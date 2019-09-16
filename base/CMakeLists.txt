@@ -1,0 +1,78 @@
+project(base)
+
+set(
+  SRC
+  array_adapters.hpp
+  assert.hpp
+  base.cpp
+  base.hpp
+  beam.hpp
+  bidirectional_map.hpp
+  bits.hpp
+  buffer_vector.hpp
+  cache.hpp
+  cancellable.hpp
+  checked_cast.hpp
+  condition.cpp
+  condition.hpp
+  control_flow.hpp
+  dfa_helpers.hpp
+  exception.cpp
+  exception.hpp
+  file_name_utils.cpp
+  file_name_utils.hpp
+  geo_object_id.cpp
+  geo_object_id.hpp
+  gmtime.cpp
+  gmtime.hpp
+  internal/message.cpp
+  internal/message.hpp
+  levenshtein_dfa.cpp
+  levenshtein_dfa.hpp
+  logging.cpp
+  logging.hpp
+  lower_case.cpp
+  macros.hpp
+  math.hpp
+  matrix.hpp
+  mem_trie.hpp
+  mutex.hpp
+  normalize_unicode.cpp
+  observer_list.hpp
+  ref_counted.hpp
+  scope_guard.hpp
+  src_point.cpp
+  src_point.hpp
+  stats.hpp
+  stl_helpers.hpp
+  string_format.cpp
+  string_format.hpp
+  string_utils.cpp
+  string_utils.hpp
+  task_loop.hpp
+  thread.cpp
+  thread.hpp
+  thread_checker.cpp
+  thread_checker.hpp
+  thread_pool.cpp
+  thread_pool.hpp
+  thread_pool_computational.hpp
+  thread_pool_delayed.cpp
+  thread_pool_delayed.hpp
+  thread_safe_queue.hpp
+  thread_utils.hpp
+  threaded_container.cpp
+  threaded_container.hpp
+  threaded_list.hpp
+  timegm.cpp
+  timegm.hpp
+  timer.cpp
+  timer.hpp
+  uni_string_dfa.cpp
+  uni_string_dfa.hpp
+  visitor.hpp
+)
+
+geocore_add_library(${PROJECT_NAME} ${SRC})
+
+geocore_add_test_subdirectory(base_tests)

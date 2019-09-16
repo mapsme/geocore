@@ -1,0 +1,180 @@
+#include "testing/testing.hpp"
+
+#include "generator/feature_builder.hpp"
+#include "generator/feature_generator.hpp"
+#include "generator/feature_helpers.hpp"
+
+#include "coding/point_coding.hpp"
+
+#include "geometry/cellid.hpp"
+#include "geometry/mercator.hpp"
+#include "geometry/point2d.hpp"
+
+#include "indexer/cell_id.hpp"
+#include "indexer/scales.hpp"
+
+#include "base/logging.hpp"
+
+#include <string>
+#include <vector>
+
+using namespace std;
+using namespace feature;
+
+namespace
+{
+m2::PointU D2I(double x, double y) { return PointDToPointU(m2::PointD(x, y), kPointCoordBits); }
+
+class ProcessCoastsBase
+{
+public:
+  explicit ProcessCoastsBase(vector<string> const & vID) : m_vID(vID) {}
+
+protected:
+  bool HasID(FeatureBuilder const & fb) const
+  {
+    TEST(fb.IsCoastCell(), ());
+    return (find(m_vID.begin(), m_vID.end(), fb.GetName()) != m_vID.end());
+  }
+
+private:
+  vector<string> const & m_vID;
+};
+
+class DoPrintCoasts : public ProcessCoastsBase
+{
+public:
+  explicit DoPrintCoasts(vector<string> const & vID) : ProcessCoastsBase(vID) {}
+
+  void operator()(FeatureBuilder const & fb, uint64_t)
+  {
+    if (HasID(fb))
+    {
+      // Check common params.
+      TEST(fb.IsArea(), ());
+      int const upperScale = scales::GetUpperScale();
+      TEST(fb.IsDrawableInRange(0, upperScale), ());
+
+      m2::RectD const rect = fb.GetLimitRect();
+      LOG(LINFO, ("ID =", fb.GetName(), "Rect =", rect, "Polygons =", fb.GetGeometry()));
+
+      // Make bound rect inflated a little.
+      DistanceToSegmentWithRectBounds distFn(rect);
+      m2::RectD const boundRect = m2::Inflate(rect, distFn.GetEpsilon(), distFn.GetEpsilon());
+
+      using Points = vector<m2::PointD>;
+      using Polygons = list<Points>;
+
+      Polygons const & poly = fb.GetGeometry();
+
+      // Check that all simplifications are inside bound rect.
+      for (int level = 0; level <= upperScale; ++level)
+      {
+        TEST(fb.IsDrawableInRange(level, level), ());
+
+        for (auto const & rawPts : poly)
+        {
+          Points pts;
+          SimplifyPoints(distFn, level, rawPts, pts);
+
+          LOG(LINFO, ("Simplified. Level =", level, "Points =", pts));
+
+          for (auto const & p : pts)
+            TEST(boundRect.IsPointInside(p), (p));
+        }
+      }
+    }
+  }
+};
+
+class DoCopyCoasts : public ProcessCoastsBase
+{
+public:
+  DoCopyCoasts(string const & fName, vector<string> const & vID)
+    : ProcessCoastsBase(vID), m_collector(fName)
+  {
+  }
+
+  void operator()(FeatureBuilder const & fb1, uint64_t)
+  {
+    if (HasID(fb1))
+      m_collector.Collect(fb1);
+  }
+
+private:
+  FeaturesCollector m_collector;
+};
+}  // namespace
+
+UNIT_TEST(CellID_CheckRectPoints)
+{
+  int const level = 6;
+  int const count = 1 << 2 * level;
+
+  using Id = m2::CellId<19>;
+  using Converter = CellIdConverter<MercatorBounds, Id>;
+
+  for (size_t i = 0; i < count; ++i)
+  {
+    Id const cell = Id::FromBitsAndLevel(i, level);
+    pair<uint32_t, uint32_t> const xy = cell.XY();
+    uint32_t const r = 2*cell.Radius();
+    uint32_t const bound = (1 << level) * r;
+
+    double minX, minY, maxX, maxY;
+    Converter::GetCellBounds(cell, minX, minY, maxX, maxY);
+
+    double minX_, minY_, maxX_, maxY_;
+    if (xy.first > r)
+    {
+      Id neighbour = Id::FromXY(xy.first - r, xy.second, level);
+      Converter::GetCellBounds(neighbour, minX_, minY_, maxX_, maxY_);
+
+      TEST_ALMOST_EQUAL_ULPS(minX, maxX_, ());
+      TEST_ALMOST_EQUAL_ULPS(minY, minY_, ());
+      TEST_ALMOST_EQUAL_ULPS(maxY, maxY_, ());
+
+      TEST_EQUAL(D2I(minX, minY), D2I(maxX_, minY_), ());
+      TEST_EQUAL(D2I(minX, maxY), D2I(maxX_, maxY_), ());
+    }
+
+    if (xy.first + r < bound)
+    {
+      Id neighbour = Id::FromXY(xy.first + r, xy.second, level);
+      Converter::GetCellBounds(neighbour, minX_, minY_, maxX_, maxY_);
+
+      TEST_ALMOST_EQUAL_ULPS(maxX, minX_, ());
+      TEST_ALMOST_EQUAL_ULPS(minY, minY_, ());
+      TEST_ALMOST_EQUAL_ULPS(maxY, maxY_, ());
+
+      TEST_EQUAL(D2I(maxX, minY), D2I(minX_, minY_), ());
+      TEST_EQUAL(D2I(maxX, maxY), D2I(minX_, maxY_), ());
+    }
+
+    if (xy.second > r)
+    {
+      Id neighbour = Id::FromXY(xy.first, xy.second - r, level);
+      Converter::GetCellBounds(neighbour, minX_, minY_, maxX_, maxY_);
+
+      TEST_ALMOST_EQUAL_ULPS(minY, maxY_, ());
+      TEST_ALMOST_EQUAL_ULPS(minX, minX_, ());
+      TEST_ALMOST_EQUAL_ULPS(maxX, maxX_, ());
+
+      TEST_EQUAL(D2I(minX, minY), D2I(minX_, maxY_), ());
+      TEST_EQUAL(D2I(maxX, minY), D2I(maxX_, maxY_), ());
+    }
+
+    if (xy.second + r < bound)
+    {
+      Id neighbour = Id::FromXY(xy.first, xy.second + r, level);
+      Converter::GetCellBounds(neighbour, minX_, minY_, maxX_, maxY_);
+
+      TEST_ALMOST_EQUAL_ULPS(maxY, minY_, ());
+      TEST_ALMOST_EQUAL_ULPS(minX, minX_, ());
+      TEST_ALMOST_EQUAL_ULPS(maxX, maxX_, ());
+
+      TEST_EQUAL(D2I(minX, maxY), D2I(minX_, minY_), ());
+      TEST_EQUAL(D2I(maxX, maxY), D2I(maxX_, minY_), ());
+    }
+  }
+}

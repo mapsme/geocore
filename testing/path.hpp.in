@@ -1,0 +1,13 @@
+#pragma once
+
+/*
+ * These values are automatically set according to their cmake variables.
+ */
+
+#include <cstdint>
+
+struct TestindDataPath
+{
+  static constexpr char const * const kDataPath = "${GEOCORE_ROOT}/data";
+  static constexpr char const * const kProjectName = "${PROJECT_NAME}";
+};

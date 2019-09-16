@@ -1,0 +1,93 @@
+project(coding)
+
+add_definitions(-DU_DISABLE_RENAMING)
+
+include_directories(
+  ${GEOCORE_ROOT}/coding
+)
+
+set(
+  SRC
+  base64.cpp
+  base64.hpp
+  bit_streams.hpp
+  buffer_reader.hpp
+  buffered_file_writer.cpp
+  buffered_file_writer.hpp
+  byte_stream.hpp
+  cbv.cpp
+  cbv.hpp
+  compressed_bit_vector.cpp
+  compressed_bit_vector.hpp
+  constants.hpp
+  csv_reader.cpp
+  csv_reader.hpp
+  dd_vector.hpp
+  elias_coder.hpp
+  endianness.hpp
+  file_container.cpp
+  file_container.hpp
+  file_container_writers.hpp
+  file_reader.cpp
+  file_reader.hpp
+  file_sort.hpp
+  file_writer.cpp
+  file_writer.hpp
+  geometry_coding.cpp
+  geometry_coding.hpp
+  hex.cpp
+  hex.hpp
+  huffman.cpp
+  huffman.hpp
+  internal/file64_api.hpp
+  internal/file_data.cpp
+  internal/file_data.hpp
+  internal/xmlparser.hpp
+  map_uint32_to_val.hpp
+  memory_region.hpp
+  mmap_reader.cpp
+  mmap_reader.hpp
+  parse_xml.hpp
+  point_coding.cpp
+  point_coding.hpp
+  read_write_utils.hpp
+  reader.cpp
+  reader.hpp
+  reader_cache.hpp
+  reader_streambuf.cpp
+  reader_streambuf.hpp
+  reader_wrapper.hpp
+  reader_writer_ops.cpp
+  reader_writer_ops.hpp
+  sha1.cpp
+  sha1.hpp
+  simple_dense_coding.cpp
+  simple_dense_coding.hpp
+  string_utf8_multilang.cpp
+  string_utf8_multilang.hpp
+  succinct_mapper.hpp
+  tesselator_decl.hpp
+  traffic.cpp
+  traffic.hpp
+  transliteration.cpp
+  transliteration.hpp
+  url_encode.hpp
+  value_opt_string.hpp
+  var_record_reader.hpp
+  var_serial_vector.hpp
+  varint.hpp
+  write_to_sink.hpp
+  writer.hpp
+)
+
+geocore_add_library(${PROJECT_NAME} ${SRC})
+geocore_link_libraries(${PROJECT_NAME}
+   base
+   icu
+   geometry
+   succinct
+   jansson
+   expat
+)
+
+geocore_add_test_subdirectory(coding_tests)
