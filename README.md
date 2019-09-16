@@ -2,7 +2,7 @@
 
 Bunch of code for geoservices
 
-![Actions Status](http://aliyunfc.tarocch1.com/github-actions-badge/LaGrunge/omim/?style=flat-square)
+![Actions Status](http://aliyunfc.tarocch1.com/github-actions-badge/mapsme/geocore/?style=flat-square)
 
 ## Submodules
 
