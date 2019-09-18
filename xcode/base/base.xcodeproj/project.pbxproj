@@ -344,53 +344,53 @@
 		39FD26C71CC659D200AFF551 /* base_tests */ = {
 			isa = PBXGroup;
 			children = (
-				395784CE2303034000F2CC07 /* thread_safe_queue_tests.cpp */,
-				395784CF2303034000F2CC07 /* url_helpers_tests.cpp */,
-				397DC50F22BB8ECD007126DB /* bidirectional_map_tests.cpp */,
-				F61B9796229BFDF1000E878B /* non_intersecting_intervals_tests.cpp */,
-				390F1C0F2294299A00EA58E3 /* file_name_utils_tests.cpp */,
-				E1B7FFC521FA1A2100F094DC /* thread_pool_computational_tests.cpp */,
-				E1B7FFC621FA1A2200F094DC /* thread_pool_delayed_tests.cpp */,
-				39F1E53021C961B800D961DC /* beam_tests.cpp */,
-				395FEB3321492F320036395C /* stl_helpers_tests.cpp */,
-				3917FA60211E00F100937DF4 /* geo_object_id_tests.cpp */,
-				39F995DF20F55B8A0034F977 /* move_to_front_tests.cpp */,
-				39F995E120F55B8A0034F977 /* suffix_array_tests.cpp */,
-				39F995E220F55B8A0034F977 /* visitor_tests.cpp */,
-				39BC707520F55B6700A6EC20 /* bwt_tests.cpp */,
-				39BC707420F55B6700A6EC20 /* clustering_map_tests.cpp */,
-				564BB446206E8A4D00BDD211 /* fifo_cache_test.cpp */,
-				39B89C391FD1898A001104AF /* control_flow_tests.cpp */,
-				67E40EC71E4DC0D500A6D200 /* small_set_test.cpp */,
-				3446C67E1DDCAA6E00146687 /* newtype_test.cpp */,
-				3446C67F1DDCAA6E00146687 /* ref_counted_tests.cpp */,
-				3446C6781DDCAA2500146687 /* levenshtein_dfa_test.cpp */,
-				3446C6791DDCAA2500146687 /* uni_string_dfa_test.cpp */,
-				39FD27011CC65A2800AFF551 /* testingmain.cpp */,
 				39FD26C81CC65A0E00AFF551 /* assert_test.cpp */,
+				39F1E53021C961B800D961DC /* beam_tests.cpp */,
+				397DC50F22BB8ECD007126DB /* bidirectional_map_tests.cpp */,
 				39FD26CA1CC65A0E00AFF551 /* bits_test.cpp */,
 				39FD26CB1CC65A0E00AFF551 /* buffer_vector_test.cpp */,
+				39BC707520F55B6700A6EC20 /* bwt_tests.cpp */,
 				39FD26CC1CC65A0E00AFF551 /* cache_test.cpp */,
+				39BC707420F55B6700A6EC20 /* clustering_map_tests.cpp */,
 				39FD26CD1CC65A0E00AFF551 /* collection_cast_test.cpp */,
 				39FD26CE1CC65A0E00AFF551 /* condition_test.cpp */,
 				39FD26D01CC65A0E00AFF551 /* containers_test.cpp */,
+				39B89C391FD1898A001104AF /* control_flow_tests.cpp */,
+				564BB446206E8A4D00BDD211 /* fifo_cache_test.cpp */,
+				390F1C0F2294299A00EA58E3 /* file_name_utils_tests.cpp */,
+				3917FA60211E00F100937DF4 /* geo_object_id_tests.cpp */,
+				3446C6781DDCAA2500146687 /* levenshtein_dfa_test.cpp */,
 				39FD26D11CC65A0E00AFF551 /* logging_test.cpp */,
 				39FD26D21CC65A0E00AFF551 /* math_test.cpp */,
 				39FD26D31CC65A0E00AFF551 /* matrix_test.cpp */,
 				39FD26D41CC65A0E00AFF551 /* mem_trie_test.cpp */,
+				39F995DF20F55B8A0034F977 /* move_to_front_tests.cpp */,
+				3446C67E1DDCAA6E00146687 /* newtype_test.cpp */,
+				F61B9796229BFDF1000E878B /* non_intersecting_intervals_tests.cpp */,
 				39FD26D51CC65A0E00AFF551 /* observer_list_test.cpp */,
 				39FD26D61CC65A0E00AFF551 /* range_iterator_test.cpp */,
+				3446C67F1DDCAA6E00146687 /* ref_counted_tests.cpp */,
 				39FD26D71CC65A0E00AFF551 /* regexp_test.cpp */,
 				39FD26D81CC65A0E00AFF551 /* rolling_hash_test.cpp */,
 				39FD26D91CC65A0E00AFF551 /* scope_guard_test.cpp */,
+				67E40EC71E4DC0D500A6D200 /* small_set_test.cpp */,
+				395FEB3321492F320036395C /* stl_helpers_tests.cpp */,
 				39FD26DC1CC65A0E00AFF551 /* string_format_test.cpp */,
 				39FD26DD1CC65A0E00AFF551 /* string_utils_test.cpp */,
+				39F995E120F55B8A0034F977 /* suffix_array_tests.cpp */,
 				39FD26DE1CC65A0E00AFF551 /* sunrise_sunset_test.cpp */,
+				39FD27011CC65A2800AFF551 /* testingmain.cpp */,
+				E1B7FFC521FA1A2100F094DC /* thread_pool_computational_tests.cpp */,
+				E1B7FFC621FA1A2200F094DC /* thread_pool_delayed_tests.cpp */,
 				39FD26DF1CC65A0E00AFF551 /* thread_pool_tests.cpp */,
+				395784CE2303034000F2CC07 /* thread_safe_queue_tests.cpp */,
 				39FD26E01CC65A0E00AFF551 /* threaded_list_test.cpp */,
 				39FD26E11CC65A0E00AFF551 /* threads_test.cpp */,
 				39FD26E21CC65A0E00AFF551 /* timegm_test.cpp */,
 				39FD26E31CC65A0E00AFF551 /* timer_test.cpp */,
+				3446C6791DDCAA2500146687 /* uni_string_dfa_test.cpp */,
+				395784CF2303034000F2CC07 /* url_helpers_tests.cpp */,
+				39F995E220F55B8A0034F977 /* visitor_tests.cpp */,
 			);
 			name = base_tests;
 			path = ../../base/base_tests;
@@ -420,29 +420,13 @@
 		675341791A3F57BF00A0A8C3 /* base */ = {
 			isa = PBXGroup;
 			children = (
-				3989E363230302EA00D63F84 /* thread_safe_queue.hpp */,
-				397DC50B22BB8EBF007126DB /* bidirectional_map.hpp */,
-				397DC50C22BB8EBF007126DB /* non_intersecting_intervals.hpp */,
-				390F1C0C2294298E00EA58E3 /* file_name_utils.cpp */,
-				390F1C0B2294298E00EA58E3 /* file_name_utils.hpp */,
-				E1B7FFBD21FA19FD00F094DC /* thread_pool_computational.hpp */,
-				E1B7FFC021FA19FE00F094DC /* thread_pool_delayed.cpp */,
-				E1B7FFBE21FA19FD00F094DC /* thread_pool_delayed.hpp */,
-				E1B7FFBF21FA19FD00F094DC /* thread_utils.hpp */,
-				39F1E52E21C961A800D961DC /* beam.hpp */,
-				3D1BE645212D775500ACD94A /* atomic_shared_ptr.hpp */,
-				3917FA5E211E00C300937DF4 /* suffix_array.hpp */,
-				3917FA5A211E00BA00937DF4 /* pprof.cpp */,
-				3917FA5B211E00BB00937DF4 /* pprof.hpp */,
-				3917FA54211E009700937DF4 /* geo_object_id.cpp */,
-				3917FA55211E009700937DF4 /* geo_object_id.hpp */,
-				3917FA56211E009700937DF4 /* get_time.hpp */,
-				3917FA52211E008C00937DF4 /* clustering_map.hpp */,
-				564BB444206E89ED00BDD211 /* fifo_cache.hpp */,
 				675341851A3F57E400A0A8C3 /* array_adapters.hpp */,
 				675341861A3F57E400A0A8C3 /* assert.hpp */,
+				3D1BE645212D775500ACD94A /* atomic_shared_ptr.hpp */,
 				675341871A3F57E400A0A8C3 /* base.cpp */,
 				675341881A3F57E400A0A8C3 /* base.hpp */,
+				39F1E52E21C961A800D961DC /* beam.hpp */,
+				397DC50B22BB8EBF007126DB /* bidirectional_map.hpp */,
 				675341891A3F57E400A0A8C3 /* bits.hpp */,
 				6753418A1A3F57E400A0A8C3 /* buffer_vector.hpp */,
 				3D74EF0E1F8B902B0081202C /* bwt.cpp */,
@@ -450,6 +434,7 @@
 				6753418B1A3F57E400A0A8C3 /* cache.hpp */,
 				672DD4B01E04255F0078E13C /* cancellable.hpp */,
 				67C79B9E1E2929DB00C40034 /* checked_cast.hpp */,
+				3917FA52211E008C00937DF4 /* clustering_map.hpp */,
 				672DD4B11E04255F0078E13C /* collection_cast.hpp */,
 				672DD4B31E04255F0078E13C /* condition.cpp */,
 				672DD4B41E04255F0078E13C /* condition.hpp */,
@@ -459,6 +444,12 @@
 				3446C66C1DDCA96300146687 /* dfa_helpers.hpp */,
 				675341941A3F57E400A0A8C3 /* exception.cpp */,
 				675341951A3F57E400A0A8C3 /* exception.hpp */,
+				564BB444206E89ED00BDD211 /* fifo_cache.hpp */,
+				390F1C0C2294298E00EA58E3 /* file_name_utils.cpp */,
+				390F1C0B2294298E00EA58E3 /* file_name_utils.hpp */,
+				3917FA54211E009700937DF4 /* geo_object_id.cpp */,
+				3917FA55211E009700937DF4 /* geo_object_id.hpp */,
+				3917FA56211E009700937DF4 /* get_time.hpp */,
 				671182EE1C807C0A00CB8177 /* gmtime.cpp */,
 				671182EF1C807C0A00CB8177 /* gmtime.hpp */,
 				675345381A3F6F5E00A0A8C3 /* internal */,
@@ -476,8 +467,11 @@
 				3D74EF0A1F8B902A0081202C /* move_to_front.hpp */,
 				675341A11A3F57E400A0A8C3 /* mutex.hpp */,
 				672DD4B61E04255F0078E13C /* newtype.hpp */,
+				397DC50C22BB8EBF007126DB /* non_intersecting_intervals.hpp */,
 				675341A21A3F57E400A0A8C3 /* normalize_unicode.cpp */,
 				672DD4B71E04255F0078E13C /* observer_list.hpp */,
+				3917FA5A211E00BA00937DF4 /* pprof.cpp */,
+				3917FA5B211E00BB00937DF4 /* pprof.hpp */,
 				56B1A0711E69DE4D00395022 /* random.cpp */,
 				56B1A0721E69DE4D00395022 /* random.hpp */,
 				672DD4B81E0425600078E13C /* range_iterator.hpp */,
@@ -501,13 +495,19 @@
 				675341BE1A3F57E400A0A8C3 /* strings_bundle.cpp */,
 				675341BF1A3F57E400A0A8C3 /* strings_bundle.hpp */,
 				3D74EF0B1F8B902B0081202C /* suffix_array.cpp */,
+				3917FA5E211E00C300937DF4 /* suffix_array.hpp */,
 				670E39421C46C76900E9C0A6 /* sunrise_sunset.cpp */,
 				670E39431C46C76900E9C0A6 /* sunrise_sunset.hpp */,
 				3D7815711F3A145F0068B6AC /* task_loop.hpp */,
 				67B52B5E1AD3C84E00664C17 /* thread_checker.cpp */,
 				67B52B5F1AD3C84E00664C17 /* thread_checker.hpp */,
+				E1B7FFBD21FA19FD00F094DC /* thread_pool_computational.hpp */,
+				E1B7FFC021FA19FE00F094DC /* thread_pool_delayed.cpp */,
+				E1B7FFBE21FA19FD00F094DC /* thread_pool_delayed.hpp */,
 				675341C11A3F57E400A0A8C3 /* thread_pool.cpp */,
 				675341C21A3F57E400A0A8C3 /* thread_pool.hpp */,
+				3989E363230302EA00D63F84 /* thread_safe_queue.hpp */,
+				E1B7FFBF21FA19FD00F094DC /* thread_utils.hpp */,
 				675341C31A3F57E400A0A8C3 /* thread.cpp */,
 				675341C41A3F57E400A0A8C3 /* thread.hpp */,
 				675341C51A3F57E400A0A8C3 /* threaded_container.cpp */,
@@ -818,7 +818,21 @@
 					"$(inherited)",
 					"GEOCORE_UNIT_TEST_DISABLE_PLATFORM_INIT=1",
 				);
-				INFOPLIST_FILE = "$(GEOCORE_ROOT)/iphone/Maps/MAPSME.plist";
+				INFOPLIST_FILE = "$(GEOCORE_ROOT)/xcode/MAPSME.plist";
+				"OTHER_LDFLAGS[sdk=macosx*]" = (
+					"-framework",
+					Cocoa,
+					"-framework",
+					IOKit,
+					"-framework",
+					SystemConfiguration,
+					"-framework",
+					CFNetwork,
+					"-lboost_filesystem",
+					"-lboost_serialization",
+					"-lboost_iostreams",
+					"-lgtest",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = maps.me.base_tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
@@ -831,7 +845,7 @@
 					"$(inherited)",
 					"GEOCORE_UNIT_TEST_DISABLE_PLATFORM_INIT=1",
 				);
-				INFOPLIST_FILE = "$(GEOCORE_ROOT)/iphone/Maps/MAPSME.plist";
+				INFOPLIST_FILE = "$(GEOCORE_ROOT)/xcode/MAPSME.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = maps.me.base_tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				VALIDATE_PRODUCT = YES;
@@ -842,7 +856,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 34BA2D6A1DBE169E00FAB345 /* common-debug.xcconfig */;
 			buildSettings = {
-				GCC_PREFIX_HEADER = "$(GEOCORE_ROOT)/precompiled_headers.hpp";
+				GCC_PREFIX_HEADER = "";
 			};
 			name = Debug;
 		};
@@ -850,7 +864,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 34BA2D6B1DBE169E00FAB345 /* common-release.xcconfig */;
 			buildSettings = {
-				GCC_PREFIX_HEADER = "$(GEOCORE_ROOT)/precompiled_headers.hpp";
+				GCC_PREFIX_HEADER = "";
 			};
 			name = Release;
 		};
@@ -874,7 +888,7 @@
 			isa = XCBuildConfiguration;
 			baseConfigurationReference = 34BA2D6B1DBE169E00FAB345 /* common-release.xcconfig */;
 			buildSettings = {
-				GCC_PREFIX_HEADER = "$(GEOCORE_ROOT)/precompiled_headers.hpp";
+				GCC_PREFIX_HEADER = "";
 			};
 			name = "Production Full";
 		};
@@ -893,7 +907,7 @@
 					"$(inherited)",
 					"GEOCORE_UNIT_TEST_DISABLE_PLATFORM_INIT=1",
 				);
-				INFOPLIST_FILE = "$(GEOCORE_ROOT)/iphone/Maps/MAPSME.plist";
+				INFOPLIST_FILE = "$(GEOCORE_ROOT)/xcode/MAPSME.plist";
 				PRODUCT_BUNDLE_IDENTIFIER = maps.me.base_tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				VALIDATE_PRODUCT = YES;

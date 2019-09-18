@@ -1,0 +1,403 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		67633E9823328E2600684E04 /* house_numbers_matcher.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67633E8823328E2500684E04 /* house_numbers_matcher.cpp */; };
+		67633E9923328E2600684E04 /* hierarchy.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67633E8923328E2500684E04 /* hierarchy.hpp */; };
+		67633E9A23328E2600684E04 /* geocoder.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67633E8A23328E2500684E04 /* geocoder.hpp */; };
+		67633E9B23328E2600684E04 /* index.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67633E8B23328E2500684E04 /* index.hpp */; };
+		67633E9C23328E2600684E04 /* name_dictionary.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67633E8C23328E2500684E04 /* name_dictionary.hpp */; };
+		67633E9D23328E2600684E04 /* hierarchy.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67633E8D23328E2500684E04 /* hierarchy.cpp */; };
+		67633E9E23328E2600684E04 /* hierarchy_reader.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67633E8E23328E2500684E04 /* hierarchy_reader.hpp */; };
+		67633E9F23328E2600684E04 /* result.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67633E8F23328E2500684E04 /* result.cpp */; };
+		67633EA023328E2600684E04 /* hierarchy_reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67633E9023328E2500684E04 /* hierarchy_reader.cpp */; };
+		67633EA123328E2600684E04 /* types.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67633E9123328E2500684E04 /* types.hpp */; };
+		67633EA223328E2600684E04 /* result.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67633E9223328E2500684E04 /* result.hpp */; };
+		67633EA323328E2600684E04 /* name_dictionary.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67633E9323328E2500684E04 /* name_dictionary.cpp */; };
+		67633EA423328E2600684E04 /* geocoder.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67633E9423328E2500684E04 /* geocoder.cpp */; };
+		67633EA523328E2600684E04 /* index.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67633E9523328E2600684E04 /* index.cpp */; };
+		67633EA623328E2600684E04 /* types.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67633E9623328E2600684E04 /* types.cpp */; };
+		67633EA723328E2600684E04 /* house_numbers_matcher.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 67633E9723328E2600684E04 /* house_numbers_matcher.hpp */; };
+		67633EB82332902100684E04 /* geocoder_tests.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67633EAC23328F7700684E04 /* geocoder_tests.cpp */; };
+		67633EB92332902100684E04 /* house_numbers_matcher_test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67633EAB23328F7700684E04 /* house_numbers_matcher_test.cpp */; };
+		67633EBC2332904900684E04 /* libbase.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67633EBB2332904900684E04 /* libbase.a */; };
+		67633EBE2332904900684E04 /* libcoding.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67633EBD2332904900684E04 /* libcoding.a */; };
+		67633EC02332904900684E04 /* libgeometry.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67633EBF2332904900684E04 /* libgeometry.a */; };
+		67633EC22332904900684E04 /* libindexer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67633EC12332904900684E04 /* libindexer.a */; };
+		67633EC32332904900684E04 /* libgeocoder.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67633E8023328DBA00684E04 /* libgeocoder.a */; };
+		67633EC52332905300684E04 /* libjansson.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67633EC42332905300684E04 /* libjansson.a */; };
+		67633EC7233290AA00684E04 /* libz.tbd in Frameworks */ = {isa = PBXBuildFile; fileRef = 67633EC6233290AA00684E04 /* libz.tbd */; };
+		67633ECB2332957F00684E04 /* libplatform_tests_support.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67633ECA2332957F00684E04 /* libplatform_tests_support.a */; };
+		67633ECD2332958B00684E04 /* libplatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 67633ECC2332958B00684E04 /* libplatform.a */; };
+		67633ECF233295C100684E04 /* testingmain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 67633ECE233295C100684E04 /* testingmain.cpp */; };
+		67633ED12332965900684E04 /* path.hpp.in in Sources */ = {isa = PBXBuildFile; fileRef = 67633ED02332965100684E04 /* path.hpp.in */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXBuildRule section */
+		67633ED22332965D00684E04 /* PBXBuildRule */ = {
+			isa = PBXBuildRule;
+			compilerSpec = com.apple.compilers.proxy.script;
+			filePatterns = "*.hpp.in";
+			fileType = pattern.proxy;
+			isEditable = 1;
+			outputFiles = (
+				"$(DERIVED_FILE_DIR)/testing/${INPUT_FILE_BASE}",
+			);
+			script = "export GIT_HASH=$(git log --pretty=format:'%h' -n 1)\nexport GIT_TIMESTAMP=$(git log --pretty=format:'%at' -n 1)\nexport GIT_TAG=\"LOCAL\"\nexport PROJECT_NAME=\"geocore\"\nsed -e 's/@PROJECT_NAME@/geocore/g' -e \"s|@GEOCORE_ROOT@|${GEOCORE_ROOT}|g\" -e \"s/@GIT_TAG@/${GIT_TAG}/\" -e \"s/@GIT_TIMESTAMP@/${GIT_TIMESTAMP}/\" -e \"s/@GIT_HASH@/${GIT_HASH}/\" ${INPUT_FILE_PATH} > ${DERIVED_FILE_DIR}/testing/${INPUT_FILE_BASE}\n";
+		};
+/* End PBXBuildRule section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		67633EAF23328F9000684E04 /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = /usr/share/man/man1/;
+			dstSubfolderSpec = 0;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 1;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		67633E8023328DBA00684E04 /* libgeocoder.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libgeocoder.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		67633E8823328E2500684E04 /* house_numbers_matcher.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = house_numbers_matcher.cpp; sourceTree = "<group>"; };
+		67633E8923328E2500684E04 /* hierarchy.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = hierarchy.hpp; sourceTree = "<group>"; };
+		67633E8A23328E2500684E04 /* geocoder.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = geocoder.hpp; sourceTree = "<group>"; };
+		67633E8B23328E2500684E04 /* index.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = index.hpp; sourceTree = "<group>"; };
+		67633E8C23328E2500684E04 /* name_dictionary.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = name_dictionary.hpp; sourceTree = "<group>"; };
+		67633E8D23328E2500684E04 /* hierarchy.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hierarchy.cpp; sourceTree = "<group>"; };
+		67633E8E23328E2500684E04 /* hierarchy_reader.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = hierarchy_reader.hpp; sourceTree = "<group>"; };
+		67633E8F23328E2500684E04 /* result.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = result.cpp; sourceTree = "<group>"; };
+		67633E9023328E2500684E04 /* hierarchy_reader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hierarchy_reader.cpp; sourceTree = "<group>"; };
+		67633E9123328E2500684E04 /* types.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = types.hpp; sourceTree = "<group>"; };
+		67633E9223328E2500684E04 /* result.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = result.hpp; sourceTree = "<group>"; };
+		67633E9323328E2500684E04 /* name_dictionary.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = name_dictionary.cpp; sourceTree = "<group>"; };
+		67633E9423328E2500684E04 /* geocoder.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = geocoder.cpp; sourceTree = "<group>"; };
+		67633E9523328E2600684E04 /* index.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = index.cpp; sourceTree = "<group>"; };
+		67633E9623328E2600684E04 /* types.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = types.cpp; sourceTree = "<group>"; };
+		67633E9723328E2600684E04 /* house_numbers_matcher.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = house_numbers_matcher.hpp; sourceTree = "<group>"; };
+		67633EA823328E4B00684E04 /* common-release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "common-release.xcconfig"; path = "../common-release.xcconfig"; sourceTree = "<group>"; };
+		67633EA923328E4B00684E04 /* common-debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "common-debug.xcconfig"; path = "../common-debug.xcconfig"; sourceTree = "<group>"; };
+		67633EAB23328F7700684E04 /* house_numbers_matcher_test.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = house_numbers_matcher_test.cpp; sourceTree = "<group>"; };
+		67633EAC23328F7700684E04 /* geocoder_tests.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = geocoder_tests.cpp; sourceTree = "<group>"; };
+		67633EB123328F9000684E04 /* geocoder_tests */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = geocoder_tests; sourceTree = BUILT_PRODUCTS_DIR; };
+		67633EBB2332904900684E04 /* libbase.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libbase.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		67633EBD2332904900684E04 /* libcoding.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libcoding.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		67633EBF2332904900684E04 /* libgeometry.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libgeometry.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		67633EC12332904900684E04 /* libindexer.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libindexer.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		67633EC42332905300684E04 /* libjansson.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libjansson.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		67633EC6233290AA00684E04 /* libz.tbd */ = {isa = PBXFileReference; lastKnownFileType = "sourcecode.text-based-dylib-definition"; name = libz.tbd; path = usr/lib/libz.tbd; sourceTree = SDKROOT; };
+		67633ECA2332957F00684E04 /* libplatform_tests_support.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libplatform_tests_support.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		67633ECC2332958B00684E04 /* libplatform.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; path = libplatform.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		67633ECE233295C100684E04 /* testingmain.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = testingmain.cpp; sourceTree = "<group>"; };
+		67633ED02332965100684E04 /* path.hpp.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = path.hpp.in; path = ../../testing/path.hpp.in; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		67633E7E23328DBA00684E04 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		67633EAE23328F9000684E04 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				67633ECD2332958B00684E04 /* libplatform.a in Frameworks */,
+				67633ECB2332957F00684E04 /* libplatform_tests_support.a in Frameworks */,
+				67633EC7233290AA00684E04 /* libz.tbd in Frameworks */,
+				67633EC52332905300684E04 /* libjansson.a in Frameworks */,
+				67633EC32332904900684E04 /* libgeocoder.a in Frameworks */,
+				67633EBC2332904900684E04 /* libbase.a in Frameworks */,
+				67633EBE2332904900684E04 /* libcoding.a in Frameworks */,
+				67633EC02332904900684E04 /* libgeometry.a in Frameworks */,
+				67633EC22332904900684E04 /* libindexer.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		67633E7723328DBA00684E04 = {
+			isa = PBXGroup;
+			children = (
+				67633EA923328E4B00684E04 /* common-debug.xcconfig */,
+				67633EA823328E4B00684E04 /* common-release.xcconfig */,
+				67633EAA23328F2B00684E04 /* geocoder_tests */,
+				67633E8723328DEF00684E04 /* geocoder */,
+				67633E8123328DBA00684E04 /* Products */,
+				67633EBA2332904900684E04 /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		67633E8123328DBA00684E04 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				67633E8023328DBA00684E04 /* libgeocoder.a */,
+				67633EB123328F9000684E04 /* geocoder_tests */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		67633E8723328DEF00684E04 /* geocoder */ = {
+			isa = PBXGroup;
+			children = (
+				67633E9423328E2500684E04 /* geocoder.cpp */,
+				67633E8A23328E2500684E04 /* geocoder.hpp */,
+				67633E9023328E2500684E04 /* hierarchy_reader.cpp */,
+				67633E8E23328E2500684E04 /* hierarchy_reader.hpp */,
+				67633E8D23328E2500684E04 /* hierarchy.cpp */,
+				67633E8923328E2500684E04 /* hierarchy.hpp */,
+				67633E8823328E2500684E04 /* house_numbers_matcher.cpp */,
+				67633E9723328E2600684E04 /* house_numbers_matcher.hpp */,
+				67633E9523328E2600684E04 /* index.cpp */,
+				67633E8B23328E2500684E04 /* index.hpp */,
+				67633E9323328E2500684E04 /* name_dictionary.cpp */,
+				67633E8C23328E2500684E04 /* name_dictionary.hpp */,
+				67633E8F23328E2500684E04 /* result.cpp */,
+				67633E9223328E2500684E04 /* result.hpp */,
+				67633E9623328E2600684E04 /* types.cpp */,
+				67633E9123328E2500684E04 /* types.hpp */,
+			);
+			name = geocoder;
+			path = ../../geocoder;
+			sourceTree = "<group>";
+		};
+		67633EAA23328F2B00684E04 /* geocoder_tests */ = {
+			isa = PBXGroup;
+			children = (
+				67633ED02332965100684E04 /* path.hpp.in */,
+				67633ECE233295C100684E04 /* testingmain.cpp */,
+				67633EAC23328F7700684E04 /* geocoder_tests.cpp */,
+				67633EAB23328F7700684E04 /* house_numbers_matcher_test.cpp */,
+			);
+			name = geocoder_tests;
+			path = ../../geocoder/geocoder_tests;
+			sourceTree = "<group>";
+		};
+		67633EBA2332904900684E04 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				67633ECC2332958B00684E04 /* libplatform.a */,
+				67633ECA2332957F00684E04 /* libplatform_tests_support.a */,
+				67633EC6233290AA00684E04 /* libz.tbd */,
+				67633EC42332905300684E04 /* libjansson.a */,
+				67633EBB2332904900684E04 /* libbase.a */,
+				67633EBD2332904900684E04 /* libcoding.a */,
+				67633EBF2332904900684E04 /* libgeometry.a */,
+				67633EC12332904900684E04 /* libindexer.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		67633E7C23328DBA00684E04 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				67633E9E23328E2600684E04 /* hierarchy_reader.hpp in Headers */,
+				67633EA723328E2600684E04 /* house_numbers_matcher.hpp in Headers */,
+				67633E9A23328E2600684E04 /* geocoder.hpp in Headers */,
+				67633EA123328E2600684E04 /* types.hpp in Headers */,
+				67633E9923328E2600684E04 /* hierarchy.hpp in Headers */,
+				67633EA223328E2600684E04 /* result.hpp in Headers */,
+				67633E9B23328E2600684E04 /* index.hpp in Headers */,
+				67633E9C23328E2600684E04 /* name_dictionary.hpp in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		67633E7F23328DBA00684E04 /* geocoder */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 67633E8423328DBA00684E04 /* Build configuration list for PBXNativeTarget "geocoder" */;
+			buildPhases = (
+				67633E7C23328DBA00684E04 /* Headers */,
+				67633E7D23328DBA00684E04 /* Sources */,
+				67633E7E23328DBA00684E04 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = geocoder;
+			productName = geocoder;
+			productReference = 67633E8023328DBA00684E04 /* libgeocoder.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		67633EB023328F9000684E04 /* geocoder_tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 67633EB523328F9100684E04 /* Build configuration list for PBXNativeTarget "geocoder_tests" */;
+			buildPhases = (
+				67633EAD23328F9000684E04 /* Sources */,
+				67633EAE23328F9000684E04 /* Frameworks */,
+				67633EAF23328F9000684E04 /* CopyFiles */,
+			);
+			buildRules = (
+				67633ED22332965D00684E04 /* PBXBuildRule */,
+			);
+			dependencies = (
+			);
+			name = geocoder_tests;
+			productName = geocoder_tests;
+			productReference = 67633EB123328F9000684E04 /* geocoder_tests */;
+			productType = "com.apple.product-type.tool";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		67633E7823328DBA00684E04 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1030;
+				ORGANIZATIONNAME = Mail.Ru;
+				TargetAttributes = {
+					67633E7F23328DBA00684E04 = {
+						CreatedOnToolsVersion = 10.3;
+					};
+					67633EB023328F9000684E04 = {
+						CreatedOnToolsVersion = 10.3;
+					};
+				};
+			};
+			buildConfigurationList = 67633E7B23328DBA00684E04 /* Build configuration list for PBXProject "geocoder" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 67633E7723328DBA00684E04;
+			productRefGroup = 67633E8123328DBA00684E04 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				67633E7F23328DBA00684E04 /* geocoder */,
+				67633EB023328F9000684E04 /* geocoder_tests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		67633E7D23328DBA00684E04 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				67633E9823328E2600684E04 /* house_numbers_matcher.cpp in Sources */,
+				67633EA423328E2600684E04 /* geocoder.cpp in Sources */,
+				67633E9D23328E2600684E04 /* hierarchy.cpp in Sources */,
+				67633EA523328E2600684E04 /* index.cpp in Sources */,
+				67633EA323328E2600684E04 /* name_dictionary.cpp in Sources */,
+				67633EA023328E2600684E04 /* hierarchy_reader.cpp in Sources */,
+				67633E9F23328E2600684E04 /* result.cpp in Sources */,
+				67633EA623328E2600684E04 /* types.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		67633EAD23328F9000684E04 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				67633ED12332965900684E04 /* path.hpp.in in Sources */,
+				67633ECF233295C100684E04 /* testingmain.cpp in Sources */,
+				67633EB82332902100684E04 /* geocoder_tests.cpp in Sources */,
+				67633EB92332902100684E04 /* house_numbers_matcher_test.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		67633E8223328DBA00684E04 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 67633EA923328E4B00684E04 /* common-debug.xcconfig */;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		67633E8323328DBA00684E04 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 67633EA823328E4B00684E04 /* common-release.xcconfig */;
+			buildSettings = {
+			};
+			name = Release;
+		};
+		67633E8523328DBA00684E04 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		67633E8623328DBA00684E04 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				EXECUTABLE_PREFIX = lib;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		67633EB623328F9100684E04 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		67633EB723328F9100684E04 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		67633E7B23328DBA00684E04 /* Build configuration list for PBXProject "geocoder" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				67633E8223328DBA00684E04 /* Debug */,
+				67633E8323328DBA00684E04 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		67633E8423328DBA00684E04 /* Build configuration list for PBXNativeTarget "geocoder" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				67633E8523328DBA00684E04 /* Debug */,
+				67633E8623328DBA00684E04 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		67633EB523328F9100684E04 /* Build configuration list for PBXNativeTarget "geocoder_tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				67633EB623328F9100684E04 /* Debug */,
+				67633EB723328F9100684E04 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 67633E7823328DBA00684E04 /* Project object */;
+}

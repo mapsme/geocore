@@ -14,8 +14,6 @@
 		347F333B1C4540F0009758CC /* simple_dense_coding.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 347F33351C4540F0009758CC /* simple_dense_coding.hpp */; };
 		347F333C1C4540F0009758CC /* succinct_mapper.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 347F33361C4540F0009758CC /* succinct_mapper.hpp */; };
 		3496AB6E1DC1F53500C5DDBA /* libalohalitics.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3496AB6D1DC1F53500C5DDBA /* libalohalitics.a */; };
-		34A129D31DF99E43001B4531 /* zlib.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 34A129D11DF99E43001B4531 /* zlib.cpp */; };
-		34A129D41DF99E43001B4531 /* zlib.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 34A129D21DF99E43001B4531 /* zlib.hpp */; };
 		394916E41BAC3ACF002A8C4F /* libcoding.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 6753421B1A3F586300A0A8C3 /* libcoding.a */; };
 		394917201BAC3BE0002A8C4F /* testingmain.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3949171F1BAC3BE0002A8C4F /* testingmain.cpp */; };
 		3949172B1BAC3CAC002A8C4F /* libbase.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 394917271BAC3CAC002A8C4F /* libbase.a */; };
@@ -105,10 +103,6 @@
 		675342CE1A3F588C00A0A8C3 /* varint.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 675342791A3F588C00A0A8C3 /* varint.hpp */; };
 		675342CF1A3F588C00A0A8C3 /* write_to_sink.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6753427A1A3F588C00A0A8C3 /* write_to_sink.hpp */; };
 		675342D01A3F588C00A0A8C3 /* writer.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6753427B1A3F588C00A0A8C3 /* writer.hpp */; };
-		675342D11A3F588C00A0A8C3 /* zip_creator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6753427C1A3F588C00A0A8C3 /* zip_creator.cpp */; };
-		675342D21A3F588C00A0A8C3 /* zip_creator.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6753427D1A3F588C00A0A8C3 /* zip_creator.hpp */; };
-		675342D31A3F588C00A0A8C3 /* zip_reader.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6753427E1A3F588C00A0A8C3 /* zip_reader.cpp */; };
-		675342D41A3F588C00A0A8C3 /* zip_reader.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 6753427F1A3F588C00A0A8C3 /* zip_reader.hpp */; };
 		675E889C1DB7B0D000F8EBDA /* traffic.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 675E889A1DB7B0D000F8EBDA /* traffic.cpp */; };
 		675E889D1DB7B0D000F8EBDA /* traffic.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 675E889B1DB7B0D000F8EBDA /* traffic.hpp */; };
 		676818201DC3ABD80094C0AC /* traffic_test.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 6768181F1DC3ABD80094C0AC /* traffic_test.cpp */; };
@@ -166,8 +160,6 @@
 		347F33351C4540F0009758CC /* simple_dense_coding.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = simple_dense_coding.hpp; sourceTree = "<group>"; };
 		347F33361C4540F0009758CC /* succinct_mapper.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = succinct_mapper.hpp; sourceTree = "<group>"; };
 		3496AB6D1DC1F53500C5DDBA /* libalohalitics.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libalohalitics.a; path = "../../../geocore-build/xcode/Debug-iphonesimulator/libalohalitics.a"; sourceTree = "<group>"; };
-		34A129D11DF99E43001B4531 /* zlib.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = zlib.cpp; sourceTree = "<group>"; };
-		34A129D21DF99E43001B4531 /* zlib.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = zlib.hpp; sourceTree = "<group>"; };
 		34A72A431DBE4989003D1F5F /* common-debug.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "common-debug.xcconfig"; path = "../common-debug.xcconfig"; sourceTree = "<group>"; };
 		34A72A441DBE4989003D1F5F /* common-release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = "common-release.xcconfig"; path = "../common-release.xcconfig"; sourceTree = "<group>"; };
 		3949168F1BAC3A5F002A8C4F /* coding_tests.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = coding_tests.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -262,10 +254,6 @@
 		675342791A3F588C00A0A8C3 /* varint.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = varint.hpp; sourceTree = "<group>"; };
 		6753427A1A3F588C00A0A8C3 /* write_to_sink.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = write_to_sink.hpp; sourceTree = "<group>"; };
 		6753427B1A3F588C00A0A8C3 /* writer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = writer.hpp; sourceTree = "<group>"; };
-		6753427C1A3F588C00A0A8C3 /* zip_creator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = zip_creator.cpp; sourceTree = "<group>"; };
-		6753427D1A3F588C00A0A8C3 /* zip_creator.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = zip_creator.hpp; sourceTree = "<group>"; };
-		6753427E1A3F588C00A0A8C3 /* zip_reader.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = zip_reader.cpp; sourceTree = "<group>"; };
-		6753427F1A3F588C00A0A8C3 /* zip_reader.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = zip_reader.hpp; sourceTree = "<group>"; };
 		675E889A1DB7B0D000F8EBDA /* traffic.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = traffic.cpp; sourceTree = "<group>"; };
 		675E889B1DB7B0D000F8EBDA /* traffic.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = traffic.hpp; sourceTree = "<group>"; };
 		6768181F1DC3ABD80094C0AC /* traffic_test.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = traffic_test.cpp; sourceTree = "<group>"; };
@@ -507,12 +495,6 @@
 				675342791A3F588C00A0A8C3 /* varint.hpp */,
 				6753427A1A3F588C00A0A8C3 /* write_to_sink.hpp */,
 				6753427B1A3F588C00A0A8C3 /* writer.hpp */,
-				6753427C1A3F588C00A0A8C3 /* zip_creator.cpp */,
-				6753427D1A3F588C00A0A8C3 /* zip_creator.hpp */,
-				6753427E1A3F588C00A0A8C3 /* zip_reader.cpp */,
-				6753427F1A3F588C00A0A8C3 /* zip_reader.hpp */,
-				34A129D11DF99E43001B4531 /* zlib.cpp */,
-				34A129D21DF99E43001B4531 /* zlib.hpp */,
 			);
 			name = coding;
 			path = ../../coding;
@@ -577,7 +559,6 @@
 				675342BA1A3F588C00A0A8C3 /* reader_writer_ops.hpp in Headers */,
 				675342C61A3F588C00A0A8C3 /* uri.hpp in Headers */,
 				6753429B1A3F588C00A0A8C3 /* file_container.hpp in Headers */,
-				34A129D41DF99E43001B4531 /* zlib.hpp in Headers */,
 				670D04BD1B0BA92D0013A7AC /* expat_impl.h in Headers */,
 				675342A81A3F588C00A0A8C3 /* hex.hpp in Headers */,
 				6753428C1A3F588C00A0A8C3 /* byte_stream.hpp in Headers */,
@@ -590,10 +571,8 @@
 				675342C71A3F588C00A0A8C3 /* url_encode.hpp in Headers */,
 				675342BC1A3F588C00A0A8C3 /* reader.hpp in Headers */,
 				39B2B9811FB4694300AB85A1 /* memory_region.hpp in Headers */,
-				675342D21A3F588C00A0A8C3 /* zip_creator.hpp in Headers */,
 				3D74EF211F8F55740081202C /* csv_reader.hpp in Headers */,
 				39B2B97D1FB4693500AB85A1 /* bwt_coder.hpp in Headers */,
-				675342D41A3F588C00A0A8C3 /* zip_reader.hpp in Headers */,
 				675342A41A3F588C00A0A8C3 /* file_writer.hpp in Headers */,
 				675342C01A3F588C00A0A8C3 /* streams_sink.hpp in Headers */,
 				670D04C11B0BA92D0013A7AC /* xmlparser.hpp in Headers */,
@@ -726,16 +705,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				347F333A1C4540F0009758CC /* simple_dense_coding.cpp in Sources */,
-				675342D11A3F588C00A0A8C3 /* zip_creator.cpp in Sources */,
 				675342B61A3F588C00A0A8C3 /* reader_streambuf.cpp in Sources */,
 				3DAB4B6E23018E0500F7E5EB /* buffered_file_writer.cpp in Sources */,
 				675342821A3F588C00A0A8C3 /* base64.cpp in Sources */,
-				675342D31A3F588C00A0A8C3 /* zip_reader.cpp in Sources */,
 				4563B062205909290057556D /* sha1.cpp in Sources */,
 				347F33371C4540F0009758CC /* compressed_bit_vector.cpp in Sources */,
 				3D74EF221F8F55740081202C /* csv_reader.cpp in Sources */,
 				6753429F1A3F588C00A0A8C3 /* file_reader.cpp in Sources */,
-				34A129D31DF99E43001B4531 /* zlib.cpp in Sources */,
 				3973743221C17EFE0003807A /* string_utf8_multilang.cpp in Sources */,
 				676818201DC3ABD80094C0AC /* traffic_test.cpp in Sources */,
 				BB537C5F1E8490120074D9D3 /* transliteration.cpp in Sources */,
@@ -817,7 +793,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				EXECUTABLE_PREFIX = lib;
-				GCC_PREFIX_HEADER = "$(GEOCORE_ROOT)/precompiled_headers.hpp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -826,7 +801,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				EXECUTABLE_PREFIX = lib;
-				GCC_PREFIX_HEADER = "$(GEOCORE_ROOT)/precompiled_headers.hpp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -853,7 +827,6 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				EXECUTABLE_PREFIX = lib;
-				GCC_PREFIX_HEADER = "$(GEOCORE_ROOT)/precompiled_headers.hpp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = "Production Full";
