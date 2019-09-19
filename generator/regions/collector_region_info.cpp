@@ -190,13 +190,12 @@ void CollectorRegionInfo::FillIsoCode(base::GeoObjectId const & osmId, OsmElemen
   rd.m_osmId = osmId;
 
   rd.SetAlpha2(el.GetTag("is_in:country_code"));
-
+  rd.SetAlpha2(el.GetTag("ISO3166-1"));
+  rd.SetAlpha2(el.GetTag("ISO3166-1:alpha2"));
   auto const & iso3166_2 = el.GetTag("ISO3166-2");
   if (iso3166_2.size() > 3 && iso3166_2[2] == '-')
     rd.SetAlpha2(iso3166_2.substr(0, 2));
 
-  rd.SetAlpha2(el.GetTag("ISO3166-1"));
-  rd.SetAlpha2(el.GetTag("ISO3166-1:alpha2"));
   rd.SetAlpha3(el.GetTag("ISO3166-1:alpha3"));
   rd.SetNumeric(el.GetTag("ISO3166-1:numeric"));
 }

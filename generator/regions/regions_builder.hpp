@@ -47,16 +47,17 @@ private:
   Regions FormRegionsInAreaOrder(Regions && regions);
   Regions ExtractCountriesOuters(Regions & regions);
   Node::PtrList BuildCountry(std::string const & countryName) const;
-  boost::optional<std::string> FindCountryIsoCode(Regions const & outers) const;
+  boost::optional<std::string> FindCountryCode(Regions const & outers) const;
+  static std::string const & GetCountryCode(std::string const & isoCode);
   Node::PtrList BuildCountryRegionTrees(Regions const & outers,
-                                        boost::optional<std::string> const & isoCode,
+                                        boost::optional<std::string> const & countryCode,
                                         CountrySpecifier const & countrySpecifier) const;
   Node::Ptr BuildCountryRegionTree(Region const & outer,
-                                   boost::optional<std::string> const & isoCode,
+                                   boost::optional<std::string> const & countryCode,
                                    CountrySpecifier const & countrySpecifier) const;
   std::vector<Node::Ptr> MakeCountryNodesInAreaOrder(
       Region const & countryOuter, Regions const & regionsInAreaOrder,
-      boost::optional<std::string> const & isoCode,
+      boost::optional<std::string> const & countryCode,
       CountrySpecifier const & countrySpecifier) const;
   Node::Ptr ChooseParent(std::vector<Node::Ptr> const & nodesInAreaOrder,
                          std::vector<Node::Ptr>::const_reverse_iterator forItem,
