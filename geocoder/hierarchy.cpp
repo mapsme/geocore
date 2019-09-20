@@ -158,6 +158,11 @@ MultipleNames const & Hierarchy::Entry::GetNormalizedMultipleNames(
   return normalizedNameDictionary.Get(addressField);
 }
 
+bool Hierarchy::Entry::HasFieldInAddress(Type type) const
+{
+  return m_normalizedAddress[static_cast<size_t>(type)] != NameDictionary::kUnspecifiedPosition;
+}
+
 // static
 Type Hierarchy::Entry::RankToType(uint8_t rank)
 {

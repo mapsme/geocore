@@ -89,6 +89,7 @@ public:
                                        MultipleNames & multipleNames,
                                        NameDictionaryBuilder & normalizedNameDictionaryBuilder,
                                        ParsingStats & stats);
+    bool HasFieldInAddress(Type type) const;
     // See generator::regions::LevelRegion::GetRank().
     static Type RankToType(uint8_t rank);
 
