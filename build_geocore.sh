@@ -54,7 +54,7 @@ if [ -z "$OPT_DEBUG$OPT_RELEASE" ]; then
   OPT_RELEASE=1
 fi
 
-GEOCORE_PATH="$(cd "${GEOCORE_PATH:-$(dirname "$0")/../..}"; pwd)"
+GEOCORE_PATH="$(cd "${GEOCORE_PATH:-$(dirname "$0")}"; pwd)"
 
 DEVTOOLSET_PATH=/opt/rh/devtoolset-7
 if [ -d "$DEVTOOLSET_PATH" ]; then
