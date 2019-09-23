@@ -159,6 +159,8 @@ private:
                         Layer & curLayer) const;
   void AddResults(Context & ctx, std::vector<Index::DocId> const & entries) const;
 
+  bool InCityState(Hierarchy::Entry const & entry) const;
+
   // Returns whether any of the paths through |layers| can be extended
   // by appending |e|.
   bool HasParent(std::vector<Geocoder::Layer> const & layers, Hierarchy::Entry const & e) const;

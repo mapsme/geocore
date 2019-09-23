@@ -502,19 +502,42 @@ void Geocoder::AddResults(Context & ctx, std::vector<Index::DocId> const & entri
     auto const & entry = m_index.GetDoc(docId);
 
     auto entryCertainty = certainty;
-    if (entry.m_type == Type::Locality)
+
+    if (InCityState(entry))
     {
-      auto const localityName = entry.m_normalizedAddress[static_cast<size_t>(Type::Locality)];
-
-      if (entry.m_normalizedAddress[static_cast<size_t>(Type::Region)] == localityName)
-        entryCertainty += GetWeight(Type::Region);
-
-      if (entry.m_normalizedAddress[static_cast<size_t>(Type::Subregion)] == localityName)
-        entryCertainty += GetWeight(Type::Subregion);
+      constexpr auto kCityStateExtraWeight = 0.05;
+      ASSERT_LESS(kCityStateExtraWeight, GetWeight(Type::Building),
+                  ("kCityStateExtraWeight must be smallest"));
+      // Prefer city-state (Moscow, Istambul) to other city types.
+      entryCertainty += kCityStateExtraWeight;
     }
 
     ctx.AddResult(entry.m_osmId, entryCertainty, entry.m_type, tokenIds, allTypes);
   }
+}
+
+bool Geocoder::InCityState(Hierarchy::Entry const & entry) const
+{
+  if (!entry.HasFieldInAddress(Type::Locality))
+    return false;
+
+  auto const & nameDictionary = m_hierarchy.GetNormalizedNameDictionary();
+  auto const & localityMultipleName = entry.GetNormalizedMultipleNames(Type::Locality,
+                                                                       nameDictionary);
+  auto const & localityName = localityMultipleName.GetMainName();
+
+  for (auto const type : {Type::Region, Type::Subregion})
+  {
+    if (!entry.HasFieldInAddress(type))
+      continue;
+
+    auto const & multipleName = entry.GetNormalizedMultipleNames(type, nameDictionary);
+    auto const & name = multipleName.GetMainName();
+    if (name == localityName)
+      return true;
+  }
+
+  return false;
 }
 
 bool Geocoder::HasParent(vector<Geocoder::Layer> const & layers, Hierarchy::Entry const & e) const

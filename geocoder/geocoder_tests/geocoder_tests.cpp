@@ -176,17 +176,22 @@ UNIT_TEST(Geocoder_MoscowLocalityRank)
 {
   string const kData = R"#(
 10 {"properties": {"locales": {"default": {"address": {"region": "Москва"}}}, "rank": 2}}
-11 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "region": "Москва"}}}, "rank": 4}}
+11 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "region": "Москва"}}, "en": {"address": {"locality": "Moscow"}}}, "rank": 4}}
+12 {"properties": {"locales": {"default": {"address": {"street": "Ленинский проспект", "locality": "Москва", "region": "Москва"}}, "en": {"address": {"locality": "Moscow"}}}}}
 
 20 {"properties": {"locales": {"default": {"address": {"region": "Тверская Область"}}}, "rank": 2}}
 21 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "region": "Тверская Область"}}}, "rank": 4}}
+22 {"properties": {"locales": {"default": {"address": {"street": "Ленинский проспект", "locality": "Москва", "region": "Тверская Область"}}}}}
 )#";
 
   Geocoder geocoder;
   ScopedFile const regionsJsonFile("regions.jsonl", kData);
   geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath());
 
-  TestGeocoder(geocoder, "Москва", {{Id{0x11}, 1.0}, {Id{0x10}, 0.625}, {Id{0x21}, 0.375}});
+  TestGeocoder(geocoder, "Москва", {{Id{0x10}, 1.0}, {Id{0x11}, 0.61}, {Id{0x21}, 0.6}});
+  TestGeocoder(geocoder, "Москва, Ленинский проспект", {{Id{0x12}, 1.0}, {Id{0x22}, 0.70922},
+                                                        {Id{0x10}, 0.70922}, {Id{0x11}, 0.432624},
+                                                        {Id{0x21}, 0.425532}});
 }
 
 // Geocoder_StreetWithNumber* ----------------------------------------------------------------------
@@ -330,8 +335,8 @@ UNIT_TEST(Geocoder_SubregionInLocality)
 
   TestGeocoder(geocoder, "Северный административный округ", {{Id{0x12}, 1.0}});
   TestGeocoder(geocoder, "Москва, Северный административный округ",
-               {{Id{0x12}, 1.0}, {Id{0x11}, 0.470588}, {Id{0x10}, 0.294118}});
-  TestGeocoder(geocoder, "Москва", {{Id{0x11}, 1.0}, {Id{0x10}, 0.625}});
+               {{Id{0x12}, 1.0}, {Id{0x10}, 0.293255}, {Id{0x11}, 0.178886}});
+  TestGeocoder(geocoder, "Москва", {{Id{0x10}, 1.0}, {Id{0x11}, 0.61}});
 }
 
 // Geocoder_NumericalSuburb* ----------------------------------------------------------------------
