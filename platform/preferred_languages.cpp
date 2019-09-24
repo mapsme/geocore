@@ -5,8 +5,6 @@
 #include "base/macros.hpp"
 
 #include "platform/target_os.hpp"
-#include "std/set.hpp"
-#include "std/vector.hpp"
 
 #if defined(GEOCORE_OS_MAC)
   #include <CoreFoundation/CFLocale.h>
@@ -14,6 +12,12 @@
 #elif defined(GEOCORE_OS_LINUX)
   #include <cstdlib>
 #endif
+
+#include <vector>
+#include <set>
+#include <string>
+
+using namespace std;
 
 namespace languages
 {

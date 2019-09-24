@@ -9,7 +9,9 @@
 #include <limits>
 #include <sstream>
 
-#include "std/transform_iterator.hpp"
+#include <boost/iterator/transform_iterator.hpp>
+
+using boost::make_transform_iterator;
 
 using namespace std;
 using namespace strings;

@@ -5,6 +5,8 @@
 #include "platform/constants.hpp"
 #include "platform/mwm_version.hpp"
 
+#include <string>
+
 std::unique_ptr<FeatureType> FeaturesVector::GetByIndex(uint32_t index) const
 {
   uint32_t offset = 0, size = 0;
@@ -18,7 +20,7 @@ size_t FeaturesVector::GetNumFeatures() const
   return m_table ? m_table->size() : 0;
 }
 
-FeaturesVectorTest::FeaturesVectorTest(string const & filePath)
+FeaturesVectorTest::FeaturesVectorTest(std::string const & filePath)
   : FeaturesVectorTest((FilesContainerR(filePath, READER_CHUNK_LOG_SIZE, READER_CHUNK_LOG_COUNT)))
 {
 }

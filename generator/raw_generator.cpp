@@ -10,6 +10,11 @@
 
 #include "defines.hpp"
 
+#include <string>
+#include <vector>
+
+using namespace std;
+
 namespace generator
 {
 RawGenerator::RawGenerator(feature::GenerateInfo & genInfo, size_t threadsCount, size_t chunkSize)

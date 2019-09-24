@@ -7,6 +7,7 @@
 #include "geometry/tree4d.hpp"
 #include "geometry/region2d.hpp"
 
+#include <vector>
 
 namespace feature
 {
@@ -30,5 +31,5 @@ public:
   /// @return false if coasts are not merged and FLAG_fail_on_coasts is set
   bool Finish();
 
-  void GetFeatures(vector<feature::FeatureBuilder> & vecFb);
+  void GetFeatures(std::vector<feature::FeatureBuilder> & vecFb);
 };

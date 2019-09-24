@@ -58,7 +58,7 @@ feature::FeatureBuilder FeatureBuilderFromOmsElementData(OsmElementData const & 
   {
     auto const & p1 = elementData.m_polygon[0];
     auto const & p2 = elementData.m_polygon[1];
-    vector<m2::PointD> poly = {
+    std::vector<m2::PointD> poly = {
       {p1.x, p1.y}, {p1.x, p2.y}, {p2.x, p2.y}, {p2.x, p1.y}, {p1.x, p1.y}};
     fb.AddPolygon(poly);
     fb.SetHoles({});
