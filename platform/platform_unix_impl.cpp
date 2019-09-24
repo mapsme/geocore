@@ -5,16 +5,19 @@
 #include "base/logging.hpp"
 #include "base/scope_guard.hpp"
 
-#include "std/algorithm.hpp"
-#include "std/regex.hpp"
-#include "std/unique_ptr.hpp"
-
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 
 #include <cstring>
 #include <unistd.h>
+
+#include <algorithm>
+#include <cstring>
+#include <memory>
+#include <regex>
+
+using namespace std;
 
 #if defined(GEOCORE_OS_MAC)
   #include <sys/mount.h>

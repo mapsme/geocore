@@ -13,6 +13,7 @@
 #include "base/base.hpp"
 #include "base/control_flow.hpp"
 
+#include <string>
 #include <unordered_map>
 #include <utility>
 
