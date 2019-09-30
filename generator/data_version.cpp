@@ -51,6 +51,17 @@ void DataVersion::DumpToPath(std::string const & path) const
 }
 
 // static
+std::string DataVersion::GetCodeVersion()
+{
+  base::JSONPtr json{json_object()};
+  ToJSONObject(*json, "build_time", geocore::build_version::git::kTimestamp);
+  ToJSONObject(*json, "git_hash", geocore::build_version::git::kHash);
+  ToJSONObject(*json, "git_tag", geocore::build_version::git::kTag);
+  return base::DumpToString(json);
+}
+
+
+// static
 DataVersion DataVersion::LoadFromPath(std::string const & path)
 {
   DataVersion result;

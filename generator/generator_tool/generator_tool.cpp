@@ -182,6 +182,7 @@ CliCommandOptions DefineOptions(int argc, char * argv[])
      ("verbose",
          po::value(&o.m_verbose)->default_value(false),
          "Provide more detailed output.")
+     ("version", "get version")
      ("help", "produce help message");
 
   po::variables_map vm;
@@ -192,6 +193,12 @@ CliCommandOptions DefineOptions(int argc, char * argv[])
   if (vm.count("help"))
   {
     std::cout << optionsDescription << std::endl;
+    exit(1);
+  }
+
+  if (vm.count("version"))
+  {
+    std::cout << generator::DataVersion::GetCodeVersion() << std::endl;
     exit(1);
   }
 

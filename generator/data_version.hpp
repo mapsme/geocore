@@ -18,7 +18,7 @@ public:
   std::string GetVersionJson() const;
   void DumpToPath(std::string const & path) const;
   static DataVersion LoadFromPath(std::string const & path);
-
+  static std::string GetCodeVersion();
 private:
   DataVersion() = default;
   static std::string ReadWholeFile(std::string const & filePath);
