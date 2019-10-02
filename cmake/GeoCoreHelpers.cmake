@@ -44,6 +44,7 @@ endfunction()
 function(geocore_add_library library)
   add_library(${library} ${ARGN})
   add_dependencies(${library} BuildVersion)
+  target_link_libraries(${library} coverage_config)
 endfunction()
 
 function(geocore_add_test executable)
