@@ -60,3 +60,16 @@ UNIT_TEST(Logging_ConditionalLog)
   CLOG(LWARNING, BoolFunction(false, isCalled), ("This should be displayed"));
   TEST(isCalled, ());
 }
+
+UNIT_TEST(Logging_Levels)
+{
+  base::LogLevel level = NUM_LOG_LEVELS;
+  bool good = base::FromString("DEBUG", level);
+  EXPECT_TRUE(good);
+  EXPECT_EQ(level, base::LDEBUG);
+
+  good = base::FromString("YAVASYA", level);
+  EXPECT_FALSE(good);
+
+  EXPECT_EQ(base::ToString(base::LDEBUG), "DEBUG");
+}
