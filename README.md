@@ -2,8 +2,7 @@
 
 Bunch of code for geoservices
 
-![Actions Status](https://github.com/LaGrunge/geocore/workflows/.github/workflows/ccpp.yml/badge.svg)
-
+![Actions Status][c++ci-badge]
 
 [![codecov][codecov-badge]][codecov-link]
 
@@ -21,5 +20,6 @@ This source code is Copyright (C) 2015 My.com B.V. (Mail.Ru Group), published un
 except third-party libraries. See [NOTICE](https://github.com/mapsme/geocore/blob/master/NOTICE)
 and [data/copyright.html](http://htmlpreview.github.io/?https://github.com/mapsme/geocore/blob/master/data/copyright.html) files for more information.
 
-[codecov-badge]:   https://codecov.io/gh/LaGrunge/geocore/branch/master/graph/badge.svg
-[codecov-link]:    https://codecov.io/gh/LaGrunge/geocore
+[codecov-badge]:   https://codecov.io/gh/mapsme/geocore/branch/master/graph/badge.svg
+[codecov-link]:    https://codecov.io/gh/mapsme/geocore
+[c++ci-badge]:     https://github.com/mapsme/geocore/workflows/C/C++%20CI/badge.svg
