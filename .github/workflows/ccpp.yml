@@ -25,12 +25,14 @@ jobs:
     - name: Coverage
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        GITHUB_REF: ${{ secrets.GITHUB_REF }}
+        GITHUB_SHA: ${{ secrets.GITHUB_SHA }}
       run: |
         lcov --capture --directory . --output-file coverage.info
         lcov --remove coverage.info "/usr/*" "$(pwd)/3party/*" "*/googletest-src/*" --output-file coverage.info # filter external
         lcov --list coverage.info # debug info
         # Uploading report to CodeCov
-        curl -s https://codecov.io/bash | bash -s -- -f coverage.info || echo "Codecov did not collect coverage reports"
+        curl -s https://codecov.io/bash | bash -s -- -f coverage.info -B ${GITHUB_REF#refs/heads/} -C ${GITHUB_SHA} || echo "Codecov did not collect coverage reports"
 
   build_clang:
     name: MacOS Clang build and unit tests
