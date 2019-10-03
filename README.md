@@ -1,11 +1,10 @@
 # MAPS.ME.GEOCORE
 
-Bunch of code for geoservices
+Bunch of core code for geoservices
 
 ![Actions Status][c++ci-badge]
 
 [![codecov][codecov-badge]][codecov-link]
-
 
 
 
