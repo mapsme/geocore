@@ -3,7 +3,6 @@
 #include "indexer/classificator.hpp"
 #include "indexer/feature.hpp"
 #include "indexer/feature_impl.hpp"
-#include "indexer/feature_visibility.hpp"
 #include "indexer/ftypes_matcher.hpp"
 
 #include "base/assert.hpp"

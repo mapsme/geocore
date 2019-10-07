@@ -1,7 +1,6 @@
 #include "testing/testing.hpp"
 
 #include "base/bidirectional_map.hpp"
-#include "base/macros.hpp"
 
 #include <string>
 

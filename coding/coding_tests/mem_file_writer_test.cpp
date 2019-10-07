@@ -1,7 +1,6 @@
 #include "testing/testing.hpp"
 
 #include "coding/writer.hpp"
-#include "coding/file_writer.hpp"
 
 #include "base/macros.hpp"
 

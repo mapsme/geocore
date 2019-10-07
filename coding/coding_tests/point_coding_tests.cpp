@@ -4,7 +4,6 @@
 
 #include "coding/point_coding.hpp"
 
-#include "geometry/mercator.hpp"
 
 #include "base/logging.hpp"
 

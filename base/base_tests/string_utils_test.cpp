@@ -50,7 +50,7 @@ UNIT_TEST(LowerUniChar)
       continue;
     std::string const capital = *semicolon;
     std::istringstream stream(capital);
-    strings::UniChar uc;
+    strings::UniChar uc{};
     stream >> std::hex >> uc;
     ++semicolon;
     std::string const type = *semicolon;

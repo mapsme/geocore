@@ -1,6 +1,5 @@
 #include "testing/testing.hpp"
 
-#include "base/base.hpp"
 #include "base/exception.hpp"
 #include "base/logging.hpp"
 

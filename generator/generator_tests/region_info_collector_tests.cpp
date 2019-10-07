@@ -8,15 +8,12 @@
 
 #include "platform/platform.hpp"
 
-#include "base/file_name_utils.hpp"
 #include "base/geo_object_id.hpp"
 #include "base/scope_guard.hpp"
 
 #include <cstdint>
 #include <limits>
 #include <memory>
-#include <string>
-#include <utility>
 #include <vector>
 
 using namespace generator_tests;

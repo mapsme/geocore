@@ -3,10 +3,8 @@
 #include "generator/generator_tests/common.hpp"
 
 #include "generator/collector_collection.hpp"
-#include "generator/collector_interface.hpp"
 #include "generator/collector_tag.hpp"
 
-#include "platform/platform.hpp"
 
 #include "base/geo_object_id.hpp"
 

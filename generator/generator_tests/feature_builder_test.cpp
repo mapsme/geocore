@@ -5,7 +5,6 @@
 #include "generator/feature_builder.hpp"
 #include "generator/generator_tests_support/test_with_classificator.hpp"
 #include "generator/geometry_holder.hpp"
-#include "generator/osm2type.hpp"
 
 #include "indexer/data_header.cpp"
 #include "indexer/classificator_loader.hpp"

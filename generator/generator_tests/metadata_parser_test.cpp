@@ -4,7 +4,6 @@
 
 #include "indexer/classificator_loader.hpp"
 
-#include "base/logging.hpp"
 
 using feature::Metadata;
 

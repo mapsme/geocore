@@ -2,7 +2,6 @@
 
 #include "platform/mwm_version.hpp"
 #include "platform/platform.hpp"
-#include "platform/platform_tests_support/scoped_file.hpp"
 
 #include "coding/file_writer.hpp"
 #include "coding/internal/file_data.hpp"
@@ -259,7 +258,6 @@ UNIT_TEST(IsSingleMwm)
 
 UNIT_TEST(MkDirRecursively)
 {
-  using namespace platform::tests_support;
   auto const writablePath = GetPlatform().WritableDir();
   auto const workPath = base::JoinPath(writablePath, "MkDirRecursively");
   auto const resetDir =  [](std::string const & path) {

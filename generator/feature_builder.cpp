@@ -8,13 +8,11 @@
 #include "coding/byte_stream.hpp"
 #include "coding/geometry_coding.hpp"
 #include "coding/read_write_utils.hpp"
-#include "coding/reader.hpp"
 
 #include "geometry/region2d.hpp"
 
 #include "base/logging.hpp"
 #include "base/math.hpp"
-#include "base/string_utils.hpp"
 
 #include <algorithm>
 #include <cstring>

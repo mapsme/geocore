@@ -7,7 +7,6 @@
 #include "base/scope_guard.hpp"
 #include "base/timer.hpp"
 
-#include <fstream>
 
 namespace generator
 {

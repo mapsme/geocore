@@ -2,7 +2,6 @@
 
 #include "base/macros.hpp"
 
-#include <algorithm>
 
 extern "C" {
 #if defined(__clang__)

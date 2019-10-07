@@ -4,9 +4,7 @@
 #include "geometry/mercator.hpp"
 
 #include "base/assert.hpp"
-#include "base/macros.hpp"
 #include "base/math.hpp"
-#include "base/stl_helpers.hpp"
 #include "base/string_utils.hpp"
 
 #include <cmath>
@@ -75,7 +73,7 @@ bool FormatDistanceWithLocalization(double m, string & res, char const * high, c
   }
   UNREACHABLE();
 }
-  
+
 bool FormatDistance(double m, string & res)
 {
   auto units = Units::Metric;
@@ -226,7 +224,7 @@ string FormatSpeed(double metersPerSecond, Units units)
   }
   return ToStringPrecision(unitsPerHour, unitsPerHour >= 10.0 ? 0 : 1);
 }
-  
+
 string FormatSpeedLimit(double kilometersPerHour, Units units)
 {
   double unitsPerHour = 0;

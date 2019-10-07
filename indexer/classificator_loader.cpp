@@ -1,4 +1,3 @@
-#include "indexer/classificator_loader.hpp"
 #include "indexer/classificator.hpp"
 #include "indexer/drawing_rules.hpp"
 #include "indexer/map_style_reader.hpp"
@@ -10,7 +9,6 @@
 
 #include "base/logging.hpp"
 
-#include <iostream>
 #include <memory>
 #include <string>
 

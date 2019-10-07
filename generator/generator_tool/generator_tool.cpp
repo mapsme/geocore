@@ -1,7 +1,4 @@
-#include "generator/check_model.hpp"
 #include "generator/data_version.hpp"
-#include "generator/dumper.hpp"
-#include "generator/feature_generator.hpp"
 #include "generator/generate_info.hpp"
 #include "generator/geo_objects/geo_objects_generator.hpp"
 #include "generator/locality_sorter.hpp"
@@ -14,7 +11,6 @@
 #include "generator/streets/streets.hpp"
 #include "generator/translator_collection.hpp"
 #include "generator/translator_factory.hpp"
-#include "generator/unpack_mwm.hpp"
 
 #include "geocoder/geocoder.hpp"
 
@@ -28,7 +24,6 @@
 #include "coding/endianness.hpp"
 
 #include "base/file_name_utils.hpp"
-#include "base/timer.hpp"
 
 #include <boost/program_options.hpp>
 
@@ -40,7 +35,6 @@
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
 #include <boost/stacktrace.hpp>
 
-#include "build_version.hpp"
 #include "defines.hpp"
 
 using namespace std;

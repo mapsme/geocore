@@ -6,7 +6,6 @@
 #include "generator/osm_element.hpp"
 #include "generator/regions/collector_region_info.hpp"
 #include "generator/regions/place_point.hpp"
-#include "generator/regions/regions.hpp"
 #include "generator/regions/regions_builder.hpp"
 
 #include "indexer/classificator.hpp"
@@ -14,15 +13,12 @@
 
 #include "platform/platform.hpp"
 
-#include "coding/transliteration.hpp"
 
-#include "base/file_name_utils.hpp"
 #include "base/macros.hpp"
 #include "base/scope_guard.hpp"
 
 #include <algorithm>
 #include <cstdint>
-#include <limits>
 #include <memory>
 #include <sstream>
 #include <string>

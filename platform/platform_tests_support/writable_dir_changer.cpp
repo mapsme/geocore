@@ -5,8 +5,6 @@
 #include "platform/platform.hpp"
 #include "platform/settings.hpp"
 
-#include "base/file_name_utils.hpp"
-#include "coding/internal/file_data.hpp"
 
 WritableDirChanger::WritableDirChanger(string const & testDir, SettingsDirPolicy settingsDirPolicy)
   : m_writableDirBeforeTest(GetPlatform().WritableDir())

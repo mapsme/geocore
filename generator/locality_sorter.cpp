@@ -6,26 +6,20 @@
 
 #include "indexer/data_header.hpp"
 #include "indexer/scales.hpp"
-#include "indexer/scales_patch.hpp"
 
 #include "coding/file_container.hpp"
 #include "coding/internal/file_data.hpp"
 
 #include "geometry/convex_hull.hpp"
 
-#include "platform/platform.hpp"
 
-#include "base/assert.hpp"
-#include "base/file_name_utils.hpp"
 #include "base/logging.hpp"
-#include "base/scope_guard.hpp"
 #include "base/string_utils.hpp"
 #include "base/timer.hpp"
 
 #include "defines.hpp"
 
 #include <cstdint>
-#include <fstream>
 #include <functional>
 #include <limits>
 #include <set>

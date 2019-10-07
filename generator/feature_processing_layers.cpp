@@ -2,8 +2,6 @@
 
 #include "generator/coastlines_generator.hpp"
 #include "generator/feature_maker.hpp"
-#include "generator/generate_info.hpp"
-#include "generator/type_helper.hpp"
 
 #include "indexer/classificator.hpp"
 #include "indexer/feature_visibility.hpp"

@@ -9,7 +9,6 @@
 #include "base/exception.hpp"
 
 #include <algorithm>
-#include <iterator>
 #include <utility>
 
 #include <boost/geometry.hpp>
@@ -159,7 +158,7 @@ void HighwayGeometry::ExtendLimitRect(std::vector<m2::PointD> const & points)
 
 void HighwayGeometry::MultiLine::Add(LineSegment && segment)
 {
-  for (auto line = m_lines.begin(), end = m_lines.end(); line != end; ++line) 
+  for (auto line = m_lines.begin(), end = m_lines.end(); line != end; ++line)
   {
     if (line->Add(std::move(segment)))
     {

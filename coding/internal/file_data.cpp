@@ -8,7 +8,6 @@
 #include "base/logging.hpp"
 #include "base/string_utils.hpp"
 
-#include "platform/target_os.hpp"
 
 #include <algorithm>
 #include <cerrno>

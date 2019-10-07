@@ -3,7 +3,6 @@
 #include "base/dfa_helpers.hpp"
 #include "base/levenshtein_dfa.hpp"
 
-#include <sstream>
 #include <string>
 #include <vector>
 

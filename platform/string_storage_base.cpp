@@ -6,9 +6,7 @@
 
 #include "base/exception.hpp"
 #include "base/logging.hpp"
-#include "base/stl_helpers.hpp"
 
-#include <istream>
 
 using namespace std;
 

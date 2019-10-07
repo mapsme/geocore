@@ -9,7 +9,6 @@
 #include "base/macros.hpp"
 #include "base/scope_guard.hpp"
 
-#include <algorithm>
 #include <functional>
 #include <initializer_list>
 #include <string>
@@ -18,8 +17,6 @@
 #include <unistd.h>
 
 #include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/types.h>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>

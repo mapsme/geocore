@@ -1,6 +1,5 @@
 #include "generator/check_model.hpp"
 
-#include "defines.hpp"
 
 #include "indexer/features_vector.hpp"
 #include "indexer/classificator.hpp"

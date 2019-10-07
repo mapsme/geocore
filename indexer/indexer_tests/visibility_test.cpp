@@ -1,6 +1,5 @@
 #include "testing/testing.hpp"
 
-#include "indexer/feature_data.hpp"
 #include "indexer/feature_visibility.hpp"
 #include "indexer/classificator.hpp"
 #include "indexer/classificator_loader.hpp"

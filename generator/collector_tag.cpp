@@ -9,7 +9,6 @@
 
 #include "base/assert.hpp"
 #include "base/geo_object_id.hpp"
-#include "base/logging.hpp"
 
 namespace generator
 {

@@ -12,7 +12,6 @@
 
 #include <iomanip>
 #include <iostream>
-#include <iterator>
 
 using namespace feature;
 using namespace std;

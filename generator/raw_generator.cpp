@@ -8,7 +8,6 @@
 
 #include "base/thread_pool_computational.hpp"
 
-#include "defines.hpp"
 
 #include <string>
 #include <vector>

@@ -1,11 +1,8 @@
 #include "indexer/classificator.hpp"
-#include "indexer/feature.hpp"
 #include "indexer/feature_data.hpp"
-#include "indexer/feature_utils.hpp"
 #include "indexer/feature_visibility.hpp"
 #include "indexer/scales.hpp"
 
-#include "geometry/point2d.hpp"
 
 #include "coding/string_utf8_multilang.hpp"
 #include "coding/transliteration.hpp"
@@ -97,7 +94,7 @@ bool GetBestName(StringUtf8Multilang const & src, vector<int8_t> const & priorit
 }
 
 vector<int8_t> GetSimilarToDeviceLanguages(int8_t deviceLang)
-{  
+{
   auto const it = kSimilarToDeviceLanguages.find(deviceLang);
   if (it != kSimilarToDeviceLanguages.cend())
     return it->second;

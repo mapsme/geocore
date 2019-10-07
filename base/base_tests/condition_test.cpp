@@ -2,8 +2,6 @@
 
 #include "base/thread.hpp"
 #include "base/threaded_list.hpp"
-#include "base/condition.hpp"
-#include "base/logging.hpp"
 
 #include <memory>
 

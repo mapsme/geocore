@@ -3,7 +3,6 @@
 #include "geometry/mercator.hpp"
 
 #include <algorithm>
-#include <iterator>
 
 #include <boost/optional.hpp>
 

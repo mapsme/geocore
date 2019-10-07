@@ -4,15 +4,12 @@
 #include "indexer/feature_algo.hpp"
 #include "indexer/feature_impl.hpp"
 #include "indexer/feature_utils.hpp"
-#include "indexer/feature_visibility.hpp"
 #include "indexer/map_object.hpp"
-#include "indexer/scales.hpp"
 #include "indexer/shared_load_info.hpp"
 
 #include "platform/preferred_languages.hpp"
 
 #include "geometry/parametrized_segment.hpp"
-#include "geometry/robust_orientation.hpp"
 
 #include "coding/byte_stream.hpp"
 #include "coding/dd_vector.hpp"
@@ -25,7 +22,6 @@
 #include <exception>
 #include <limits>
 
-#include "defines.hpp"
 
 using namespace feature;
 using namespace std;

@@ -6,14 +6,11 @@
 #include "base/scope_guard.hpp"
 
 #include <dirent.h>
-#include <sys/types.h>
 #include <sys/stat.h>
 
 #include <cstring>
 #include <unistd.h>
 
-#include <algorithm>
-#include <cstring>
 #include <memory>
 #include <regex>
 

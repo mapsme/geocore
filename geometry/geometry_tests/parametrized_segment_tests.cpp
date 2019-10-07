@@ -4,7 +4,6 @@
 #include "geometry/point2d.hpp"
 
 #include "base/macros.hpp"
-#include "base/math.hpp"
 
 template <typename Point>
 void FloatingPointsTest()
@@ -53,17 +52,17 @@ UNIT_TEST(ParametrizedSegment2D_DegenerateSection)
 UNIT_TEST(ParametrizedSegment2D_ClosestPoint)
 {
   using P = m2::PointD;
- 
+
   P arr[][4] =
   {
     { P(3, 4), P(0, 0), P(10, 0), P(3, 0) },
     { P(3, 4), P(0, 0), P(0, 10), P(0, 4) },
- 
+
     { P(3, 5), P(2, 2), P(5, 5), P(4, 4) },
     { P(5, 3), P(2, 2), P(5, 5), P(4, 4) },
     { P(2, 4), P(2, 2), P(5, 5), P(3, 3) },
     { P(4, 2), P(2, 2), P(5, 5), P(3, 3) },
- 
+
     { P(5, 6), P(2, 2), P(5, 5), P(5, 5) },
     { P(1, 0), P(2, 2), P(5, 5), P(2, 2) }
   };

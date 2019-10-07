@@ -7,7 +7,6 @@
 #include <iterator>
 #include <queue>
 #include <set>
-#include <sstream>
 #include <vector>
 
 namespace strings

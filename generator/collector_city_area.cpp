@@ -1,6 +1,5 @@
 #include "generator/collector_city_area.hpp"
 
-#include "generator/feature_generator.hpp"
 #include "generator/intermediate_data.hpp"
 
 #include "indexer/ftypes_matcher.hpp"
@@ -11,7 +10,6 @@
 
 #include "base/assert.hpp"
 
-#include <algorithm>
 #include <iterator>
 
 using namespace feature;

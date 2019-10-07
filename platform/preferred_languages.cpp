@@ -1,4 +1,3 @@
-#include "platform/preferred_languages.hpp"
 
 #include "base/string_utils.hpp"
 #include "base/logging.hpp"
@@ -14,7 +13,6 @@
 #endif
 
 #include <vector>
-#include <set>
 #include <string>
 
 using namespace std;

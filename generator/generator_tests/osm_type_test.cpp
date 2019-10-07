@@ -8,7 +8,6 @@
 
 #include "indexer/feature_data.hpp"
 #include "indexer/classificator.hpp"
-#include "indexer/classificator_loader.hpp"
 
 #include "platform/platform.hpp"
 

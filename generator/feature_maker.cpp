@@ -3,11 +3,9 @@
 #include "generator/holes.hpp"
 #include "generator/osm2type.hpp"
 #include "generator/osm_element.hpp"
-#include "generator/type_helper.hpp"
 
 #include "indexer/classificator.hpp"
 #include "indexer/feature_visibility.hpp"
-#include "indexer/ftypes_matcher.hpp"
 
 #include <utility>
 

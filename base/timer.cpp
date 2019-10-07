@@ -2,10 +2,8 @@
 
 #include "base/assert.hpp"
 #include "base/gmtime.hpp"
-#include "base/macros.hpp"
 #include "base/timegm.hpp"
 
-#include "platform/target_os.hpp"
 
 #include <algorithm>
 #include <array>
@@ -136,7 +134,7 @@ time_t StringToTimestamp(std::string const & s)
   {
     // Parse custom time zone offset format: 2012-12-03T00:38:34+03:30
     tm t1{}, t2{};
-    char sign;
+    char sign = 0;
     std::istringstream ss(s);
     ss >> base::get_time(&t1, "%Y-%m-%dT%H:%M:%S") >> sign >> base::get_time(&t2, "%H:%M");
 
