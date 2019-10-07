@@ -4,9 +4,7 @@
 #include "coding/value_opt_string.hpp"
 #include "coding/writer.hpp"
 
-#include <algorithm>
 #include <cstddef>
-#include <cstdint>
 #include <string>
 #include <vector>
 

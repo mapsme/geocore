@@ -6,7 +6,6 @@
 #include "indexer/locality_object.hpp"
 
 #include "coding/file_container.hpp"
-#include "coding/mmap_reader.hpp"
 #include "coding/reader.hpp"
 
 #include "geometry/rect2d.hpp"

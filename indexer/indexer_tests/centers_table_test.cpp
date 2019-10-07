@@ -3,10 +3,7 @@
 #include "indexer/centers_table.hpp"
 #include "indexer/classificator_loader.hpp"
 #include "indexer/data_header.hpp"
-#include "indexer/feature_algo.hpp"
-#include "indexer/features_vector.hpp"
 
-#include "platform/platform.hpp"
 
 #include "coding/reader.hpp"
 #include "coding/writer.hpp"
@@ -14,10 +11,8 @@
 #include "geometry/mercator.hpp"
 #include "geometry/point2d.hpp"
 
-#include "base/file_name_utils.hpp"
 
 #include <cstdint>
-#include <string>
 #include <utility>
 #include <vector>
 

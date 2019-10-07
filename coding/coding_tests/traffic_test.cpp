@@ -3,7 +3,6 @@
 #include "coding/traffic.hpp"
 
 #include "geometry/mercator.hpp"
-#include "geometry/point2d.hpp"
 
 #include "base/logging.hpp"
 #include "base/math.hpp"

@@ -6,7 +6,6 @@
 #include "platform/local_country_file_utils.hpp"
 
 #include "base/assert.hpp"
-#include "base/exception.hpp"
 #include "base/logging.hpp"
 #include "base/stl_helpers.hpp"
 
@@ -14,7 +13,6 @@
 #include <exception>
 #include <sstream>
 
-#include "defines.hpp"
 
 using namespace std;
 using platform::CountryFile;

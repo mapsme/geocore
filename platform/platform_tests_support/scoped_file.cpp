@@ -1,6 +1,5 @@
 #include "platform/platform_tests_support/scoped_file.hpp"
 
-#include "testing/testing.hpp"
 
 #include "platform/country_file.hpp"
 #include "platform/mwm_version.hpp"

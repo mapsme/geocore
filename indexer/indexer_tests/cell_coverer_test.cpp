@@ -1,13 +1,10 @@
 #include "testing/testing.hpp"
 
-#include "geometry/covering_utils.hpp"
 
 #include "indexer/cell_coverer.hpp"
 #include "indexer/indexer_tests/bounds.hpp"
 
-#include "coding/hex.hpp"
 
-#include "base/logging.hpp"
 
 #include <vector>
 

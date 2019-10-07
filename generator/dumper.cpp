@@ -2,7 +2,6 @@
 
 #include "indexer/classificator.hpp"
 #include "indexer/feature_processor.hpp"
-#include "indexer/trie_reader.hpp"
 #include "indexer/search_delimiters.hpp"
 #include "indexer/search_string_utils.hpp"
 
@@ -16,7 +15,6 @@
 #include <map>
 #include <vector>
 
-#include "defines.hpp"
 
 using namespace std;
 

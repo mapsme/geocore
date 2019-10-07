@@ -7,13 +7,11 @@
 
 #include "base/logging.hpp"
 #include "base/stl_helpers.hpp"
-#include "base/thread.hpp"
 
 #include "defines.hpp"
 
 #include <algorithm>
 
-#include "3party/succinct/mapper.hpp"
 
 using namespace std;
 

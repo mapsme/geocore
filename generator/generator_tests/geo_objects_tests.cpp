@@ -11,7 +11,6 @@
 
 #include "indexer/classificator_loader.hpp"
 
-#include <iostream>
 
 using namespace generator_tests;
 using namespace platform::tests_support;

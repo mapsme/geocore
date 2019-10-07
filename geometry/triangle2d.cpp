@@ -4,7 +4,6 @@
 #include "geometry/robust_orientation.hpp"
 #include "geometry/segment2d.hpp"
 
-#include "base/math.hpp"
 
 #include <chrono>
 #include <limits>

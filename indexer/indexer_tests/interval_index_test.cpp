@@ -9,7 +9,6 @@
 #include "base/macros.hpp"
 #include "base/stl_helpers.hpp"
 
-#include <utility>
 #include <vector>
 
 using namespace std;

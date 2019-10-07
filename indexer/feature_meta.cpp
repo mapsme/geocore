@@ -1,6 +1,5 @@
 #include "indexer/feature_meta.hpp"
 
-#include "platform/target_os.hpp"
 
 #include <sstream>
 

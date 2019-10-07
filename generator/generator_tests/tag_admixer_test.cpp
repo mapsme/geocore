@@ -4,7 +4,6 @@
 
 #include <map>
 #include <set>
-#include <sstream>
 
 UNIT_TEST(WaysParserTests)
 {

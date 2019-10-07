@@ -2,7 +2,6 @@
 
 #include "base/logging.hpp"
 
-#include <utility>
 #include <vector>
 
 

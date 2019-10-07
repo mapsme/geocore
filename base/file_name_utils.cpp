@@ -1,6 +1,5 @@
 #include "base/file_name_utils.hpp"
 
-#include "platform/target_os.hpp"
 
 using namespace std;
 

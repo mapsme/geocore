@@ -3,7 +3,6 @@
 #include "geometry/transformations.hpp"
 
 #include "base/assert.hpp"
-#include "base/logging.hpp"
 
 #include <cmath>
 

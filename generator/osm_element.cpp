@@ -4,7 +4,6 @@
 #include "coding/parse_xml.hpp"
 
 #include <algorithm>
-#include <cstdio>
 #include <cstring>
 #include <sstream>
 

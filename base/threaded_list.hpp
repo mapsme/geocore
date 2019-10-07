@@ -89,10 +89,7 @@ public:
       m_Cond.Wait();
     }
 
-    if (IsCancelled())
-      return true;
-
-    return false;
+    return IsCancelled();
   }
 
   T const Front(bool doPop)

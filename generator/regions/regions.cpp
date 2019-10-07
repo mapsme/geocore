@@ -3,20 +3,15 @@
 
 #include "generator/feature_builder.hpp"
 #include "generator/feature_generator.hpp"
-#include "generator/generate_info.hpp"
 #include "generator/regions/node.hpp"
 #include "generator/regions/place_point.hpp"
-#include "generator/regions/regions.hpp"
 #include "generator/regions/regions_builder.hpp"
 
 #include "geometry/mercator.hpp"
 
-#include "coding/transliteration.hpp"
 
 #include "base/assert.hpp"
-#include "base/file_name_utils.hpp"
 #include "base/logging.hpp"
-#include "base/stl_helpers.hpp"
 #include "base/timer.hpp"
 
 #include <algorithm>
@@ -24,15 +19,10 @@
 #include <map>
 #include <memory>
 #include <numeric>
-#include <queue>
 #include <set>
-#include <thread>
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
-#include "defines.hpp"
 
 using namespace feature;
 

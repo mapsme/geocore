@@ -10,7 +10,6 @@
 
 #include <algorithm>
 #include <memory>
-#include <utility>
 #include <vector>
 
 #include <boost/iterator/transform_iterator.hpp>

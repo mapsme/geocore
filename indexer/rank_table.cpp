@@ -1,10 +1,7 @@
 #include "indexer/rank_table.hpp"
 
-#include "indexer/classificator.hpp"
 #include "indexer/data_header.hpp"
-#include "indexer/feature_algo.hpp"
 #include "indexer/feature_impl.hpp"
-#include "indexer/feature_utils.hpp"
 #include "indexer/features_vector.hpp"
 #include "indexer/ftypes_matcher.hpp"
 
@@ -22,7 +19,6 @@
 
 #include "base/assert.hpp"
 #include "base/logging.hpp"
-#include "base/macros.hpp"
 #include "base/math.hpp"
 
 #include <algorithm>

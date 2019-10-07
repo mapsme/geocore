@@ -5,7 +5,6 @@
 #include "coding/varint.hpp"
 #include "coding/writer.hpp"
 
-#include "base/assert.hpp"
 #include "base/gmtime.hpp"
 #include "base/string_utils.hpp"
 #include "base/timegm.hpp"

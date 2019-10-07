@@ -4,9 +4,7 @@
 #include "indexer/map_style_reader.hpp"
 #include "indexer/scales.hpp"
 
-#include "defines.hpp"
 
-#include "platform/platform.hpp"
 
 #include "base/logging.hpp"
 

@@ -1,4 +1,3 @@
-#include "indexer/feature_impl.hpp"
 
 #include "base/string_utils.hpp"
 #include "base/logging.hpp"

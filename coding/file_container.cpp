@@ -8,10 +8,8 @@
 #include <cstring>
 #include <sstream>
 
-#include <stdio.h>
 #include <unistd.h>
 #include <sys/mman.h>
-#include <sys/stat.h>
 #include <sys/fcntl.h>
 
 #include <errno.h>

@@ -7,7 +7,6 @@
 
 #include "geometry/mercator.hpp"
 
-#include "base/logging.hpp"
 #include "base/math.hpp"
 
 #include <vector>

@@ -8,21 +8,15 @@
 
 #include "testing/testing.hpp"
 
-#include "generator/generate_info.hpp"
-#include "generator/intermediate_data.hpp"
 #include "generator/intermediate_elements.hpp"
 
 #include "coding/reader.hpp"
 #include "coding/writer.hpp"
 
-#include "defines.hpp"
 
 #include <cstdint>
-#include <string>
-#include <utility>
 #include <vector>
 
-using namespace generator;
 using namespace std;
 
 UNIT_TEST(Intermediate_Data_empty_way_element_save_load_test)

@@ -1,4 +1,3 @@
-#include "indexer/feature_algo.hpp"
 #include "indexer/feature.hpp"
 
 #include "geometry/algorithm.hpp"

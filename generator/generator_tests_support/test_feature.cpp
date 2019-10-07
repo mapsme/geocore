@@ -6,10 +6,7 @@
 #include "indexer/editable_map_object.hpp"
 #include "indexer/feature.hpp"
 #include "indexer/feature_algo.hpp"
-#include "indexer/feature_decl.hpp"
 #include "indexer/feature_meta.hpp"
-#include "indexer/ftypes_matcher.hpp"
-#include "indexer/mwm_set.hpp"
 
 #include "coding/string_utf8_multilang.hpp"
 

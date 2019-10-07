@@ -1,7 +1,6 @@
 #include "base/condition.hpp"
 #include "base/mutex.hpp"
 
-#include "platform/target_os.hpp"
 
 #include <pthread.h>
 

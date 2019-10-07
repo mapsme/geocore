@@ -4,9 +4,6 @@
 
 #include "defines.hpp"
 
-#include "coding/file_reader.hpp"
-#include "coding/file_writer.hpp"
-#include "coding/reader_streambuf.hpp"
 #include "coding/transliteration.hpp"
 
 #include "geometry/any_rect2d.hpp"
@@ -16,7 +13,6 @@
 
 #include <cmath>
 #include <iostream>
-#include <sstream>
 
 using namespace std;
 

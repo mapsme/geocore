@@ -4,7 +4,6 @@
 
 #include "base/string_utils.hpp"
 
-#include <cstdint>
 #include <string>
 #include <utility>
 #include <vector>

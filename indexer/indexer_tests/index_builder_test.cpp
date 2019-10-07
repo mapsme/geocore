@@ -4,7 +4,6 @@
 #include "indexer/data_source.hpp"
 #include "indexer/features_vector.hpp"
 #include "indexer/index_builder.hpp"
-#include "indexer/scales.hpp"
 
 #include "defines.hpp"
 

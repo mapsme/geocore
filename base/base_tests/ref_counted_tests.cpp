@@ -22,7 +22,7 @@ UNIT_TEST(RefCounted_Smoke)
   }
 
   {
-    bool destroyed;
+    bool destroyed = false;
     {
       RefCountPtr<Resource> p(new Resource(destroyed));
       TEST_EQUAL(1, p->NumRefs(), ());

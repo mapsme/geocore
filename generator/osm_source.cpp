@@ -9,7 +9,6 @@
 #include "platform/platform.hpp"
 
 #include "geometry/mercator.hpp"
-#include "geometry/tree4d.hpp"
 
 #include "base/assert.hpp"
 #include "base/stl_helpers.hpp"

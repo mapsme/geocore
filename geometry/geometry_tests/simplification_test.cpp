@@ -5,11 +5,9 @@
 #include "geometry/point2d.hpp"
 #include "geometry/simplification.hpp"
 
-#include "base/logging.hpp"
 #include "base/macros.hpp"
 #include "base/stl_helpers.hpp"
 
-#include <cstdint>
 #include <limits>
 #include <vector>
 

@@ -17,7 +17,6 @@
 #include <cctype>
 #include <memory>
 #include <regex>
-#include <sstream>
 #include <unordered_set>
 
 #include "defines.hpp"

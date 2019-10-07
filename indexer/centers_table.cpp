@@ -1,26 +1,17 @@
 #include "indexer/centers_table.hpp"
 
-#include "indexer/feature_processor.hpp"
 
 #include "coding/endianness.hpp"
-#include "coding/file_container.hpp"
 #include "coding/geometry_coding.hpp"
-#include "coding/memory_region.hpp"
 #include "coding/point_coding.hpp"
 #include "coding/reader.hpp"
-#include "coding/succinct_mapper.hpp"
 #include "coding/varint.hpp"
-#include "coding/write_to_sink.hpp"
 #include "coding/writer.hpp"
 
 #include "base/assert.hpp"
-#include "base/checked_cast.hpp"
-#include "base/logging.hpp"
 
 #include <unordered_map>
 
-#include "3party/succinct/elias_fano.hpp"
-#include "3party/succinct/rs_bit_vector.hpp"
 
 using namespace std;
 

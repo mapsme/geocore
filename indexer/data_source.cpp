@@ -3,7 +3,6 @@
 #include "base/logging.hpp"
 
 #include <algorithm>
-#include <limits>
 
 using platform::CountryFile;
 using platform::LocalCountryFile;

@@ -3,7 +3,6 @@
 #include "geocoder/geocoder.hpp"
 #include "geocoder/hierarchy_reader.hpp"
 
-#include "indexer/search_string_utils.hpp"
 
 #include "platform/platform_tests_support/scoped_file.hpp"
 
