@@ -1,6 +1,7 @@
 #pragma once
 
 #include "generator/feature_builder.hpp"
+#include "generator/feature_generator.hpp"
 #include "generator/key_value_storage.hpp"
 #include "generator/osm_element.hpp"
 #include "generator/regions/region_info_getter.hpp"
@@ -12,10 +13,10 @@
 
 #include "base/geo_object_id.hpp"
 
-#include <stdint.h>
 #include <memory>
 #include <mutex>
 #include <ostream>
+#include <stdint.h>
 #include <string>
 #include <unordered_map>
 
@@ -32,6 +33,9 @@ public:
 
   void AssembleStreets(std::string const & pathInStreetsTmpMwm);
   void AssembleBindings(std::string const & pathInGeoObjectsTmpMwm);
+
+  void RegenerateAggreatedStreetsFeatures(std::string const & pathStreetsTmpMwm);
+
   // Save built streets in the jsonl format with the members: "properties", "bbox" (array: left
   // bottom longitude, left bottom latitude, right top longitude, right top latitude), "pin" (array:
   // longitude, latitude).
@@ -47,6 +51,9 @@ private:
     StreetGeometry m_geometry;
   };
   using RegionStreets = std::unordered_map<std::string, Street>;
+
+  void WriteAsAggregatedStreet(feature::FeatureBuilder & fb, Street const & street,
+                               feature::FeaturesCollector & collector) const;
 
   void SaveRegionStreetsKv(std::ostream & streamStreetsKv, uint64_t regionId,
                            RegionStreets const & streets);
@@ -67,6 +74,7 @@ private:
   base::GeoObjectId NextOsmSurrogateId();
 
   std::unordered_map<uint64_t, RegionStreets> m_regions;
+  std::unordered_multimap<base::GeoObjectId, Street const *> m_streetFeatures2Streets;
   regions::RegionInfoGetter const & m_regionInfoGetter;
   uint64_t m_osmSurrogateCounter{0};
   size_t m_threadsCount;

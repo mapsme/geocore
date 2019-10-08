@@ -8,7 +8,9 @@ namespace feature
 // @param featuresDir - path to folder with pregenerated features data;
 // @param nodesFile - path to file with list of node ids we need to add to output;
 // @param out - output file name;
-bool GenerateGeoObjectsData(std::string const & featuresFile, std::string const & nodesFile,
+bool GenerateGeoObjectsData(std::string const & geoObjectsFeaturesFile,
+                            std::string const & streetFeaturesFile,
+                            std::string const & nodesFile,
                             std::string const & out);
 
 // Generates data for RegionsIndexBuilder from input feature-dat-files.

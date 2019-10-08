@@ -51,6 +51,16 @@ void StreetGeometry::SetPin(Pin && pin)
   m_pin = std::move(pin);
 }
 
+boost::optional<Pin> const & StreetGeometry::GetPin() const
+{
+  return m_pin;
+}
+
+HighwayGeometry const * StreetGeometry::GetHighwayGeometry() const
+{
+  return m_highwayGeometry.get();
+}
+
 void StreetGeometry::AddHighwayLine(base::GeoObjectId const & osmId, std::vector<m2::PointD> const & line)
 {
   if (!m_highwayGeometry)
@@ -83,6 +93,21 @@ Pin HighwayGeometry::ChoosePin() const
     return ChooseAreaPin();
 
   return ChooseMultilinePin();
+}
+
+m2::RectD const & HighwayGeometry::GetBbox() const
+{
+  return m_limitRect;
+}
+
+std::vector<HighwayGeometry::AreaPart> const & HighwayGeometry::GetAreaParts() const
+{
+  return m_areaParts;
+}
+
+HighwayGeometry::MultiLine const & HighwayGeometry::GetMultiLine() const
+{
+  return m_multiLine;
 }
 
 Pin HighwayGeometry::ChooseMultilinePin() const
@@ -143,11 +168,6 @@ void HighwayGeometry::AddArea(base::GeoObjectId const & osmId, std::vector<m2::P
 {
   m_areaParts.emplace_back(osmId, border);
   ExtendLimitRect(border);
-}
-
-m2::RectD const & HighwayGeometry::GetBbox() const
-{
-  return m_limitRect;
 }
 
 void HighwayGeometry::ExtendLimitRect(std::vector<m2::PointD> const & points)
@@ -315,13 +335,14 @@ double HighwayGeometry::LineSegment::CalculateLength() const noexcept
 
 // HighwayGeometry::AreaPart ---------------------------------------------------------------------------------
 
-HighwayGeometry::AreaPart::AreaPart(base::GeoObjectId const & osmId, std::vector<m2::PointD> const & polygon)
-  : m_osmId{osmId}
+HighwayGeometry::AreaPart::AreaPart(base::GeoObjectId const & osmId,
+                                    std::vector<m2::PointD> const & border)
+  : m_osmId{osmId}, m_border{border}
 {
-  CHECK_GREATER_OR_EQUAL(polygon.size(), 3, ());
+  CHECK_GREATER_OR_EQUAL(border.size(), 3, ());
 
   auto boostPolygon = boost_helpers::BoostPolygon{};
-  for (auto const & p : polygon)
+  for (auto const & p : border)
     boost::geometry::append(boostPolygon, boost_helpers::BoostPoint{p.x, p.y});
   boost::geometry::correct(boostPolygon);
 

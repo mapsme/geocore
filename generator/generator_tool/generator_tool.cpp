@@ -317,6 +317,7 @@ int GeneratorToolMain(int argc, char ** argv)
     if (options.m_generate_geo_objects_index)
     {
       if (!feature::GenerateGeoObjectsData(options.m_geo_objects_features,
+                                           options.m_streets_features,
                                            options.m_nodes_list_path, locDataFile))
       {
         LOG(LCRITICAL, ("Error generating geo objects data."));

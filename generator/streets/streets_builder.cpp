@@ -1,14 +1,20 @@
 #include "generator/streets/streets_builder.hpp"
+
 #include "generator/key_value_storage.hpp"
 #include "generator/streets/street_regions_tracing.hpp"
 #include "generator/translation.hpp"
+
+#include "coding/internal/file_data.hpp"
 
 #include "indexer/classificator.hpp"
 #include "indexer/ftypes_matcher.hpp"
 
 #include "geometry/mercator.hpp"
 
+#include "platform/platform.hpp"
+
 #include "base/logging.hpp"
+#include "base/scope_guard.hpp"
 
 #include <utility>
 
@@ -45,6 +51,72 @@ void StreetsBuilder::AssembleBindings(std::string const & pathInGeoObjectsTmpMwm
     }
   };
   ForEachParallelFromDatRawFormat(m_threadsCount, pathInGeoObjectsTmpMwm, transform);
+}
+
+void StreetsBuilder::RegenerateAggreatedStreetsFeatures(
+    std::string const & pathStreetsTmpMwm)
+{
+  auto const aggregatedStreetsTmpFile = GetPlatform().TmpPathForFile();
+  SCOPE_GUARD(aggregatedStreetsTmpFileGuard,
+              std::bind(Platform::RemoveFileIfExists, aggregatedStreetsTmpFile));
+  FeaturesCollector collector(aggregatedStreetsTmpFile);
+
+  std::set<Street const *> processedStreets;
+  auto const transform = [&](FeatureBuilder & fb, uint64_t /* currPos */) {
+    auto street = m_streetFeatures2Streets.find(fb.GetMostGenericOsmId());
+    if (street == m_streetFeatures2Streets.end())
+        return;
+
+    if (!processedStreets.insert(street->second).second)
+      return;
+
+    WriteAsAggregatedStreet(fb, *street->second, collector);
+  };
+  ForEachFromDatRawFormat(pathStreetsTmpMwm, transform);
+
+  CHECK(base::RenameFileX(aggregatedStreetsTmpFile, pathStreetsTmpMwm), ());
+}
+
+void StreetsBuilder::WriteAsAggregatedStreet(FeatureBuilder & fb, Street const & street,
+                                             FeaturesCollector & collector) const
+{
+  fb.GetParams().name = street.m_name;
+
+  auto const & geometry = street.m_geometry;
+  auto const & pin = geometry.GetOrChoosePin();
+  fb.SetOsmId(pin.m_osmId);
+
+  if (auto const & pin = geometry.GetPin())
+  {
+    fb.ResetGeometry();
+    fb.SetCenter(pin->m_position);
+    collector.Collect(fb);
+  }
+
+  auto const * highwayGeometry = geometry.GetHighwayGeometry();
+  if (!highwayGeometry)
+    return;
+
+  for (auto const & area : highwayGeometry->GetAreaParts())
+  {
+    fb.ResetGeometry();
+    fb.GetParams().SetGeomType(feature::GeomType::Area);
+    auto polygon = area.m_border;
+    fb.AddPolygon(polygon);
+    collector.Collect(fb);
+  }
+
+  for (auto const & line : highwayGeometry->GetMultiLine().m_lines)
+  {
+    for (auto const & segment : line.m_segments)
+    {
+      fb.ResetGeometry();
+      fb.SetLinear();
+      for (auto const & point : segment.m_points)
+        fb.AddPoint(point);
+      collector.Collect(fb);
+    }
+  }
 }
 
 void StreetsBuilder::SaveStreetsKv(std::ostream & streamStreetsKv)
@@ -100,6 +172,8 @@ void StreetsBuilder::AddStreetHighway(FeatureBuilder & fb)
     auto & street = InsertStreet(region.first, fb.GetName(), fb.GetMultilangName());
     auto const osmId = pathSegments.size() == 1 ? fb.GetMostGenericOsmId() : NextOsmSurrogateId();
     street.m_geometry.AddHighwayLine(osmId, std::move(segment.m_path));
+
+    m_streetFeatures2Streets.emplace(fb.GetMostGenericOsmId(), &street);
   }
 }
 
@@ -114,6 +188,8 @@ void StreetsBuilder::AddStreetArea(FeatureBuilder & fb)
   auto & street = InsertStreet(region->first, fb.GetName(), fb.GetMultilangName());
   auto osmId = fb.GetMostGenericOsmId();
   street.m_geometry.AddHighwayArea(osmId, fb.GetOuterGeometry());
+
+  m_streetFeatures2Streets.emplace(osmId, &street);
 }
 
 void StreetsBuilder::AddStreetPoint(FeatureBuilder & fb)
@@ -127,6 +203,8 @@ void StreetsBuilder::AddStreetPoint(FeatureBuilder & fb)
   auto osmId = fb.GetMostGenericOsmId();
   auto & street = InsertStreet(region->first, fb.GetName(), fb.GetMultilangName());
   street.m_geometry.SetPin({fb.GetKeyPoint(), osmId});
+
+  m_streetFeatures2Streets.emplace(osmId, &street);
 }
 
 void StreetsBuilder::AddStreetBinding(std::string && streetName, FeatureBuilder & fb,

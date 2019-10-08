@@ -240,6 +240,8 @@ public:
     {
       uint64_t const key = it->GetCell();
       Value const value = it->GetValue();
+      if (key == prevKey && value == prevValue)
+        continue;
       if (it != beg && (key >> skipBits) != (prevKey >> skipBits))
       {
         sizes.push_back(writer.Pos() - prevPos);
