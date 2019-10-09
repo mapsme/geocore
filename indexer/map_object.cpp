@@ -4,7 +4,6 @@
 #include "indexer/feature_algo.hpp"
 #include "indexer/ftypes_matcher.hpp"
 
-#include "platform/localization.hpp"
 #include "platform/measurement_utils.hpp"
 
 #include "base/logging.hpp"
@@ -117,7 +116,7 @@ string MapObject::GetLocalizedType() const
   feature::TypesHolder copy(m_types);
   copy.SortBySpec();
 
-  return platform::GetLocalizedTypeName(classif().GetReadableObjectName(*copy.begin()));
+  return classif().GetReadableObjectName(*copy.begin());
 }
 
 vector<osm::Props> MapObject::AvailableProperties() const

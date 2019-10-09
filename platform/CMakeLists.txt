@@ -13,8 +13,6 @@ set(
   local_country_file.hpp
   local_country_file_utils.cpp
   local_country_file_utils.hpp
-  localization.hpp
-  localization_dummy.cpp
   measurement_utils.cpp
   measurement_utils.hpp
   mwm_version.cpp
