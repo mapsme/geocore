@@ -1,5 +1,4 @@
 #include "platform/platform.hpp"
-#include "platform/socket.hpp"
 
 #include "coding/file_reader.hpp"
 
@@ -108,13 +107,6 @@ string DefaultWritableDir()
 }
 }  // namespace
 
-namespace platform
-{
-unique_ptr<Socket> CreateSocket()
-{
-  return unique_ptr<Socket>();
-}
-}
 
 Platform::Platform()
 {

@@ -26,7 +26,6 @@ set(
   preferred_languages.hpp
   settings.cpp
   settings.hpp
-  socket.hpp
   string_storage_base.cpp
   string_storage_base.hpp
   target_os.hpp
@@ -36,7 +35,6 @@ if(${PLATFORM_MAC})
   append(
     SRC
     platform_mac.mm
-    socket_apple.mm
   )
 elseif(${PLATFORM_LINUX})
   append(
