@@ -13,8 +13,6 @@ set(
   local_country_file.hpp
   local_country_file_utils.cpp
   local_country_file_utils.hpp
-  localization.hpp
-  localization_dummy.cpp
   measurement_utils.cpp
   measurement_utils.hpp
   mwm_version.cpp
@@ -28,7 +26,6 @@ set(
   preferred_languages.hpp
   settings.cpp
   settings.hpp
-  socket.hpp
   string_storage_base.cpp
   string_storage_base.hpp
   target_os.hpp
@@ -38,7 +35,6 @@ if(${PLATFORM_MAC})
   append(
     SRC
     platform_mac.mm
-    socket_apple.mm
   )
 elseif(${PLATFORM_LINUX})
   append(
