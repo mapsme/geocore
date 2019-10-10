@@ -28,7 +28,10 @@ void GenerateStreets(std::string const & pathInRegionsIndex, std::string const &
   regions::RegionInfoGetter regionInfoGetter{pathInRegionsIndex, pathInRegionsKv};
   LOG(LINFO, ("Size of regions key-value storage:", regionInfoGetter.GetStorage().Size()));
 
-  StreetsBuilder streetsBuilder{regionInfoGetter, threadsCount};
+  auto const regionFinder = [&regionInfoGetter] (auto && point, auto && selector) {
+    return regionInfoGetter.FindDeepest(point, selector);
+  };
+  StreetsBuilder streetsBuilder{regionFinder, threadsCount};
 
   streetsBuilder.AssembleStreets(pathInStreetsTmpMwm);
   LOG(LINFO, ("Streets were built."));
@@ -40,7 +43,10 @@ void GenerateStreets(std::string const & pathInRegionsIndex, std::string const &
   LOG(LINFO, ("Streets features are aggreated into", pathInStreetsTmpMwm));
 
   std::ofstream streamStreetsKv(pathOutStreetsKv);
-  streetsBuilder.SaveStreetsKv(streamStreetsKv);
+  auto const regionGetter = [&regionStorage = regionInfoGetter.GetStorage()](uint64_t id) {
+    return regionStorage.Find(id);
+  };
+  streetsBuilder.SaveStreetsKv(regionGetter, streamStreetsKv);
   LOG(LINFO, ("Streets key-value storage saved to", pathOutStreetsKv));
 }
 }  // namespace streets

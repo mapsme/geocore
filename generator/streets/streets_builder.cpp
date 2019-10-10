@@ -26,16 +26,19 @@ namespace generator
 {
 namespace streets
 {
-StreetsBuilder::StreetsBuilder(regions::RegionInfoGetter const & regionInfoGetter,
+StreetsBuilder::StreetsBuilder(RegionFinder const & regionFinder,
                                size_t threadsCount)
-  : m_regionInfoGetter{regionInfoGetter}, m_threadsCount{threadsCount}
+  : m_regionFinder{regionFinder}, m_threadsCount{threadsCount}
 {
 }
 
 void StreetsBuilder::AssembleStreets(std::string const & pathInStreetsTmpMwm)
 {
   auto const transform = [this](FeatureBuilder & fb, uint64_t /* currPos */) { AddStreet(fb); };
-  ForEachParallelFromDatRawFormat(m_threadsCount, pathInStreetsTmpMwm, transform);
+  if (m_threadsCount == 1)
+    ForEachFromDatRawFormat(pathInStreetsTmpMwm, transform);
+  else
+    ForEachParallelFromDatRawFormat(m_threadsCount, pathInStreetsTmpMwm, transform);
 }
 
 void StreetsBuilder::AssembleBindings(std::string const & pathInGeoObjectsTmpMwm)
@@ -50,7 +53,11 @@ void StreetsBuilder::AssembleBindings(std::string const & pathInGeoObjectsTmpMwm
       AddStreetBinding(std::move(streetName), fb, multilangName);
     }
   };
-  ForEachParallelFromDatRawFormat(m_threadsCount, pathInGeoObjectsTmpMwm, transform);
+
+  if (m_threadsCount == 1)
+    ForEachFromDatRawFormat(pathInGeoObjectsTmpMwm, transform);
+  else
+    ForEachParallelFromDatRawFormat(m_threadsCount, pathInGeoObjectsTmpMwm, transform);
 }
 
 void StreetsBuilder::RegenerateAggreatedStreetsFeatures(
@@ -73,6 +80,8 @@ void StreetsBuilder::RegenerateAggreatedStreetsFeatures(
     WriteAsAggregatedStreet(fb, *street->second, collector);
   };
   ForEachFromDatRawFormat(pathStreetsTmpMwm, transform);
+
+  collector.Finish();
 
   CHECK(base::RenameFileX(aggregatedStreetsTmpFile, pathStreetsTmpMwm), ());
 }
@@ -119,19 +128,21 @@ void StreetsBuilder::WriteAsAggregatedStreet(FeatureBuilder & fb, Street const &
   }
 }
 
-void StreetsBuilder::SaveStreetsKv(std::ostream & streamStreetsKv)
+void StreetsBuilder::SaveStreetsKv(RegionGetter const & regionGetter,
+                                   std::ostream & streamStreetsKv)
 {
   for (auto const & region : m_regions)
-    SaveRegionStreetsKv(streamStreetsKv, region.first, region.second);
+  {
+    auto const && regionObject = regionGetter(region.first);
+    CHECK(regionObject, ());
+    SaveRegionStreetsKv(region.second, region.first, *regionObject, streamStreetsKv);
+  }
 }
 
-void StreetsBuilder::SaveRegionStreetsKv(std::ostream & streamStreetsKv, uint64_t regionId,
-                                         RegionStreets const & streets)
+void StreetsBuilder::SaveRegionStreetsKv(RegionStreets const & streets, uint64_t regionId,
+                                         JsonValue const & regionInfo,
+                                         std::ostream & streamStreetsKv)
 {
-  auto const & regionsStorage = m_regionInfoGetter.GetStorage();
-  auto const && regionObject = regionsStorage.Find(regionId);
-  ASSERT(regionObject, ());
-
   for (auto const & street : streets)
   {
     auto const & bbox = street.second.m_geometry.GetBbox();
@@ -139,7 +150,7 @@ void StreetsBuilder::SaveRegionStreetsKv(std::ostream & streamStreetsKv, uint64_
 
     auto const id = KeyValueStorage::SerializeDref(pin.m_osmId.GetEncodedId());
     auto const & value =
-        MakeStreetValue(regionId, *regionObject, street.second.m_name, bbox, pin.m_position);
+        MakeStreetValue(regionId, regionInfo, street.second.m_name, bbox, pin.m_position);
     streamStreetsKv << id << " " << KeyValueStorage::Serialize(value) << "\n";
   }
 }
@@ -238,7 +249,7 @@ boost::optional<KeyValue> StreetsBuilder::FindStreetRegionOwner(m2::PointD const
     return true;
   };
 
-  return m_regionInfoGetter.FindDeepest(point, isStreetAdministrator);
+  return m_regionFinder(point, isStreetAdministrator);
 }
 
 StringUtf8Multilang MergeNames(const StringUtf8Multilang & first,

@@ -178,7 +178,7 @@ UNIT_TEST(GenerateGeoObjects_AddNullBuildingGeometryForPointsWithAddressesInside
        {}},
       {2,
        {{"building", "commercial"}, {"type", "multipolygon"}, {"name", "superbuilding"}},
-       {{1, 1}, {4, 4}},
+       RectArea{{1, 1}, {4, 4}},
        {}},
       {3,
        {{"addr:housenumber", "39 с80"}, {"addr:street", "Ленинградский проспект"}},
@@ -203,7 +203,7 @@ UNIT_TEST(GenerateGeoObjects_AddNullBuildingGeometryForPointsWithAddressesRevers
        {}},
       {3,
        {{"building", "commercial"}, {"type", "multipolygon"}, {"name", "superbuilding"}},
-       {{1, 1}, {4, 4}},
+       RectArea{{1, 1}, {4, 4}},
        {}},
 
   };
@@ -262,7 +262,7 @@ UNIT_TEST(GenerateGeoObjects_CheckPoiEnrichedWithAddress)
       {1, {{"addr:housenumber", "111"}, {"addr:street", "Healing street"}}, {{1.6, 1.6}}, {}},
       {2,
        {{"building", "commercial"}, {"type", "multipolygon"}, {"name", "superbuilding"}},
-       {{1, 1}, {4, 4}},
+       RectArea{{1, 1}, {4, 4}},
        {}},
       {3,
        {{"shop", "supermarket"}, {"population", "1"}, {"name", "ForgetMeNot"}},

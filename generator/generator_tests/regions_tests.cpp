@@ -75,7 +75,7 @@ void BuildTestData(std::vector<OsmElementData> const & testData, RegionsBuilder:
     FeatureBuilder fb = FeatureBuilderFromOmsElementData(elementData);
 
     auto const id = fb.GetMostGenericOsmId();
-    if (elementData.m_polygon.size() == 1)
+    if (elementData.m_points.size() == 1)
       placePointsMap.emplace(id, PlacePoint{fb, collector.Get(id)});
     else
       regions.emplace_back(fb, collector.Get(id));
@@ -357,9 +357,10 @@ UNIT_TEST(RegionsBuilderTest_GenerateCityPointRegionByAround)
 
   auto regions = GenerateTestRegions(
       {
-          {1, {name = u8"Nederland", admin = "2", ba}, {{0.00, 0.00}, {0.50, 0.50}}, {}},
-          {2, {name = u8"Nederland", admin = "3", ba}, {{0.10, 0.10}, {0.20, 0.20}}, {}},
-          {3, {name = u8"Noord-Holland", admin = "4", ba}, {{0.12, 0.12}, {0.18, 0.18}}, {}},
+          {1, {name = u8"Nederland", admin = "2", ba}, RectArea{{0.00, 0.00}, {0.50, 0.50}}, {}},
+          {2, {name = u8"Nederland", admin = "3", ba}, RectArea{{0.10, 0.10}, {0.20, 0.20}}, {}},
+          {3, {name = u8"Noord-Holland", admin = "4", ba}, RectArea{{0.12, 0.12}, {0.18, 0.18}},
+           {}},
           {6, {name = u8"Amsterdam", place = "city", admin = "2"}, {{0.15, 0.15}}, {}},
       },
       true /* withGeometry */);
@@ -377,11 +378,12 @@ UNIT_TEST(RegionsBuilderTest_GenerateCityPointRegionByNameMatching)
 
   auto regions = GenerateTestRegions(
       {
-          {1, {name = u8"Nederland", admin = "2", ba}, {{0.00, 0.00}, {0.50, 0.50}}, {}},
-          {2, {name = u8"Nederland", admin = "3", ba}, {{0.10, 0.10}, {0.20, 0.20}}, {}},
-          {3, {name = u8"Noord-Holland", admin = "4", ba}, {{0.12, 0.12}, {0.18, 0.18}}, {}},
-          {4, {name = u8"Amsterdam", admin = "8", ba}, {{0.14, 0.14}, {0.17, 0.17}}, {}},
-          {5, {name = u8"Amsterdam", admin = "10", ba}, {{0.14, 0.14}, {0.16, 0.16}}, {}},
+          {1, {name = u8"Nederland", admin = "2", ba}, RectArea{{0.00, 0.00}, {0.50, 0.50}}, {}},
+          {2, {name = u8"Nederland", admin = "3", ba}, RectArea{{0.10, 0.10}, {0.20, 0.20}}, {}},
+          {3, {name = u8"Noord-Holland", admin = "4", ba}, RectArea{{0.12, 0.12}, {0.18, 0.18}},
+           {}},
+          {4, {name = u8"Amsterdam", admin = "8", ba}, RectArea{{0.14, 0.14}, {0.17, 0.17}}, {}},
+          {5, {name = u8"Amsterdam", admin = "10", ba}, RectArea{{0.14, 0.14}, {0.16, 0.16}}, {}},
           {6, {name = u8"Amsterdam", place = "city", admin = "2"}, {{0.15, 0.15}}, {}},
       },
       true /* withGeometry */);
@@ -400,13 +402,13 @@ UNIT_TEST(RegionsBuilderTest_GenerateCityPointRegionByEnglishNameMatching)
       {
           {1,
            {name = u8"België / Belgique / Belgien", admin = "2", ba},
-           {{0.00, 0.00}, {0.50, 0.50}}, {}},
+           RectArea{{0.00, 0.00}, {0.50, 0.50}}, {}},
           {3,
            {name = u8"Ville de Bruxelles - Stad Brussel", admin = "8", ba},
-           {{0.12, 0.12}, {0.18, 0.18}}, {}},
+           RectArea{{0.12, 0.12}, {0.18, 0.18}}, {}},
           {4,
            {name = u8"Bruxelles / Brussel", {"name:en", "Brussels"}, admin = "9", ba},
-           {{0.12, 0.12}, {0.17, 0.17}}, {}},
+           RectArea{{0.12, 0.12}, {0.17, 0.17}}, {}},
           {5,
            {name = u8"Bruxelles - Brussel", {"name:en", "Brussels"}, place = "city"},
            {{0.15, 0.15}}, {}},
@@ -428,9 +430,11 @@ UNIT_TEST(RegionsBuilderTest_GenerateCityPointRegionByNameMatchingWithCityPrefix
 
   auto regions = GenerateTestRegions(
       {
-          {1, {name = u8"United Kingdom", admin = "2", ba}, {{0.00, 0.00}, {0.50, 0.50}}, {}},
-          {3, {name = u8"Scotland", admin = "4", ba}, {{0.12, 0.12}, {0.18, 0.18}}, {}},
-          {4, {name = u8"City of Edinburgh", admin = "6", ba}, {{0.12, 0.12}, {0.17, 0.17}}, {}},
+          {1, {name = u8"United Kingdom", admin = "2", ba}, RectArea{{0.00, 0.00}, {0.50, 0.50}},
+           {}},
+          {3, {name = u8"Scotland", admin = "4", ba}, RectArea{{0.12, 0.12}, {0.18, 0.18}}, {}},
+          {4, {name = u8"City of Edinburgh", admin = "6", ba}, RectArea{{0.12, 0.12}, {0.17, 0.17}},
+           {}},
           {5, {name = u8"Edinburgh", place = "city"}, {{0.15, 0.15}}, {}},
       },
       true /* withGeometry */);
@@ -450,9 +454,11 @@ UNIT_TEST(RegionsBuilderTest_GenerateCityPointRegionByNameMatchingWithCityPostfi
 
   auto regions = GenerateTestRegions(
       {
-          {1, {name = u8"United Kingdom", admin = "2", ba}, {{0.00, 0.00}, {0.50, 0.50}}, {}},
-          {3, {name = u8"Scotland", admin = "4", ba}, {{0.12, 0.12}, {0.18, 0.18}}, {}},
-          {4, {name = u8"Edinburgh (city)", admin = "6", ba}, {{0.12, 0.12}, {0.17, 0.17}}, {}},
+          {1, {name = u8"United Kingdom", admin = "2", ba}, RectArea{{0.00, 0.00}, {0.50, 0.50}},
+           {}},
+          {3, {name = u8"Scotland", admin = "4", ba}, RectArea{{0.12, 0.12}, {0.18, 0.18}}, {}},
+          {4, {name = u8"Edinburgh (city)", admin = "6", ba}, RectArea{{0.12, 0.12}, {0.17, 0.17}},
+           {}},
           {5, {name = u8"Edinburgh", place = "city"}, {{0.15, 0.15}}, {}},
       },
       true /* withGeometry */);
@@ -472,9 +478,9 @@ UNIT_TEST(RegionsBuilderTest_GenerateCapitalPointRegionAndAdminRegionWithSameBou
 
   auto regions = GenerateTestRegions(
       {
-          {1, {name = u8"Country", admin = "2", ba}, {{0.00, 0.00}, {0.50, 0.50}}, {}},
-          {2, {name = u8"Region", admin = "6", ba}, {{0.10, 0.10}, {0.20, 0.20}}, {}},
-          {3, {name = u8"Washington", admin = "8", ba}, {{0.10, 0.10}, {0.20, 0.20}}, {}},
+          {1, {name = u8"Country", admin = "2", ba}, RectArea{{0.00, 0.00}, {0.50, 0.50}}, {}},
+          {2, {name = u8"Region", admin = "6", ba}, RectArea{{0.10, 0.10}, {0.20, 0.20}}, {}},
+          {3, {name = u8"Washington", admin = "8", ba}, RectArea{{0.10, 0.10}, {0.20, 0.20}}, {}},
           {4, {name = u8"Washington", place = "city", admin = "2"}, {{0.15, 0.15}}, {}},
       },
       true /* withGeometry */);
@@ -493,16 +499,18 @@ UNIT_TEST(RegionsBuilderTest_GenerateRusCitySuburb)
   TagValue const ba{"boundary", "administrative"};
 
   auto regions = GenerateTestRegions({
-      {1, {name = u8"Россия", admin = "2", ba}, {{0, 0}, {50, 50}}, {}},
-      {2, {name = u8"Сибирский федеральный округ", admin = "3", ba}, {{10, 10}, {20, 20}}, {}},
-      {3, {name = u8"Омская область", admin = "4", ba}, {{12, 12}, {18, 18}}, {}},
-      {4, {name = u8"Омск", place = "city"}, {{14, 14}, {16, 16}}, {}},
+      {1, {name = u8"Россия", admin = "2", ba}, RectArea{{0, 0}, {50, 50}}, {}},
+      {2, {name = u8"Сибирский федеральный округ", admin = "3", ba}, RectArea{{10, 10}, {20, 20}},
+       {}},
+      {3, {name = u8"Омская область", admin = "4", ba}, RectArea{{12, 12}, {18, 18}}, {}},
+      {4, {name = u8"Омск", place = "city"}, RectArea{{14, 14}, {16, 16}}, {}},
       {5,
        {name = u8"городской округ Омск", admin = "6", ba},
-       {{14, 14}, {16, 16}},
+       RectArea{{14, 14}, {16, 16}},
        {{6, NodeEntry, "admin_centre"}}},
       {6, {name = u8"Омск", place = "city"}, {{15, 15}}, {}},
-      {7, {name = u8"Кировский административный округ", admin = "9", ba}, {{14, 14}, {15, 15}}, {}},
+      {7, {name = u8"Кировский административный округ", admin = "9", ba},
+       RectArea{{14, 14}, {15, 15}}, {}},
   });
 
   TEST(HasName(regions,
@@ -523,17 +531,22 @@ UNIT_TEST(RegionsBuilderTest_GenerateRusMoscowSubregion)
   TagValue const ba{"boundary", "administrative"};
 
   auto regions = GenerateTestRegions({
-      {1, {name = u8"Россия", admin = "2", ba}, {{0, 0}, {50, 50}}, {}},
-      {2, {name = u8"Центральный федеральный округ", admin = "3", ba}, {{10, 10}, {20, 20}}, {}},
-      {3, {name = u8"Москва", admin = "4", ba}, {{12, 12}, {16, 16}}, {}},
+      {1, {name = u8"Россия", admin = "2", ba}, RectArea{{0, 0}, {50, 50}}, {}},
+      {2, {name = u8"Центральный федеральный округ", admin = "3", ba}, RectArea{{10, 10}, {20, 20}},
+       {}},
+      {3, {name = u8"Москва", admin = "4", ba}, RectArea{{12, 12}, {16, 16}}, {}},
 
-      {4, {name = u8"Западный административный округ", admin = "5", ba}, {{12, 12}, {13, 13}}, {}},
-      {4, {name = u8"Западный административный округ", admin = "5", ba}, {{13, 13}, {15, 14}}, {}},
-      {5, {name = u8"Северный административный округ", admin = "5", ba}, {{13, 14}, {15, 15}}, {}},
-      {6, {name = u8"Троицкий административный округ", admin = "5", ba}, {{15, 15}, {16, 16}}, {}},
+      {4, {name = u8"Западный административный округ", admin = "5", ba},
+       RectArea{{12, 12}, {13, 13}}, {}},
+      {4, {name = u8"Западный административный округ", admin = "5", ba},
+       RectArea{{13, 13}, {15, 14}}, {}},
+      {5, {name = u8"Северный административный округ", admin = "5", ba},
+       RectArea{{13, 14}, {15, 15}}, {}},
+      {6, {name = u8"Троицкий административный округ", admin = "5", ba},
+       RectArea{{15, 15}, {16, 16}}, {}},
 
-      {7, {name = u8"Москва", place = "city"}, {{12, 12}, {13, 13}}, {}},
-      {7, {name = u8"Москва", place = "city"}, {{13, 13}, {15, 15}}, {}},
+      {7, {name = u8"Москва", place = "city"}, RectArea{{12, 12}, {13, 13}}, {}},
+      {7, {name = u8"Москва", place = "city"}, RectArea{{13, 13}, {15, 15}}, {}},
   });
 
   TEST(HasName(regions, u8"Россия, region: Москва"), ());
@@ -562,19 +575,21 @@ UNIT_TEST(RegionsBuilderTest_GenerateRusMoscowSuburb)
   TagValue const ba{"boundary", "administrative"};
 
   auto regions = GenerateTestRegions({
-      {1, {name = u8"Россия", admin = "2", ba}, {{0, 0}, {50, 50}}, {}},
-      {2, {name = u8"Центральный федеральный округ", admin = "3", ba}, {{10, 10}, {20, 20}}, {}},
-      {3, {name = u8"Москва", admin = "4", ba}, {{12, 12}, {20, 20}}, {}},
-      {4, {name = u8"Москва", place = "city"}, {{12, 12}, {19, 19}}, {}},
-      {5, {name = u8"Западный административный округ", admin = "5", ba}, {{12, 12}, {18, 18}}, {}},
+      {1, {name = u8"Россия", admin = "2", ba}, RectArea{{0, 0}, {50, 50}}, {}},
+      {2, {name = u8"Центральный федеральный округ", admin = "3", ba},
+       RectArea{{10, 10}, {20, 20}}, {}},
+      {3, {name = u8"Москва", admin = "4", ba}, RectArea{{12, 12}, {20, 20}}, {}},
+      {4, {name = u8"Москва", place = "city"}, RectArea{{12, 12}, {19, 19}}, {}},
+      {5, {name = u8"Западный административный округ", admin = "5", ba},
+       RectArea{{12, 12}, {18, 18}}, {}},
       {6,
        {name = u8"район Раменки", admin = "8", ba},
-       {{12, 12}, {15, 15}},
+       RectArea{{12, 12}, {15, 15}},
        {{7, NodeEntry, "label"}}},
       {7, {name = u8"Раменки", place = "suburb"}, {{13, 13}}, {}},    // label
       {8, {name = u8"Тропарёво", place = "suburb"}, {{16, 16}}, {}},  // no label
-      {9, {name = u8"Воробъёвы горы", place = "suburb"}, {{12, 12}, {14, 14}}, {}},
-      {10, {name = u8"Центр", place = "suburb"}, {{15, 15}, {16, 16}}, {}},
+      {9, {name = u8"Воробъёвы горы", place = "suburb"}, RectArea{{12, 12}, {14, 14}}, {}},
+      {10, {name = u8"Центр", place = "suburb"}, RectArea{{15, 15}, {16, 16}}, {}},
   });
 
   TEST(HasName(regions, u8"Россия, region: Москва"), ());
@@ -606,12 +621,13 @@ UNIT_TEST(RegionsBuilderTest_GenerateRusSPetersburgSuburb)
   TagValue const ba{"boundary", "administrative"};
 
   auto regions = GenerateTestRegions({
-      {1, {name = u8"Россия", admin = "2", ba}, {{0, 0}, {50, 50}}, {}},
-      {2, {name = u8"Северо-Западный федеральный округ", admin = "3", ba}, {{10, 10}, {20, 20}}, {}},
-      {3, {name = u8"Санкт-Петербург", admin = "4", ba}, {{12, 12}, {18, 18}}, {}},
-      {4, {name = u8"Санкт-Петербург", place = "city"}, {{12, 12}, {17, 17}}, {}},
-      {5, {name = u8"Центральный район", admin = "5", ba}, {{14, 14}, {16, 16}}, {}},
-      {6, {name = u8"Дворцовый округ", admin = "8", ba}, {{14, 14}, {15, 15}} , {}},
+      {1, {name = u8"Россия", admin = "2", ba}, RectArea{{0, 0}, {50, 50}}, {}},
+      {2, {name = u8"Северо-Западный федеральный округ", admin = "3", ba},
+       RectArea{{10, 10}, {20, 20}}, {}},
+      {3, {name = u8"Санкт-Петербург", admin = "4", ba}, RectArea{{12, 12}, {18, 18}}, {}},
+      {4, {name = u8"Санкт-Петербург", place = "city"}, RectArea{{12, 12}, {17, 17}}, {}},
+      {5, {name = u8"Центральный район", admin = "5", ba}, RectArea{{14, 14}, {16, 16}}, {}},
+      {6, {name = u8"Дворцовый округ", admin = "8", ba}, RectArea{{14, 14}, {15, 15}} , {}},
   });
 
   TEST(HasName(regions, u8"Россия, region: Санкт-Петербург, locality: Санкт-Петербург"), ());
