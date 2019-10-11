@@ -152,19 +152,17 @@ void TestFindReverse(std::vector<OsmElementData> const & osmElements,
     TestRegionAddress(json.get());
     TEST(JsonHasBuilding(JsonValue{std::move(json)}), ("No address for", id));
   }
-  // Flush all streams inside geoObjectsGenerator in d-tor
-  geoObjectsGenerator.reset(nullptr);
+  geoObjectsGenerator->GetMaintainer().Flush();
 
-// Commented due mac problems
-//  KeyValueStorage kvStorage{geoObjectsKeyValue.GetFullPath(), 0 /*cacheValuesCountLimit*/};
-//
-//  for (GeoObjectId id : toCheck)
-//  {
-//    std::shared_ptr<JsonValue> value = kvStorage.Find(id.GetEncodedId());
-//    TEST(value, ("Id", id.GetEncodedId(), "is not stored in key value"));
-//    TEST(JsonHasBuilding(*value), ("No address for", id));
-//    TestRegionAddress(*value);
-//  }
+  KeyValueStorage kvStorage{geoObjectsKeyValue.GetFullPath(), 0 /*cacheValuesCountLimit*/};
+
+  for (GeoObjectId id : toCheck)
+  {
+    std::shared_ptr<JsonValue> value = kvStorage.Find(id.GetEncodedId());
+    TEST(value, ("Id", id.GetEncodedId(), "is not stored in key value"));
+    TEST(JsonHasBuilding(*value), ("No address for", id));
+    TestRegionAddress(*value);
+  }
 }
 
 UNIT_TEST(GenerateGeoObjects_AddNullBuildingGeometryForPointsWithAddressesInside)
@@ -234,26 +232,24 @@ void TestPoiHasAddress(std::vector<OsmElementData> const & osmElements)
   ScopedFile const idsWithoutAddresses{"ids_without_addresses.txt", ScopedFile::Mode::DoNotCreate};
   ScopedFile const geoObjectsKeyValue{"geo_objects.jsonl", ScopedFile::Mode::DoNotCreate};
 
-  CollectFeatures(osmElements, geoObjectsFeatures,
-                  [](FeatureBuilder const & fb) { return GeoObjectsFilter::IsPoi(fb); });
+  auto const & expectedIds = CollectFeatures(
+      osmElements, geoObjectsFeatures,
+      [](FeatureBuilder const & fb) { return GeoObjectsFilter::IsPoi(fb); });
 
   std::unique_ptr<GeoObjectsGenerator> geoObjectsGenerator = {
       TearUp(osmElements, geoObjectsFeatures, idsWithoutAddresses, geoObjectsKeyValue)};
 
-  // Flush all streams inside geoObjectsGenerator in d-tor
-  geoObjectsGenerator.reset(nullptr);
+  geoObjectsGenerator->GetMaintainer().Flush();
 
+  KeyValueStorage kvStorage{geoObjectsKeyValue.GetFullPath(), 0 /*cacheValuesCountLimit*/};
 
-//  Commented due mac problems
-//  KeyValueStorage kvStorage{geoObjectsKeyValue.GetFullPath(), 0 /*cacheValuesCountLimit*/};
-//
-//  for (GeoObjectId id : expectedIds)
-//  {
-//    std::shared_ptr<JsonValue> value = kvStorage.Find(id.GetEncodedId());
-//    TEST(value, ("Id", id, "is not stored in key value"));
-//    TEST(JsonHasBuilding(*value), ("No address for", id));
-//    TestRegionAddress(*value);
-//  }
+  for (GeoObjectId id : expectedIds)
+  {
+    std::shared_ptr<JsonValue> value = kvStorage.Find(id.GetEncodedId());
+    TEST(value, ("Id", id, "is not stored in key value"));
+    TEST(JsonHasBuilding(*value), ("No address for", id));
+    TestRegionAddress(*value);
+  }
 }
 
 UNIT_TEST(GenerateGeoObjects_CheckPoiEnrichedWithAddress)

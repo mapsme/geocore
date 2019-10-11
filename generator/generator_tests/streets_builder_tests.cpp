@@ -54,7 +54,7 @@ StreetsBuilder::RegionFinder RussiaFinder()
   return finder;
 }
 
-UNIT_TEST(StreetsBuilderTest_AggreatedStreetsInKv)
+UNIT_TEST(StreetsBuilderTest_AggregatedStreetsInKv)
 {
   auto const osmElements = std::vector<OsmElementData>{
       {1, {{"name", "Arbat Street"}, {"highway", "residential"}}, {{1.001, 2.001}, {1.002, 2.001}},
@@ -66,6 +66,7 @@ UNIT_TEST(StreetsBuilderTest_AggreatedStreetsInKv)
   ScopedFile const streetsFeatures{"streets.mwm", ScopedFile::Mode::DoNotCreate};
   WriteFeatures(osmElements, streetsFeatures);
 
+  LOG(LINFO, ("WritableDir:", GetPlatform().WritableDir()));
   StreetsBuilder streetsBuilder{RussiaFinder()};
   streetsBuilder.AssembleStreets(streetsFeatures.GetFullPath());
   ScopedFile const streetsJsonlFile{"streets.jsonl", ScopedFile::Mode::DoNotCreate};
@@ -73,7 +74,7 @@ UNIT_TEST(StreetsBuilderTest_AggreatedStreetsInKv)
   streetsBuilder.SaveStreetsKv(RussiaGetter, streetsJsonlStream);
   streetsJsonlStream.flush();
 
-  KeyValueStorage streetsStorage{streetsJsonlFile.GetFullPath(), 1000 /* cacheValuesCountLimit */};
+  KeyValueStorage streetsStorage{streetsJsonlFile.GetFullPath(), 0 /* cacheValuesCountLimit */};
   TEST_EQUAL(streetsStorage.Size(), 2, ());
   TEST(bool(streetsStorage.Find(MakeOsmWay(1).GetEncodedId())) !=
            bool(streetsStorage.Find(MakeOsmWay(2).GetEncodedId())),
@@ -81,7 +82,7 @@ UNIT_TEST(StreetsBuilderTest_AggreatedStreetsInKv)
   TEST(streetsStorage.Find(MakeOsmWay(3).GetEncodedId()), ());
 }
 
-UNIT_TEST(StreetsBuilderTest_AggreatedStreetsInFeatures)
+UNIT_TEST(StreetsBuilderTest_AggregatedStreetsInFeatures)
 {
   auto const osmElements = std::vector<OsmElementData>{
       {1, {{"name", "Arbat Street"}, {"highway", "residential"}}, {{1.001, 2.001}, {1.002, 2.001}},
@@ -95,7 +96,7 @@ UNIT_TEST(StreetsBuilderTest_AggreatedStreetsInFeatures)
 
   StreetsBuilder streetsBuilder{RussiaFinder()};
   streetsBuilder.AssembleStreets(streetsFeatures.GetFullPath());
-  streetsBuilder.RegenerateAggreatedStreetsFeatures(streetsFeatures.GetFullPath());
+  streetsBuilder.RegenerateAggregatedStreetsFeatures(streetsFeatures.GetFullPath());
 
   std::vector<feature::FeatureBuilder> features;
   std::unordered_set<GeoObjectId> featureIds;

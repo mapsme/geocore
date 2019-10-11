@@ -23,7 +23,7 @@ void LocalityObject::Deserialize(char const * data)
 
   if (type == feature::GeomType::Line)
   {
-    uint32_t ptsCount;
+    uint32_t ptsCount{};
     ReadPrimitiveFromSource(src, ptsCount);
     CHECK_GREATER(ptsCount, 1, ());
     char const * start = src.PtrC();
@@ -32,7 +32,7 @@ void LocalityObject::Deserialize(char const * data)
   }
 
   ASSERT_EQUAL(type, feature::GeomType::Area, ());
-  uint32_t trgCount;
+  uint32_t trgCount{};
   ReadPrimitiveFromSource(src, trgCount);
   CHECK_GREATER(trgCount, 0, ());
   trgCount += 2;

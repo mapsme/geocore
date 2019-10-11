@@ -20,9 +20,10 @@ KeyValueStorage::KeyValueStorage(std::string const & path, size_t cacheValuesCou
   if (!m_storage)
     MYTHROW(Reader::OpenException, ("Failed to open file", path));
 
+  auto storage = std::ifstream{path};
   std::string line;
   std::streamoff lineNumber = 0;
-  while (std::getline(m_storage, line))
+  while (std::getline(storage, line))
   {
     ++lineNumber;
 
@@ -50,8 +51,6 @@ KeyValueStorage::KeyValueStorage(std::string const & path, size_t cacheValuesCou
     else
       m_values.emplace(key, std::move(json));
   }
-
-  m_storage.clear();
 }
 
 // static

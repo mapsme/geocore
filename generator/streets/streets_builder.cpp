@@ -60,7 +60,7 @@ void StreetsBuilder::AssembleBindings(std::string const & pathInGeoObjectsTmpMwm
     ForEachParallelFromDatRawFormat(m_threadsCount, pathInGeoObjectsTmpMwm, transform);
 }
 
-void StreetsBuilder::RegenerateAggreatedStreetsFeatures(
+void StreetsBuilder::RegenerateAggregatedStreetsFeatures(
     std::string const & pathStreetsTmpMwm)
 {
   auto const aggregatedStreetsTmpFile = GetPlatform().TmpPathForFile();

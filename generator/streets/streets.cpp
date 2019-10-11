@@ -39,7 +39,7 @@ void GenerateStreets(std::string const & pathInRegionsIndex, std::string const &
   streetsBuilder.AssembleBindings(pathInGeoObjectsTmpMwm);
   LOG(LINFO, ("Binding's streets were built."));
 
-  streetsBuilder.RegenerateAggreatedStreetsFeatures(pathInStreetsTmpMwm);
+  streetsBuilder.RegenerateAggregatedStreetsFeatures(pathInStreetsTmpMwm);
   LOG(LINFO, ("Streets features are aggreated into", pathInStreetsTmpMwm));
 
   std::ofstream streamStreetsKv(pathOutStreetsKv);

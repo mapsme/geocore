@@ -38,7 +38,7 @@ public:
   void AssembleStreets(std::string const & pathInStreetsTmpMwm);
   void AssembleBindings(std::string const & pathInGeoObjectsTmpMwm);
 
-  void RegenerateAggreatedStreetsFeatures(std::string const & pathStreetsTmpMwm);
+  void RegenerateAggregatedStreetsFeatures(std::string const & pathStreetsTmpMwm);
 
   // Save built streets in the jsonl format with the members: "properties", "bbox" (array: left
   // bottom longitude, left bottom latitude, right top longitude, right top latitude), "pin" (array:
