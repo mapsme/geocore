@@ -228,18 +228,10 @@ public:
   unsigned CpuCores() const;
 
 
-  std::string DeviceName() const;
-
-  std::string DeviceModel() const;
 
   std::string UniqueClientId() const;
 
-  std::string AdvertisingId() const;
 
-  std::string MacAddress(bool md5Decoded) const;
-
-  static EConnectionType ConnectionStatus();
-  static bool IsConnected() { return ConnectionStatus() != EConnectionType::CONNECTION_NONE; }
 
   /// \brief Placing an executable object |task| on a queue of |thread|. Then the object will be
   /// executed on |thread|.

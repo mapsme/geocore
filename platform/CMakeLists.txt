@@ -20,6 +20,7 @@ set(
   platform.cpp
   platform.hpp
   platform_std.cpp
+  platform_linux.cpp
   platform_unix_impl.cpp
   platform_unix_impl.hpp
   preferred_languages.cpp
@@ -30,18 +31,6 @@ set(
   string_storage_base.hpp
   target_os.hpp
 )
-
-if(${PLATFORM_MAC})
-  append(
-    SRC
-    platform_mac.mm
-  )
-elseif(${PLATFORM_LINUX})
-  append(
-    SRC
-    platform_linux.cpp
-  )
-endif()
 
 geocore_add_test_subdirectory(platform_tests_support)
 
