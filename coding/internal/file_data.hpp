@@ -4,8 +4,6 @@
 #include "base/base.hpp"
 #include "base/macros.hpp"
 
-#include "platform/target_os.hpp"
-
 #include <cstddef>
 #include <cstdint>
 #include <functional>

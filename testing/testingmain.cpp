@@ -1,5 +1,3 @@
-#include "platform/target_os.hpp"
-
 #include "testing/testing.hpp"
 
 #ifndef GEOCORE_UNIT_TEST_DISABLE_PLATFORM_INIT

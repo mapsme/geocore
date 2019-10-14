@@ -273,9 +273,7 @@ inline void ReadFromPos(TReader const & reader, uint64_t pos, void * p, size_t s
 template <typename TPrimitive, class TReader>
 inline TPrimitive ReadPrimitiveFromPos(TReader const & reader, uint64_t pos)
 {
-#ifndef GEOCORE_OS_LINUX
   static_assert(std::is_trivially_copyable<TPrimitive>::value, "");
-#endif
   TPrimitive primitive;
   ReadFromPos(reader, pos, &primitive, sizeof(primitive));
   return SwapIfBigEndianMacroBased(primitive);
@@ -284,9 +282,7 @@ inline TPrimitive ReadPrimitiveFromPos(TReader const & reader, uint64_t pos)
 template <typename TPrimitive, class TSource>
 TPrimitive ReadPrimitiveFromSource(TSource & source)
 {
-#ifndef GEOCORE_OS_LINUX
   static_assert(std::is_trivially_copyable<TPrimitive>::value, "");
-#endif
   TPrimitive primitive;
   source.Read(&primitive, sizeof(primitive));
   return SwapIfBigEndianMacroBased(primitive);

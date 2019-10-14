@@ -7,8 +7,6 @@
 #include "base/base.hpp"
 #include "base/buffer_vector.hpp"
 
-#include "platform/target_os.hpp"
-
 #include <array>
 #include <iostream>
 #include <map>

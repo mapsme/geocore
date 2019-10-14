@@ -46,9 +46,7 @@ template <typename Primitive>
 class SingleValueSerializer
 {
 public:
-#if !defined(GEOCORE_OS_LINUX)
   static_assert(std::is_trivially_copyable<Primitive>::value, "");
-#endif
 
   template <typename Sink>
   void Serialize(Sink & sink, Primitive const & v) const
@@ -64,9 +62,7 @@ public:
   using Value = Primitive;
   using Serializer = SingleValueSerializer<Value>;
 
-#if !defined(GEOCORE_OS_LINUX)
   static_assert(std::is_trivially_copyable<Primitive>::value, "");
-#endif
 
   void Init(vector<Value> const & values) { m_values = values; }
 

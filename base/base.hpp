@@ -31,5 +31,3 @@ static_assert(MY_DEBUG_DEFINED ^ MY_RELEASE_DEFINED, "Either Debug or Release sh
   #define IF_DEBUG_ELSE(a, b) (b)
 #endif
 
-// platform macroses
-#include "platform/target_os.hpp"
