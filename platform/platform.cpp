@@ -122,11 +122,6 @@ bool Platform::RmDirRecursively(string const & dirName)
   return res;
 }
 
-void Platform::SetSettingsDir(string const & path)
-{
-  m_settingsDir = base::AddSlashIfNeeded(path);
-}
-
 string Platform::ReadPathForFile(string const & file, string searchScope) const
 {
   if (searchScope.empty())
@@ -139,7 +134,6 @@ string Platform::ReadPathForFile(string const & file, string searchScope) const
     {
     case 'w': fullPath = m_writableDir + file; break;
     case 'r': fullPath = m_resourcesDir + file; break;
-    case 's': fullPath = m_settingsDir + file; break;
     case 'f': fullPath = file; break;
     default : CHECK(false, ("Unsupported searchScope:", searchScope)); break;
     }
@@ -147,7 +141,7 @@ string Platform::ReadPathForFile(string const & file, string searchScope) const
       return fullPath;
   }
 
-  string const possiblePaths = m_writableDir  + "\n" + m_resourcesDir + "\n" + m_settingsDir;
+  string const possiblePaths = m_writableDir  + "\n" + m_resourcesDir + "\n";
   MYTHROW(FileAbsentException, ("File", file, "doesn't exist in the scope", searchScope,
                                 "Have been looking in:\n", possiblePaths));
 }
@@ -463,16 +457,6 @@ Platform::Platform()
   string path;
   CHECK(GetBinaryDir(path), ("Can't retrieve path to executable"));
 
-  m_settingsDir = base::JoinPath(HomeDir(), ".config", "MapsWithMe");
-
-  if (!IsFileExistsByFullPath(base::JoinPath(m_settingsDir, SETTINGS_FILE_NAME)))
-  {
-    auto const configDir = base::JoinPath(HomeDir(), ".config");
-    if (!MkDirChecked(configDir))
-      MYTHROW(FileSystemException, ("Can't create directory", configDir));
-    if (!MkDirChecked(m_settingsDir))
-      MYTHROW(FileSystemException, ("Can't create directory", m_settingsDir));
-  }
 
   char const * resDir = ::getenv("MWM_RESOURCES_DIR");
   char const * writableDir = ::getenv("MWM_WRITABLE_DIR");
@@ -521,7 +505,6 @@ Platform::Platform()
     }
   }
   m_resourcesDir += '/';
-  m_settingsDir += '/';
   m_writableDir += '/';
 
   char const * tmpDir = ::getenv("TMPDIR");
@@ -531,12 +514,9 @@ Platform::Platform()
     m_tmpDir = "/tmp";
   m_tmpDir += '/';
 
-  m_privateDir = m_settingsDir;
-
   LOG(LDEBUG, ("Resources directory:", m_resourcesDir));
   LOG(LDEBUG, ("Writable directory:", m_writableDir));
   LOG(LDEBUG, ("Tmp directory:", m_tmpDir));
-  LOG(LDEBUG, ("Settings directory:", m_settingsDir));
 }
 
 

@@ -1,7 +1,6 @@
 #include "testing/testing.hpp"
 
 #include "platform/measurement_utils.hpp"
-#include "platform/settings.hpp"
 
 #include "base/math.hpp"
 
@@ -9,34 +8,10 @@
 #include <utility>
 
 using namespace measurement_utils;
-using namespace settings;
 
-struct ScopedSettings
-{
-  ScopedSettings() { m_wasSet = Get(kMeasurementUnits, m_oldUnits); }
-
-  /// Saves/restores previous units and sets new units for a scope.
-  explicit ScopedSettings(Units newUnits) : ScopedSettings()
-  {
-    Set(kMeasurementUnits, newUnits);
-  }
-
-  ~ScopedSettings()
-  {
-    if (m_wasSet)
-      Set(kMeasurementUnits, m_oldUnits);
-    else
-      Delete(kMeasurementUnits);
-  }
-
-  bool m_wasSet;
-  Units m_oldUnits;
-};
 
 UNIT_TEST(Measurement_Smoke)
 {
-  ScopedSettings guard(Units::Metric);
-
   using Pair = std::pair<double, char const *>;
 
   Pair arr[] = {
@@ -93,26 +68,17 @@ UNIT_TEST(LatLonToDMS_NoRounding)
 
 UNIT_TEST(FormatAltitude)
 {
-  ScopedSettings guard;
-  settings::Set(settings::kMeasurementUnits, Units::Imperial);
-  TEST_EQUAL(FormatAltitude(10000), "32808ft", ());
-  settings::Set(settings::kMeasurementUnits, Units::Metric);
-  TEST_EQUAL(FormatAltitude(5), "5m", ());
+
+  TEST_EQUAL(FormatAltitude(10000, Units::Imperial), "32808ft", ());
+  TEST_EQUAL(FormatAltitude(5, Units::Metric), "5m", ());
 }
 
 UNIT_TEST(FormatSpeedWithDeviceUnits)
 {
-  {
-    ScopedSettings guard(Units::Metric);
-    TEST_EQUAL(FormatSpeedWithDeviceUnits(10), "36km/h", ());
-    TEST_EQUAL(FormatSpeedWithDeviceUnits(1), "3.6km/h", ());
-  }
-
-  {
-    ScopedSettings guard(Units::Imperial);
-    TEST_EQUAL(FormatSpeedWithDeviceUnits(10), "22mph", ());
-    TEST_EQUAL(FormatSpeedWithDeviceUnits(1), "2.2mph", ());
-  }
+  TEST_EQUAL(FormatSpeedWithDeviceUnits(10, Units::Metric), "36km/h", ());
+  TEST_EQUAL(FormatSpeedWithDeviceUnits(1, Units::Metric), "3.6km/h", ());
+  TEST_EQUAL(FormatSpeedWithDeviceUnits(10, Units::Imperial), "22mph", ());
+  TEST_EQUAL(FormatSpeedWithDeviceUnits(1, Units::Imperial), "2.2mph", ());
 }
 
 UNIT_TEST(FormatSpeedWithUnits)
