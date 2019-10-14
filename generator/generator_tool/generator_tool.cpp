@@ -212,16 +212,22 @@ int GeneratorToolMain(int argc, char ** argv)
   Platform & pl = GetPlatform();
   auto threadsCount = pl.CpuCores();
 
-  if (!options.m_user_resource_path.empty())
+  if (options.m_user_resource_path.empty())
   {
-    pl.SetResourceDir(options.m_user_resource_path);
+    LOG(LERROR, ("Set user resource path"));
+    return EXIT_FAILURE;
   }
 
-  string const path =
-      options.m_data_path.empty() ? pl.WritableDir() : base::AddSlashIfNeeded(options.m_data_path);
+  if (options.m_data_path.empty())
+  {
+    LOG(LERROR, ("Set data path path"));
+    return EXIT_FAILURE;
+  }
 
-  // So that stray GetWritablePathForFile calls do not crash the generator.
-  pl.SetWritableDirForTests(path);
+  pl.SetWritableDir(options.m_data_path);
+  pl.SetResourceDir(options.m_user_resource_path);
+
+  string const path = base::AddSlashIfNeeded(options.m_data_path);
 
   feature::GenerateInfo genInfo;
   genInfo.m_verbose = options.m_verbose;

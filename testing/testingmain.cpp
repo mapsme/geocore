@@ -10,7 +10,7 @@ int main(int argc, char * argv[])
 #ifndef GEOCORE_UNIT_TEST_DISABLE_PLATFORM_INIT
   // Setting stored paths from testingmain.cpp
   Platform & pl = GetPlatform();
-  pl.SetWritableDirForTests(TestindDataPath::kDataPath);
+  pl.SetWritableDir(TestindDataPath::kDataPath);
   pl.SetResourceDir(TestindDataPath::kDataPath);
 #endif
 

@@ -223,7 +223,7 @@ void Platform::GetFilesRecursively(string const & directory, FilesList & filesLi
   }
 }
 
-void Platform::SetWritableDirForTests(string const & path)
+void Platform::SetWritableDir(string const & path)
 {
   m_writableDir = base::AddSlashIfNeeded(path);
 }
@@ -285,23 +285,12 @@ bool Platform::MkDirRecursively(string const & dirName)
   return true;
 }
 
+// static
 unsigned Platform::CpuCores() const
 {
   unsigned const cores = thread::hardware_concurrency();
   return cores > 0 ? cores : 1;
 }
-
-namespace
-{
-struct CloseDir
-{
-  void operator()(DIR * dir) const
-  {
-    if (dir)
-      closedir(dir);
-  }
-};
-}  // namespace
 
 // static
 Platform::EError Platform::RmDir(string const & dirName)
@@ -345,7 +334,8 @@ string Platform::GetCurrentWorkingDirectory() noexcept
 
 bool Platform::IsDirectoryEmpty(string const & directory)
 {
-  unique_ptr<DIR, CloseDir> dir(opendir(directory.c_str()));
+  auto closeMe = [](DIR * dir){ closedir(dir) };
+  unique_ptr<DIR, decltype(closeMe) }> dir(opendir(directory.c_str()));
   if (!dir)
     return true;
 
@@ -372,164 +362,18 @@ bool Platform::GetFileSizeByFullPath(string const & filePath, uint64_t & size)
   else return false;
 }
 
-namespace
-{
-
-// Returns directory where binary resides, including slash at the end.
-bool GetBinaryDir(string & outPath)
-{
-  char path[4096] = {};
-#ifdef GEOCORE_OS_MAC
-  uint32_t size = 4096;
-  if (_NSGetExecutablePath(path, &size) != 0)
-    return false;
-#else
-  if (::readlink("/proc/self/exe", path, ARRAY_SIZE(path)) <= 0)
-    return false;
-#endif
-  outPath = path;
-  outPath.erase(outPath.find_last_of('/') + 1);
-  return true;
-}
-
-// Returns true if EULA file exists in directory.
-bool IsEulaExist(string const & directory)
-{
-  return Platform::IsFileExistsByFullPath(base::JoinPath(directory, "eula.html"));
-}
-
-// Makes base::JoinPath(path, dirs) and all intermediate dirs.
-// The directory |path| is assumed to exist already.
-bool MkDirsChecked(string path, initializer_list<string> const & dirs)
-{
-  string accumulatedDirs = path;
-  // Storing full paths is redundant but makes the implementation easier.
-  vector<string> madeDirs;
-  bool ok = true;
-  for (auto const & dir : dirs)
-  {
-    accumulatedDirs = base::JoinPath(accumulatedDirs, dir);
-    auto const result = Platform::MkDir(accumulatedDirs);
-    switch (result)
-    {
-    case Platform::ERR_OK: madeDirs.push_back(accumulatedDirs); break;
-    case Platform::ERR_FILE_ALREADY_EXISTS:
-    {
-      Platform::EFileType type;
-      if (Platform::GetFileType(accumulatedDirs, type) != Platform::ERR_OK ||
-          type != Platform::FILE_TYPE_DIRECTORY)
-      {
-        ok = false;
-      }
-    }
-      break;
-    default: ok = false; break;
-    }
-  }
-
-  if (ok)
-    return true;
-
-  for (; !madeDirs.empty(); madeDirs.pop_back())
-    Platform::RmDir(madeDirs.back());
-
-  return false;
-}
-
-string HomeDir()
-{
-  char const * homePath = ::getenv("HOME");
-  if (homePath == nullptr)
-    MYTHROW(RootException, ("The environment variable HOME is not set"));
-  return homePath;
-}
-
-// Returns the default path to the writable dir, creating the dir if needed.
-// An exception is thrown if the default dir is not already there and we were unable to create it.
-string DefaultWritableDir()
-{
-  initializer_list<string> const dirs = {".local", "share", "MapsWithMe"};
-  string result;
-  for (auto const & dir : dirs)
-    result = base::JoinPath(result, dir);
-  result = base::AddSlashIfNeeded(result);
-
-  auto const home = HomeDir();
-  if (!MkDirsChecked(home, dirs))
-    MYTHROW(FileSystemException, ("Cannot create directory:", result));
-  return result;
-}
-}  // namespace
-
-
 Platform::Platform()
 {
-  // Init directories.
-  string path;
-  CHECK(GetBinaryDir(path), ("Can't retrieve path to executable"));
-
-
-  char const * resDir = ::getenv("MWM_RESOURCES_DIR");
-  char const * writableDir = ::getenv("MWM_WRITABLE_DIR");
-  if (resDir && writableDir)
-  {
-    m_resourcesDir = resDir;
-    m_writableDir = writableDir;
-  }
-  else if (resDir)
-  {
-    m_resourcesDir = resDir;
-    m_writableDir = DefaultWritableDir();
-  }
-  else
-  {
-    string const devBuildWithSymlink = base::JoinPath(path, "..", "..", "data");
-    string const devBuildWithoutSymlink = base::JoinPath(path, "..", "..", "..", "geocore", "data");
-    string const installedVersionWithPackages = base::JoinPath(path, "..", "share");
-    string const installedVersionWithoutPackages = base::JoinPath(path, "..", "MapsWithMe");
-    string const customInstall = path;
-
-    if (IsEulaExist(devBuildWithSymlink))
-    {
-      m_resourcesDir = devBuildWithSymlink;
-      m_writableDir = writableDir != nullptr ? writableDir : m_resourcesDir;
-    }
-    else if (IsEulaExist(devBuildWithoutSymlink))
-    {
-      m_resourcesDir = devBuildWithoutSymlink;
-      m_writableDir = writableDir != nullptr ? writableDir : m_resourcesDir;
-    }
-    else if (IsEulaExist(installedVersionWithPackages))
-    {
-      m_resourcesDir = installedVersionWithPackages;
-      m_writableDir = writableDir != nullptr ? writableDir : DefaultWritableDir();
-    }
-    else if (IsEulaExist(installedVersionWithoutPackages))
-    {
-      m_resourcesDir = installedVersionWithoutPackages;
-      m_writableDir = writableDir != nullptr ? writableDir : DefaultWritableDir();
-    }
-    else if (IsEulaExist(customInstall))
-    {
-      m_resourcesDir = path;
-      m_writableDir = writableDir != nullptr ? writableDir : DefaultWritableDir();
-    }
-  }
-  m_resourcesDir += '/';
-  m_writableDir += '/';
-
   char const * tmpDir = ::getenv("TMPDIR");
   if (tmpDir)
     m_tmpDir = tmpDir;
   else
     m_tmpDir = "/tmp";
+
   m_tmpDir += '/';
 
-  LOG(LDEBUG, ("Resources directory:", m_resourcesDir));
-  LOG(LDEBUG, ("Writable directory:", m_writableDir));
   LOG(LDEBUG, ("Tmp directory:", m_tmpDir));
 }
-
 
 unique_ptr<ModelReader> Platform::GetReader(string const & file, string const & searchScope) const
 {
