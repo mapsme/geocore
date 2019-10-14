@@ -53,12 +53,12 @@ public:
 
 protected:
   /// Usually read-only directory for application resources
-  std::string m_resourcesDir = "./data";
+  std::string m_resourcesDir = "./../geocore/data/";
   /// Writable directory to store downloaded map data
   /// @note on some systems it can point to external ejectable storage
-  std::string m_writableDir = ".";
+  std::string m_writableDir = "./";
   /// Temporary directory, can be cleaned up by the system
-  std::string m_tmpDir = "/tmp";
+  std::string m_tmpDir = "/tmp/";
 
   /// Returns last system call error as EError.
   static EError ErrnoToError();
