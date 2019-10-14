@@ -34,14 +34,6 @@ if(CODE_COVERAGE AND CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
   endif()
 endif()
 
-if (CMAKE_SYSTEM_NAME MATCHES "Linux")
-  set(LINUX_DETECTED TRUE)
-endif()
-
-geocore_set_platform_var(PLATFORM_MAC "macx-.*" ${APPLE})
-geocore_set_platform_var(PLATFORM_LINUX "linux-.*" ${LINUX_DETECTED})
-
-
 # Set build type:
 if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE "Release")
@@ -109,10 +101,6 @@ find_package(Threads)
 
 find_package(Boost ${BOOST_VERSION} EXACT COMPONENTS system filesystem serialization iostreams program_options REQUIRED)
 set(Boost_USE_MULTITHREADED ON)
-if (PLATFORM_MAC)
-    set(Boost_USE_STATIC_LIBS ON)
-    set(Boost_USE_STATIC_RUNTIME ON)
-endif()
 
 include_directories(${CMAKE_HOME_DIRECTORY})
 include_directories(SYSTEM ${Boost_INCLUDE_DIRS})

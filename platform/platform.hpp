@@ -20,11 +20,6 @@
 DECLARE_EXCEPTION(FileAbsentException, RootException);
 DECLARE_EXCEPTION(FileSystemException, RootException);
 
-namespace platform
-{
-class LocalCountryFile;
-}
-
 class Platform;
 
 Platform & GetPlatform();
@@ -54,13 +49,6 @@ public:
     FILE_TYPE_DIRECTORY = 0x4
   };
 
-  enum class Thread : uint8_t
-  {
-    File,
-    Network,
-    Background,
-  };
-
   using TFilesWithType = std::vector<std::pair<std::string, EFileType>>;
 
 protected:
@@ -72,16 +60,8 @@ protected:
   /// Temporary directory, can be cleaned up by the system
   std::string m_tmpDir;
 
-  /// Extended resource files.
-  /// Used in Android only (downloaded zip files as a container).
-  std::vector<std::string> m_extResFiles;
-
   /// Returns last system call error as EError.
   static EError ErrnoToError();
-
-  std::unique_ptr<base::thread_pool::delayed::ThreadPool> m_networkThread;
-  std::unique_ptr<base::thread_pool::delayed::ThreadPool> m_fileThread;
-  std::unique_ptr<base::thread_pool::delayed::ThreadPool> m_backgroundThread;
 
 public:
   Platform();
@@ -159,7 +139,6 @@ public:
                             FilesList & outFiles);
   static void GetFilesByRegExp(std::string const & directory, std::string const & regexp,
                                FilesList & outFiles);
-  //@}
 
   static void GetFilesByType(std::string const & directory, unsigned typeMask,
                              TFilesWithType & outFiles);
@@ -179,14 +158,6 @@ public:
   /// @note Try do not use in client production code
   static bool GetFileSizeByFullPath(std::string const & filePath, uint64_t & size);
   //@}
-
-  /// Used to check available free storage space for downloading.
-  enum TStorageStatus
-  {
-    STORAGE_OK = 0,
-    STORAGE_DISCONNECTED,
-    NOT_ENOUGH_SPACE
-  };
 
   // Please note, that number of active cores can vary at runtime.
   // DO NOT assume for the same return value between calls.
