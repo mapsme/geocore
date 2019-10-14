@@ -23,10 +23,6 @@
 #include "platform/constants.hpp"
 
 
-#ifdef GEOCORE_OS_MAC
-#include <mach-o/dyld.h>
-#endif
-
 namespace fs = boost::filesystem;
 using namespace std;
 
@@ -286,7 +282,7 @@ bool Platform::MkDirRecursively(string const & dirName)
 }
 
 // static
-unsigned Platform::CpuCores() const
+unsigned Platform::CpuCores()
 {
   unsigned const cores = thread::hardware_concurrency();
   return cores > 0 ? cores : 1;
@@ -303,7 +299,7 @@ Platform::EError Platform::RmDir(string const & dirName)
 // static
 Platform::EError Platform::GetFileType(string const & path, EFileType & type)
 {
-  struct stat stats;
+  struct stat stats{};
   if (stat(path.c_str(), &stats) != 0)
     return ErrnoToError();
   if (S_ISREG(stats.st_mode))
@@ -318,7 +314,7 @@ Platform::EError Platform::GetFileType(string const & path, EFileType & type)
 // static
 bool Platform::IsFileExistsByFullPath(string const & filePath)
 {
-  struct stat s;
+  struct stat s{};
   return stat(filePath.c_str(), &s) == 0;
 }
 
@@ -334,8 +330,8 @@ string Platform::GetCurrentWorkingDirectory() noexcept
 
 bool Platform::IsDirectoryEmpty(string const & directory)
 {
-  auto closeMe = [](DIR * dir){ closedir(dir) };
-  unique_ptr<DIR, decltype(closeMe) }> dir(opendir(directory.c_str()));
+  auto closeMe = [](DIR * d){ d && closedir(d); };
+  unique_ptr<DIR, decltype(closeMe)> dir(opendir(directory.c_str()), closeMe);
   if (!dir)
     return true;
 
@@ -353,7 +349,7 @@ bool Platform::IsDirectoryEmpty(string const & directory)
 
 bool Platform::GetFileSizeByFullPath(string const & filePath, uint64_t & size)
 {
-  struct stat s;
+  struct stat s{};
   if (stat(filePath.c_str(), &s) == 0)
   {
     size = s.st_size;
@@ -366,11 +362,7 @@ Platform::Platform()
 {
   char const * tmpDir = ::getenv("TMPDIR");
   if (tmpDir)
-    m_tmpDir = tmpDir;
-  else
-    m_tmpDir = "/tmp";
-
-  m_tmpDir += '/';
+    m_tmpDir = std::string(tmpDir) + "/";
 
   LOG(LDEBUG, ("Tmp directory:", m_tmpDir));
 }
