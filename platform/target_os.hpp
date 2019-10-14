@@ -1,4 +1,5 @@
 #pragma once
+#pragma message("Using of this header means non portable code, fix it, or SUFFER")
 
 #if defined(__APPLE__)
   #include <TargetConditionals.h>

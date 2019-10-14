@@ -207,7 +207,6 @@ v = w * (x + z);
 ### Some useful macros:
 
 - `#ifdef DEBUG | RELEASE | GEOCORE_PRODUCTION`
-- `#ifdef GEOCORE_OS_LINUX | GEOCORE_OS_MAC` (and some other useful OS-related macros, see `platform/target_os.hpp`)
 - Use `ASSERT(expression, (out message))` and `ASSERT_XXXXXX` macros often to check code validity in DEBUG builds
 - Use `CHECK(expression, (out message))` and `CHECK_XXXXXX` macros to check code validity in all builds
 - Use `LOG(level, (message))` for logging, below is more detailed description for level:

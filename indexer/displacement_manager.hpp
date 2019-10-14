@@ -13,8 +13,6 @@
 #include "geometry/screenbase.hpp"
 #include "geometry/tree4d.hpp"
 
-#include "platform/target_os.hpp"
-
 #include <algorithm>
 #include <functional>
 #include <vector>
@@ -55,9 +53,7 @@ private:
   uint32_t m_bucket;
 };
 static_assert(sizeof(CellFeatureBucketTuple) == 16, "");
-#ifndef GEOCORE_OS_LINUX
 static_assert(std::is_trivially_copyable<CellFeatureBucketTuple>::value, "");
-#endif
 
 /// Displacement manager filters incoming single-point features to simplify runtime
 /// feature visibility displacement.

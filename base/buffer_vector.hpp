@@ -27,8 +27,6 @@ private:
 
   inline bool IsDynamic() const { return m_size == USE_DYNAMIC; }
 
-  /// @todo clang on linux doesn't have is_trivially_copyable.
-#ifndef GEOCORE_OS_LINUX
   template <class U = T>
   std::enable_if_t<std::is_trivially_copyable<U>::value, void> MoveStatic(buffer_vector<T, N> & rhs)
   {
@@ -41,19 +39,6 @@ private:
     for (size_t i = 0; i < rhs.m_size; ++i)
       Swap(m_static[i], rhs.m_static[i]);
   }
-#else
-  template <class U = T>
-  std::enable_if_t<std::is_pod<U>::value, void> MoveStatic(buffer_vector<T, N> & rhs)
-  {
-    memcpy(m_static, rhs.m_static, rhs.m_size*sizeof(T));
-  }
-  template <class U = T>
-  std::enable_if_t<!std::is_pod<U>::value, void> MoveStatic(buffer_vector<T, N> & rhs)
-  {
-    for (size_t i = 0; i < rhs.m_size; ++i)
-      Swap(m_static[i], rhs.m_static[i]);
-  }
-#endif
 
 public:
   typedef T value_type;
