@@ -41,13 +41,14 @@ double ToSpeedKmPH(double speed, measurement_utils::Units units);
 /// @param[in] m meters
 /// @param[out] res formatted std::string for search
 /// @return should be direction arrow drawed? false if distance is to small (< 1.0)
-bool FormatDistance(double m, std::string & res);
-bool FormatDistanceWithLocalization(double m, std::string & res, char const * high, char const * low);
+bool FormatDistance(double m, std::string & res, Units units = Units::Metric);
+bool FormatDistanceWithLocalization(double m, std::string & res, char const * high,
+                                    char const * low, Units units = Units::Metric);
 
 /// We always use meters and feet/yards for altitude
-std::string FormatAltitude(double altitudeInMeters);
+std::string FormatAltitude(double altitudeInMeters, Units units = Units::Metric);
 // Return value is measured in km/h for Metric and in mph for Imperial.
-std::string FormatSpeedWithDeviceUnits(double metersPerSecond);
+std::string FormatSpeedWithDeviceUnits(double metersPerSecond, Units units = Units::Metric);
 std::string FormatSpeedWithUnits(double metersPerSecond, Units units);
 std::string FormatSpeed(double metersPerSecond, Units units);
 std::string FormatSpeedUnits(Units units);

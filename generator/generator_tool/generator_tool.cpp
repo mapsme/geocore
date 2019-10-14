@@ -215,7 +215,6 @@ int GeneratorToolMain(int argc, char ** argv)
   if (!options.m_user_resource_path.empty())
   {
     pl.SetResourceDir(options.m_user_resource_path);
-    pl.SetSettingsDir(options.m_user_resource_path);
   }
 
   string const path =

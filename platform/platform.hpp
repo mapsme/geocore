@@ -69,12 +69,8 @@ protected:
   /// Writable directory to store downloaded map data
   /// @note on some systems it can point to external ejectable storage
   std::string m_writableDir;
-  /// Application private directory.
-  std::string m_privateDir;
   /// Temporary directory, can be cleaned up by the system
   std::string m_tmpDir;
-  /// Writable directory to store persistent application data
-  std::string m_settingsDir;
 
   /// Extended resource files.
   /// Used in Android only (downloaded zip files as a container).
@@ -104,7 +100,7 @@ public:
   void SetWritableDirForTests(std::string const & path);
   /// @return full path to file in user's writable directory
   std::string WritablePathForFile(std::string const & file) const { return WritableDir() + file; }
-  /// Uses m_writeableDir [w], m_resourcesDir [r], m_settingsDir [s].
+  /// Uses m_writeableDir [w], m_resourcesDir [r]
   std::string ReadPathForFile(std::string const & file,
                               std::string searchScope = std::string()) const;
 
@@ -144,21 +140,11 @@ public:
   /// @return full random path to temporary file.
   std::string TmpPathForFile() const;
 
-  /// @return full path to the file where data for unit tests is stored.
-  std::string TestsDataPathForFile(std::string const & file) const { return ReadPathForFile(file); }
-
-  /// @return path for directory in the persistent memory, can be the same
-  /// as WritableDir, but on some platforms it's different
-  std::string const & SettingsDir() const { return m_settingsDir; }
-  void SetSettingsDir(std::string const & path);
-  /// @return full path to file in the settings directory
-  std::string SettingsPathForFile(std::string const & file) const { return SettingsDir() + file; }
-
   /// @return reader for file decriptor.
   /// @throws FileAbsentException
   /// @param[in] file name or full path which we want to read
   /// @param[in] searchScope looks for file in dirs in given order: \n
-  /// [w]ritable, [r]esources, [s]ettings, by [f]ull path, [e]xternal resources,
+  /// [w]ritable, [r]esources, by [f]ull path, [e]xternal resources,
   std::unique_ptr<ModelReader> GetReader(std::string const & file,
                                          std::string const & searchScope = std::string()) const;
 

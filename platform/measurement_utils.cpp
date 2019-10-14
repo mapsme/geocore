@@ -1,5 +1,4 @@
 #include "platform/measurement_utils.hpp"
-#include "platform/settings.hpp"
 
 #include "geometry/mercator.hpp"
 
@@ -11,9 +10,9 @@
 #include <iomanip>
 #include <sstream>
 
-using namespace settings;
 using namespace std;
 using namespace strings;
+
 
 namespace measurement_utils
 {
@@ -60,11 +59,9 @@ double ToSpeedKmPH(double speed, measurement_utils::Units units)
   UNREACHABLE();
 }
 
-bool FormatDistanceWithLocalization(double m, string & res, char const * high, char const * low)
+bool FormatDistanceWithLocalization(double m, string & res, char const * high, char const * low,
+                                    Units units)
 {
-  auto units = Units::Metric;
-  TryGet(settings::kMeasurementUnits, units);
-
   /// @todo Put string units resources.
   switch (units)
   {
@@ -74,11 +71,8 @@ bool FormatDistanceWithLocalization(double m, string & res, char const * high, c
   UNREACHABLE();
 }
 
-bool FormatDistance(double m, string & res)
+bool FormatDistance(double m, string & res, Units units)
 {
-  auto units = Units::Metric;
-  TryGet(settings::kMeasurementUnits, units);
-
   /// @todo Put string units resources.
   switch (units)
   {
@@ -183,11 +177,8 @@ void FormatMercator(m2::PointD const & mercator, string & lat, string & lon, int
   lon = to_string_dac(MercatorBounds::XToLon(mercator.x), dac);
 }
 
-string FormatAltitude(double altitudeInMeters)
+string FormatAltitude(double altitudeInMeters, Units units)
 {
-  Units units = Units::Metric;
-  TryGet(settings::kMeasurementUnits, units);
-
   ostringstream ss;
   ss << fixed << setprecision(0);
 
@@ -200,10 +191,8 @@ string FormatAltitude(double altitudeInMeters)
   return ss.str();
 }
 
-string FormatSpeedWithDeviceUnits(double metersPerSecond)
+string FormatSpeedWithDeviceUnits(double metersPerSecond, Units units)
 {
-  auto units = Units::Metric;
-  TryGet(settings::kMeasurementUnits, units);
   return FormatSpeedWithUnits(metersPerSecond, units);
 }
 
