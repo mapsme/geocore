@@ -18,15 +18,3 @@ geocore_link_libraries(
   platform
 )
 
-if (PLATFORM_MAC)
-  geocore_link_libraries(
-    ${PROJECT_NAME}
-    "-framework QuartzCore"
-  )
-endif()
-
-if (PLATFORM_WIN OR PLATFORM_LINUX)
-  geocore_link_libraries(
-    ${PROJECT_NAME}
-  )
-endif()

@@ -70,16 +70,6 @@ endfunction()
 
 function(geocore_link_platform_deps target)
   if ("${ARGN}" MATCHES "platform")
-    if (PLATFORM_MAC)
-      target_link_libraries(
-        ${target}
-        "-framework CFNetwork"
-        "-framework Foundation"
-        "-framework IOKit"
-        "-framework SystemConfiguration"
-        "-framework Security"
-      )
-    endif()
   endif()
 endfunction()
 
