@@ -43,6 +43,13 @@ endfunction()
 
 function(geocore_add_library library)
   add_library(${library} ${ARGN})
+  if (PLATFORM_MAC)
+    set_property(
+      TARGET ${library}
+      APPEND
+      PROPERTY STATIC_LIBRARY_FLAGS "-no_warning_for_no_symbols"
+    )
+  endif()
   target_link_libraries(${library} coverage_config)
 endfunction()
 
