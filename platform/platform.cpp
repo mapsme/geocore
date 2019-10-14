@@ -22,6 +22,11 @@
 
 #include "platform/constants.hpp"
 
+
+#ifdef GEOCORE_OS_MAC
+#include <mach-o/dyld.h>
+#endif
+
 namespace fs = boost::filesystem;
 using namespace std;
 
@@ -374,8 +379,14 @@ namespace
 bool GetBinaryDir(string & outPath)
 {
   char path[4096] = {};
+#ifdef GEOCORE_OS_MAC
+  uint32_t size = 4096;
+  if (_NSGetExecutablePath(path, &size) != 0)
+    return false;
+#else
   if (::readlink("/proc/self/exe", path, ARRAY_SIZE(path)) <= 0)
     return false;
+#endif
   outPath = path;
   outPath.erase(outPath.find_last_of('/') + 1);
   return true;
