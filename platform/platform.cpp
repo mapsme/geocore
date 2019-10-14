@@ -1,5 +1,6 @@
 #include "platform/platform.hpp"
 
+#include "coding/file_reader.hpp"
 #include "coding/internal/file_data.hpp"
 #include "coding/writer.hpp"
 
@@ -19,8 +20,9 @@
 #include <boost/filesystem.hpp>
 #include <boost/range/iterator_range.hpp>
 
-namespace fs = boost::filesystem;
+#include "platform/constants.hpp"
 
+namespace fs = boost::filesystem;
 using namespace std;
 
 namespace
@@ -290,27 +292,6 @@ unsigned Platform::CpuCores() const
   return cores > 0 ? cores : 1;
 }
 
-void Platform::ShutdownThreads()
-{
-  ASSERT(m_networkThread && m_fileThread && m_backgroundThread, ());
-
-  m_networkThread->ShutdownAndJoin();
-  m_fileThread->ShutdownAndJoin();
-  m_backgroundThread->ShutdownAndJoin();
-
-  m_networkThread.reset();
-  m_fileThread.reset();
-  m_backgroundThread.reset();
-}
-
-void Platform::RunThreads()
-{
-  ASSERT(!m_networkThread && !m_fileThread && !m_backgroundThread, ());
-  m_networkThread = make_unique<base::thread_pool::delayed::ThreadPool>();
-  m_fileThread = make_unique<base::thread_pool::delayed::ThreadPool>();
-  m_backgroundThread = make_unique<base::thread_pool::delayed::ThreadPool>();
-}
-
 namespace
 {
 struct CloseDir
@@ -322,7 +303,6 @@ struct CloseDir
   }
 };
 }  // namespace
-
 
 // static
 Platform::EError Platform::RmDir(string const & dirName)
@@ -395,8 +375,6 @@ bool Platform::GetFileSizeByFullPath(string const & filePath, uint64_t & size)
 
 namespace
 {
-// Web service ip to check internet connection. Now it's a mail.ru ip.
-char constexpr kSomeWorkingWebServer[] = "217.69.139.202";
 
 // Returns directory where binary resides, including slash at the end.
 bool GetBinaryDir(string & outPath)
@@ -561,29 +539,6 @@ Platform::Platform()
   LOG(LDEBUG, ("Settings directory:", m_settingsDir));
 }
 
-#include "platform/constants.hpp"
-#include "platform/measurement_utils.hpp"
-#include "platform/platform.hpp"
-#include "platform/settings.hpp"
-
-#include "coding/file_reader.hpp"
-
-#include "base/logging.hpp"
-
-#include "platform/target_os.hpp"
-
-#include <algorithm>
-#include <future>
-#include <memory>
-#include <regex>
-#include <string>
-
-#include <boost/filesystem.hpp>
-#include <boost/range/iterator_range.hpp>
-
-namespace fs = boost::filesystem;
-
-using namespace std;
 
 unique_ptr<ModelReader> Platform::GetReader(string const & file, string const & searchScope) const
 {
