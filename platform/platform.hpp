@@ -53,12 +53,12 @@ public:
 
 protected:
   /// Usually read-only directory for application resources
-  std::string m_resourcesDir;
+  std::string m_resourcesDir = "./data";
   /// Writable directory to store downloaded map data
   /// @note on some systems it can point to external ejectable storage
-  std::string m_writableDir;
+  std::string m_writableDir = ".";
   /// Temporary directory, can be cleaned up by the system
-  std::string m_tmpDir;
+  std::string m_tmpDir = "/tmp";
 
   /// Returns last system call error as EError.
   static EError ErrnoToError();
@@ -76,8 +76,8 @@ public:
   static std::string GetCurrentWorkingDirectory() noexcept;
   /// @return always the same writable dir for current user with slash at the end
   std::string const & WritableDir() const { return m_writableDir; }
-  /// Set writable dir — use for testing and linux stuff only
-  void SetWritableDirForTests(std::string const & path);
+  /// Set writable dir
+  void SetWritableDir(std::string const & path);
   /// @return full path to file in user's writable directory
   std::string WritablePathForFile(std::string const & file) const { return WritableDir() + file; }
   /// Uses m_writeableDir [w], m_resourcesDir [r]
@@ -161,7 +161,7 @@ public:
 
   // Please note, that number of active cores can vary at runtime.
   // DO NOT assume for the same return value between calls.
-  unsigned CpuCores() const;
+  static unsigned CpuCores();
 };
 
 std::string DebugPrint(Platform::EError err);
