@@ -32,15 +32,6 @@ Platform & GetPlatform();
 class Platform
 {
 public:
-  friend class ThreadRunner;
-
-  // ThreadRunner may be subclassed for testing purposes.
-  class ThreadRunner
-  {
-  public:
-    ThreadRunner() { GetPlatform().RunThreads(); }
-    virtual ~ThreadRunner() { GetPlatform().ShutdownThreads(); }
-  };
 
   enum EError
   {
@@ -61,13 +52,6 @@ public:
     FILE_TYPE_UNKNOWN = 0x1,
     FILE_TYPE_REGULAR = 0x2,
     FILE_TYPE_DIRECTORY = 0x4
-  };
-
-  enum class EConnectionType : uint8_t
-  {
-    CONNECTION_NONE,
-    CONNECTION_WIFI,
-    CONNECTION_WWAN
   };
 
   enum class Thread : uint8_t
@@ -108,7 +92,7 @@ public:
   virtual ~Platform() = default;
 
   static bool IsFileExistsByFullPath(std::string const & filePath);
-  static void DisableBackupForFile(std::string const & filePath);
+
   static bool RemoveFileIfExists(std::string const & filePath);
 
   /// @returns path to current working directory.
@@ -170,9 +154,6 @@ public:
   /// @return full path to file in the settings directory
   std::string SettingsPathForFile(std::string const & file) const { return SettingsDir() + file; }
 
-  /// Returns application private directory.
-  std::string const & PrivateDir() const { return m_privateDir; }
-
   /// @return reader for file decriptor.
   /// @throws FileAbsentException
   /// @param[in] file name or full path which we want to read
@@ -224,49 +205,6 @@ public:
   // Please note, that number of active cores can vary at runtime.
   // DO NOT assume for the same return value between calls.
   unsigned CpuCores() const;
-
-
-  /// \brief Placing an executable object |task| on a queue of |thread|. Then the object will be
-  /// executed on |thread|.
-  /// \note |task| cannot be moved in case of |Thread::Gui|. This way unique_ptr cannot be used
-  /// in |task|. Use shared_ptr instead.
-  template <typename Task>
-  void RunTask(Thread thread, Task && task)
-  {
-    ASSERT(m_networkThread && m_fileThread && m_backgroundThread, ());
-    switch (thread)
-    {
-    case Thread::File:
-      m_fileThread->Push(std::forward<Task>(task));
-      break;
-    case Thread::Network:
-      m_networkThread->Push(std::forward<Task>(task));
-      break;
-    case Thread::Background: m_backgroundThread->Push(std::forward<Task>(task)); break;
-    }
-  }
-
-  template <typename Task>
-  void RunDelayedTask(Thread thread, base::thread_pool::delayed::ThreadPool::Duration const & delay, Task && task)
-  {
-    ASSERT(m_networkThread && m_fileThread && m_backgroundThread, ());
-    switch (thread)
-    {
-    case Thread::File:
-      m_fileThread->PushDelayed(delay, std::forward<Task>(task));
-      break;
-    case Thread::Network:
-      m_networkThread->PushDelayed(delay, std::forward<Task>(task));
-      break;
-    case Thread::Background:
-      m_backgroundThread->PushDelayed(delay, std::forward<Task>(task));
-      break;
-    }
-  }
-
-private:
-  void RunThreads();
-  void ShutdownThreads();
 };
 
 std::string DebugPrint(Platform::EError err);
