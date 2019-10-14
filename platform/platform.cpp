@@ -1,7 +1,5 @@
 #include "platform/platform.hpp"
 
-
-#include "coding/base64.hpp"
 #include "coding/internal/file_data.hpp"
 #include "coding/writer.hpp"
 
@@ -13,8 +11,21 @@
 #include <random>
 #include <thread>
 
+#include <dirent.h>
+#include <sys/stat.h>
 
-#include <errno.h>
+#if defined(GEOCORE_OS_MAC)
+#include <sys/mount.h>
+#else
+#include <sys/vfs.h>
+#endif
+
+#include <cerrno>
+
+#include <boost/filesystem.hpp>
+#include <boost/range/iterator_range.hpp>
+
+namespace fs = boost::filesystem;
 
 using namespace std;
 
@@ -304,6 +315,371 @@ void Platform::RunThreads()
   m_networkThread = make_unique<base::thread_pool::delayed::ThreadPool>();
   m_fileThread = make_unique<base::thread_pool::delayed::ThreadPool>();
   m_backgroundThread = make_unique<base::thread_pool::delayed::ThreadPool>();
+}
+
+namespace
+{
+struct CloseDir
+{
+  void operator()(DIR * dir) const
+  {
+    if (dir)
+      closedir(dir);
+  }
+};
+}  // namespace
+
+
+// static
+Platform::EError Platform::RmDir(string const & dirName)
+{
+  if (rmdir(dirName.c_str()) != 0)
+    return ErrnoToError();
+  return ERR_OK;
+}
+
+// static
+Platform::EError Platform::GetFileType(string const & path, EFileType & type)
+{
+  struct stat stats;
+  if (stat(path.c_str(), &stats) != 0)
+    return ErrnoToError();
+  if (S_ISREG(stats.st_mode))
+    type = FILE_TYPE_REGULAR;
+  else if (S_ISDIR(stats.st_mode))
+    type = FILE_TYPE_DIRECTORY;
+  else
+    type = FILE_TYPE_UNKNOWN;
+  return ERR_OK;
+}
+
+// static
+bool Platform::IsFileExistsByFullPath(string const & filePath)
+{
+  struct stat s;
+  return stat(filePath.c_str(), &s) == 0;
+}
+
+// static
+string Platform::GetCurrentWorkingDirectory() noexcept
+{
+  char path[PATH_MAX];
+  char const * const dir = getcwd(path, PATH_MAX);
+  if (dir == nullptr)
+    return {};
+  return dir;
+}
+
+bool Platform::IsDirectoryEmpty(string const & directory)
+{
+  unique_ptr<DIR, CloseDir> dir(opendir(directory.c_str()));
+  if (!dir)
+    return true;
+
+  struct dirent * entry;
+
+  // Invariant: all files met so far are "." or "..".
+  while ((entry = readdir(dir.get())) != nullptr)
+  {
+    // A file is not a special UNIX file. Early exit here.
+    if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0)
+      return false;
+  }
+  return true;
+}
+
+bool Platform::GetFileSizeByFullPath(string const & filePath, uint64_t & size)
+{
+  struct stat s;
+  if (stat(filePath.c_str(), &s) == 0)
+  {
+    size = s.st_size;
+    return true;
+  }
+  else return false;
+}
+
+Platform::TStorageStatus Platform::GetWritableStorageStatus(uint64_t neededSize) const
+{
+  struct statfs st;
+  int const ret = statfs(m_writableDir.c_str(), &st);
+
+  LOG(LDEBUG, ("statfs return =", ret,
+      "; block size =", st.f_bsize,
+      "; blocks available =", st.f_bavail));
+
+  if (ret != 0)
+  {
+    LOG(LERROR, ("Path:", m_writableDir, "statfs error:", ErrnoToError()));
+    return STORAGE_DISCONNECTED;
+  }
+
+  /// @todo May be add additional storage space.
+  if (st.f_bsize * st.f_bavail < neededSize)
+    return NOT_ENOUGH_SPACE;
+
+  return STORAGE_OK;
+}
+
+uint64_t Platform::GetWritableStorageSpace() const
+{
+  struct statfs st;
+  int const ret = statfs(m_writableDir.c_str(), &st);
+
+  LOG(LDEBUG, ("statfs return =", ret,
+      "; block size =", st.f_bsize,
+      "; blocks available =", st.f_bavail));
+
+  if (ret != 0)
+    LOG(LERROR, ("Path:", m_writableDir, "statfs error:", ErrnoToError()));
+
+  return (ret != 0) ? 0 : st.f_bsize * st.f_bavail;
+}
+
+namespace
+{
+// Web service ip to check internet connection. Now it's a mail.ru ip.
+char constexpr kSomeWorkingWebServer[] = "217.69.139.202";
+
+// Returns directory where binary resides, including slash at the end.
+bool GetBinaryDir(string & outPath)
+{
+  char path[4096] = {};
+  if (::readlink("/proc/self/exe", path, ARRAY_SIZE(path)) <= 0)
+    return false;
+  outPath = path;
+  outPath.erase(outPath.find_last_of('/') + 1);
+  return true;
+}
+
+// Returns true if EULA file exists in directory.
+bool IsEulaExist(string const & directory)
+{
+  return Platform::IsFileExistsByFullPath(base::JoinPath(directory, "eula.html"));
+}
+
+// Makes base::JoinPath(path, dirs) and all intermediate dirs.
+// The directory |path| is assumed to exist already.
+bool MkDirsChecked(string path, initializer_list<string> const & dirs)
+{
+  string accumulatedDirs = path;
+  // Storing full paths is redundant but makes the implementation easier.
+  vector<string> madeDirs;
+  bool ok = true;
+  for (auto const & dir : dirs)
+  {
+    accumulatedDirs = base::JoinPath(accumulatedDirs, dir);
+    auto const result = Platform::MkDir(accumulatedDirs);
+    switch (result)
+    {
+    case Platform::ERR_OK: madeDirs.push_back(accumulatedDirs); break;
+    case Platform::ERR_FILE_ALREADY_EXISTS:
+    {
+      Platform::EFileType type;
+      if (Platform::GetFileType(accumulatedDirs, type) != Platform::ERR_OK ||
+          type != Platform::FILE_TYPE_DIRECTORY)
+      {
+        ok = false;
+      }
+    }
+      break;
+    default: ok = false; break;
+    }
+  }
+
+  if (ok)
+    return true;
+
+  for (; !madeDirs.empty(); madeDirs.pop_back())
+    Platform::RmDir(madeDirs.back());
+
+  return false;
+}
+
+string HomeDir()
+{
+  char const * homePath = ::getenv("HOME");
+  if (homePath == nullptr)
+    MYTHROW(RootException, ("The environment variable HOME is not set"));
+  return homePath;
+}
+
+// Returns the default path to the writable dir, creating the dir if needed.
+// An exception is thrown if the default dir is not already there and we were unable to create it.
+string DefaultWritableDir()
+{
+  initializer_list<string> const dirs = {".local", "share", "MapsWithMe"};
+  string result;
+  for (auto const & dir : dirs)
+    result = base::JoinPath(result, dir);
+  result = base::AddSlashIfNeeded(result);
+
+  auto const home = HomeDir();
+  if (!MkDirsChecked(home, dirs))
+    MYTHROW(FileSystemException, ("Cannot create directory:", result));
+  return result;
+}
+}  // namespace
+
+
+Platform::Platform()
+{
+  // Init directories.
+  string path;
+  CHECK(GetBinaryDir(path), ("Can't retrieve path to executable"));
+
+  m_settingsDir = base::JoinPath(HomeDir(), ".config", "MapsWithMe");
+
+  if (!IsFileExistsByFullPath(base::JoinPath(m_settingsDir, SETTINGS_FILE_NAME)))
+  {
+    auto const configDir = base::JoinPath(HomeDir(), ".config");
+    if (!MkDirChecked(configDir))
+      MYTHROW(FileSystemException, ("Can't create directory", configDir));
+    if (!MkDirChecked(m_settingsDir))
+      MYTHROW(FileSystemException, ("Can't create directory", m_settingsDir));
+  }
+
+  char const * resDir = ::getenv("MWM_RESOURCES_DIR");
+  char const * writableDir = ::getenv("MWM_WRITABLE_DIR");
+  if (resDir && writableDir)
+  {
+    m_resourcesDir = resDir;
+    m_writableDir = writableDir;
+  }
+  else if (resDir)
+  {
+    m_resourcesDir = resDir;
+    m_writableDir = DefaultWritableDir();
+  }
+  else
+  {
+    string const devBuildWithSymlink = base::JoinPath(path, "..", "..", "data");
+    string const devBuildWithoutSymlink = base::JoinPath(path, "..", "..", "..", "geocore", "data");
+    string const installedVersionWithPackages = base::JoinPath(path, "..", "share");
+    string const installedVersionWithoutPackages = base::JoinPath(path, "..", "MapsWithMe");
+    string const customInstall = path;
+
+    if (IsEulaExist(devBuildWithSymlink))
+    {
+      m_resourcesDir = devBuildWithSymlink;
+      m_writableDir = writableDir != nullptr ? writableDir : m_resourcesDir;
+    }
+    else if (IsEulaExist(devBuildWithoutSymlink))
+    {
+      m_resourcesDir = devBuildWithoutSymlink;
+      m_writableDir = writableDir != nullptr ? writableDir : m_resourcesDir;
+    }
+    else if (IsEulaExist(installedVersionWithPackages))
+    {
+      m_resourcesDir = installedVersionWithPackages;
+      m_writableDir = writableDir != nullptr ? writableDir : DefaultWritableDir();
+    }
+    else if (IsEulaExist(installedVersionWithoutPackages))
+    {
+      m_resourcesDir = installedVersionWithoutPackages;
+      m_writableDir = writableDir != nullptr ? writableDir : DefaultWritableDir();
+    }
+    else if (IsEulaExist(customInstall))
+    {
+      m_resourcesDir = path;
+      m_writableDir = writableDir != nullptr ? writableDir : DefaultWritableDir();
+    }
+  }
+  m_resourcesDir += '/';
+  m_settingsDir += '/';
+  m_writableDir += '/';
+
+  char const * tmpDir = ::getenv("TMPDIR");
+  if (tmpDir)
+    m_tmpDir = tmpDir;
+  else
+    m_tmpDir = "/tmp";
+  m_tmpDir += '/';
+
+  m_privateDir = m_settingsDir;
+
+  LOG(LDEBUG, ("Resources directory:", m_resourcesDir));
+  LOG(LDEBUG, ("Writable directory:", m_writableDir));
+  LOG(LDEBUG, ("Tmp directory:", m_tmpDir));
+  LOG(LDEBUG, ("Settings directory:", m_settingsDir));
+}
+
+#include "platform/constants.hpp"
+#include "platform/measurement_utils.hpp"
+#include "platform/platform.hpp"
+#include "platform/settings.hpp"
+
+#include "coding/file_reader.hpp"
+
+#include "base/logging.hpp"
+
+#include "platform/target_os.hpp"
+
+#include <algorithm>
+#include <future>
+#include <memory>
+#include <regex>
+#include <string>
+
+#include <boost/filesystem.hpp>
+#include <boost/range/iterator_range.hpp>
+
+namespace fs = boost::filesystem;
+
+using namespace std;
+
+unique_ptr<ModelReader> Platform::GetReader(string const & file, string const & searchScope) const
+{
+  return make_unique<FileReader>(ReadPathForFile(file, searchScope), READER_CHUNK_LOG_SIZE,
+                                 READER_CHUNK_LOG_COUNT);
+}
+
+bool Platform::GetFileSizeByName(string const & fileName, uint64_t & size) const
+{
+  try
+  {
+    return GetFileSizeByFullPath(ReadPathForFile(fileName), size);
+  }
+  catch (RootException const &)
+  {
+    return false;
+  }
+}
+
+void Platform::GetFilesByRegExp(string const & directory, string const & regexp,
+                                FilesList & outFiles)
+{
+  boost::system::error_code ec{};
+  regex exp(regexp);
+
+  for (auto const & entry : boost::make_iterator_range(fs::directory_iterator(directory, ec), {}))
+  {
+    string const name = entry.path().filename().string();
+    if (regex_search(name.begin(), name.end(), exp))
+      outFiles.push_back(name);
+  }
+}
+
+// static
+Platform::EError Platform::MkDir(string const & dirName)
+{
+  boost::system::error_code ec{};
+
+  fs::path dirPath{dirName};
+  if (fs::exists(dirPath, ec))
+    return Platform::ERR_FILE_ALREADY_EXISTS;
+  if (!fs::create_directory(dirPath, ec))
+  {
+    LOG(LWARNING, ("Can't create directory: ", dirName));
+    return Platform::ERR_UNKNOWN;
+  }
+  return Platform::ERR_OK;
+}
+
+Platform & GetPlatform()
+{
+  static Platform platform;
+  return platform;
 }
 
 string DebugPrint(Platform::EError err)
