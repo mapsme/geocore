@@ -220,17 +220,10 @@ public:
     STORAGE_DISCONNECTED,
     NOT_ENOUGH_SPACE
   };
-  TStorageStatus GetWritableStorageStatus(uint64_t neededSize) const;
-  uint64_t GetWritableStorageSpace() const;
 
   // Please note, that number of active cores can vary at runtime.
   // DO NOT assume for the same return value between calls.
   unsigned CpuCores() const;
-
-
-
-  std::string UniqueClientId() const;
-
 
 
   /// \brief Placing an executable object |task| on a queue of |thread|. Then the object will be

@@ -208,12 +208,6 @@ UNIT_TEST(CpuCores)
   TEST_LESS_OR_EQUAL(coresNum, 128, ());
 }
 
-UNIT_TEST(GetWritableStorageStatus)
-{
-  TEST_EQUAL(Platform::STORAGE_OK, GetPlatform().GetWritableStorageStatus(100000), ());
-  TEST_EQUAL(Platform::NOT_ENOUGH_SPACE, GetPlatform().GetWritableStorageStatus(uint64_t(-1)), ());
-}
-
 UNIT_TEST(RmDirRecursively)
 {
   std::string const testDir1 = base::JoinPath(GetPlatform().WritableDir(), "test_dir1");
