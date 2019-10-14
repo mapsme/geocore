@@ -45,16 +45,14 @@ char const * GetDataPathHelp()
 {
   static string const kHelp =
       "Directory where the generated mwms are put into. Also used as the path for helper "
-      "functions, such as those that calculate statistics and regenerate sections. "
-      "Default: " +
-      Platform::GetCurrentWorkingDirectory() + "/../../data'.";
+      "functions, such as those that calculate statistics and regenerate sections. ";
+
   return kHelp.c_str();
 }
 }  // namespace
 
 struct CliCommandOptions
 {
-  std::string m_intermediate_data_path;
   std::string m_osm_file_type;
   std::string m_osm_file_name;
   std::string m_node_storage;
@@ -104,9 +102,6 @@ CliCommandOptions DefineOptions(int argc, char * argv[])
      ("user_resource_path",
          po::value(&o.m_user_resource_path)->default_value(""),
          "User defined resource path for classificator.txt and etc.")
-     ("intermediate_data_path",
-         po::value(&o.m_intermediate_data_path)->default_value(""),
-         "Path to stored nodes, ways, relations.")
      ("output",
          po::value(&o.m_output)->default_value(""),
          "File name for process (without 'mwm' ext).")
@@ -231,15 +226,13 @@ int GeneratorToolMain(int argc, char ** argv)
 
   feature::GenerateInfo genInfo;
   genInfo.m_verbose = options.m_verbose;
-  genInfo.m_intermediateDir = options.m_intermediate_data_path.empty()
-                                  ? path
-                                  : base::AddSlashIfNeeded(options.m_intermediate_data_path);
+  genInfo.m_dataPath = path;
   genInfo.m_targetDir = genInfo.m_tmpDir = path;
 
   /// @todo Probably, it's better to add separate option for .mwm.tmp files.
-  if (!options.m_intermediate_data_path.empty())
+  if (!options.m_data_path.empty())
   {
-    string const tmpPath = base::JoinPath(genInfo.m_intermediateDir, "tmp");
+    string const tmpPath = base::JoinPath(genInfo.m_dataPath, "tmp");
     if (Platform::MkDir(tmpPath) != Platform::ERR_UNKNOWN)
       genInfo.m_tmpDir = tmpPath;
   }
@@ -259,7 +252,7 @@ int GeneratorToolMain(int argc, char ** argv)
   // Generate intermediate files.
   if (options.m_preprocess)
   {
-    DataVersion{options.m_osm_file_name}.DumpToPath(genInfo.m_intermediateDir);
+    DataVersion{options.m_osm_file_name}.DumpToPath(genInfo.m_dataPath);
 
     LOG(LINFO, ("Generating intermediate data ...."));
     if (!GenerateIntermediateData(genInfo))

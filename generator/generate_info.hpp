@@ -32,8 +32,8 @@ struct GenerateInfo
   // Directory for result .mwm files.
   std::string m_targetDir;
 
-  // Directory for all intermediate files.
-  std::string m_intermediateDir;
+  // Directory for all files.
+  std::string m_dataPath;
 
   // Current generated file name if --output option is defined.
   std::string m_fileName;
@@ -42,29 +42,9 @@ struct GenerateInfo
   OsmSourceType m_osmFileType;
   std::string m_osmFileName;
 
-  std::string m_bookingDataFilename;
-  std::string m_opentableDataFilename;
-  std::string m_promoCatalogCitiesFilename;
-
-  std::string m_brandsFilename;
-  std::string m_brandsTranslationsFilename;
-
-  std::string m_popularPlacesFilename;
-
-  std::string m_idToWikidataFilename;
-
-  std::string m_citiesBoundariesFilename;
-
-  uint32_t m_versionDate = 0;
-
   std::vector<std::string> m_bucketNames;
 
-  bool m_createWorld = false;
-  bool m_haveBordersForWholeWorld = false;
-  bool m_makeCoasts = false;
-  bool m_emitCoasts = false;
   bool m_genAddresses = false;
-  bool m_failOnCoasts = false;
   bool m_preloadCache = false;
   bool m_verbose = false;
 
@@ -107,7 +87,7 @@ struct GenerateInfo
   std::string GetIntermediateFileName(std::string const & fileName,
                                       std::string const & ext = "") const
   {
-    return base::JoinPath(m_intermediateDir, fileName + ext);
+    return base::JoinPath(m_dataPath, fileName + ext);
   }
 
   std::string GetAddressesFileName() const
