@@ -3,15 +3,7 @@
 #include "base/logging.hpp"
 #include "base/macros.hpp"
 
-#include "platform/target_os.hpp"
-
-#if defined(GEOCORE_OS_MAC)
-  #include <CoreFoundation/CFLocale.h>
-  #include <CoreFoundation/CFString.h>
-#elif defined(GEOCORE_OS_LINUX)
-  #include <cstdlib>
-#endif
-
+#include <cstdlib>
 #include <vector>
 #include <string>
 
@@ -22,7 +14,6 @@ namespace languages
 
 void GetSystemPreferred(vector<string> & languages)
 {
-#if defined(GEOCORE_OS_MAC) || defined(GEOCORE_OS_LINUX)
   // check environment variables
   char const * p = getenv("LANGUAGE");
   if (p && strlen(p))  // LANGUAGE can contain several values divided by ':'
@@ -38,22 +29,6 @@ void GetSystemPreferred(vector<string> & languages)
     languages.push_back(p);
   else if ((p = getenv("LANG")))
     languages.push_back(p);
-#if defined(GEOCORE_OS_MAC)
-  else
-  {
-    // Mac and iOS implementation
-    CFArrayRef langs = CFLocaleCopyPreferredLanguages();
-    char buf[30];
-    for (CFIndex i = 0; i < CFArrayGetCount(langs); ++i)
-    {
-      CFStringRef strRef = (CFStringRef)CFArrayGetValueAtIndex(langs, i);
-      CFStringGetCString(strRef, buf, 30, kCFStringEncodingUTF8);
-      languages.push_back(buf);
-    }
-    CFRelease(langs);
-  }
-#endif // defined(GEOCORE_OS_MAC)
-#endif // defined(GEOCORE_OS_MAC) || defined(GEOCORE_OS_LINUX)
 }
 
 string GetPreferred()
