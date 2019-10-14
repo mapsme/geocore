@@ -27,7 +27,7 @@ class LocalCountryFile;
 
 class Platform;
 
-extern Platform & GetPlatform();
+Platform & GetPlatform();
 
 class Platform
 {

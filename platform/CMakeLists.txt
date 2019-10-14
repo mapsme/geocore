@@ -19,10 +19,6 @@ set(
   mwm_version.hpp
   platform.cpp
   platform.hpp
-  platform_std.cpp
-  platform_linux.cpp
-  platform_unix_impl.cpp
-  platform_unix_impl.hpp
   preferred_languages.cpp
   preferred_languages.hpp
   settings.cpp
