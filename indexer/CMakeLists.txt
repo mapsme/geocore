@@ -2,8 +2,6 @@ project(indexer)
 
 set(
   SRC
-  altitude_loader.cpp
-  altitude_loader.hpp
   borders.cpp
   borders.hpp
   brands_holder.cpp
