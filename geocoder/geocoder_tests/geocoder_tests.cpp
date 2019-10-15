@@ -22,7 +22,7 @@ namespace
 {
 using Id = base::GeoObjectId;
 
-double const kCertaintyEps = 1e-6;
+double const kCertaintyEps = 1e-4;
 string const kRegionsData = R"#(
 C00000000004B279 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-80.1142033187951, 21.55511095]}, "properties": {"locales": {"default": {"name": "Cuba", "address": {"country": "Cuba"}}}, "rank": 2}}
 C0000000001C4CA7 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-78.7260117405499, 21.74300205]}, "properties": {"locales": {"default": {"name": "Ciego de Ávila", "address": {"region": "Ciego de Ávila", "country": "Cuba"}}}, "rank": 4}}
@@ -317,6 +317,23 @@ UNIT_TEST(Geocoder_LocalityBuilding)
 
   base::GeoObjectId const building2(0x22);
   TestGeocoder(geocoder, "Zelenograd 2", {{building2, 1.0}});
+}
+
+//--------------------------------------------------------------------------------------------------
+UNIT_TEST(Geocoder_LocalityAndStreetBuildingsRank)
+{
+  string const kData = R"#(
+10 {"properties": {"locales": {"default": {"address": {"locality": "Zelenograd"}}}}}
+22 {"properties": {"locales": {"default": {"address": {"building": "2", "locality": "Zelenograd"}}}}}
+31 {"properties": {"locales": {"default": {"address": {"street": "Krymskaya", "locality": "Zelenograd"}}}}}
+32 {"properties": {"locales": {"default": {"address": {"building": "2", "street": "Krymskaya", "locality": "Zelenograd"}}}}}
+)#";
+
+  Geocoder geocoder;
+  ScopedFile const regionsJsonFile("regions.jsonl", kData);
+  geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath());
+
+  TestGeocoder(geocoder, "Zelenograd, Krymskaya 2", {{Id{0x32}, 1.0}, {Id{0x22}, 0.7560}});
 }
 
 // Geocoder_Subregion* -----------------------------------------------------------------------------
