@@ -29,6 +29,7 @@
 #include <boost/iostreams/filter/gzip.hpp>
 #include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/optional.hpp>
+#include <boost/range/adaptor/reversed.hpp>
 
 using namespace std;
 
@@ -436,9 +437,10 @@ void Geocoder::FillBuildingsLayer(Context & ctx, Tokens const & subquery, vector
   if (!search::house_numbers::LooksLikeHouseNumber(subqueryHN, false /* isPrefix */))
     return;
 
-  for_each(ctx.GetLayers().rbegin(), ctx.GetLayers().rend(), [&, this] (auto const & layer) {
+  for (auto const & layer : boost::adaptors::reverse(ctx.GetLayers()))
+  {
     if (layer.m_type != Type::Street && layer.m_type != Type::Locality)
-      return;
+      continue;
 
     // We've already filled a street/location layer and now see something that resembles
     // a house number. While it still can be something else (a zip code, for example)
@@ -460,7 +462,9 @@ void Geocoder::FillBuildingsLayer(Context & ctx, Tokens const & subquery, vector
         }
       });
     }
-  });
+
+    break;
+  }
 }
 
 void Geocoder::FillRegularLayer(Context const & ctx, Type type, Tokens const & subquery,
