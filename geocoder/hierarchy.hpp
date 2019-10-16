@@ -6,6 +6,8 @@
 #include "base/assert.hpp"
 #include "base/geo_object_id.hpp"
 
+#include "coding/json.hpp"
+
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -17,8 +19,6 @@
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/version.hpp>
-
-#include "3party/jansson/myjansson.hpp"
 
 namespace geocoder
 {
@@ -79,16 +79,14 @@ public:
     bool DeserializeFromJSON(std::string const & jsonStr,
                              NameDictionaryBuilder & normalizedNameDictionaryBuilder,
                              ParsingStats & stats);
-    bool DeserializeFromJSONImpl(json_t * const root, std::string const & jsonStr,
+    bool DeserializeFromJSONImpl(coding::JsonDocument const & root, std::string const & jsonStr,
                                  NameDictionaryBuilder & normalizedNameDictionaryBuilder,
                                  ParsingStats & stats);
-    bool DeserializeAddressFromJSON(json_t * const root,
+    bool DeserializeAddressFromJSON(coding::JsonDocument const & root,
                                     NameDictionaryBuilder & normalizedNameDictionaryBuilder,
                                     ParsingStats & stats);
-    static bool FetchAddressFieldNames(json_t * const locales, Type type,
-                                       MultipleNames & multipleNames,
-                                       NameDictionaryBuilder & normalizedNameDictionaryBuilder,
-                                       ParsingStats & stats);
+    static bool FetchAddressFieldNames(coding::JsonValue const & locales, Type type,
+                                       MultipleNames & multipleNames);
     bool HasFieldInAddress(Type type) const;
     // See generator::regions::LevelRegion::GetRank().
     static Type RankToType(uint8_t rank);

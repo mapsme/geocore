@@ -43,6 +43,7 @@ set(
   internal/file_data.cpp
   internal/file_data.hpp
   internal/xmlparser.hpp
+  json.hpp
   map_uint32_to_val.hpp
   memory_region.hpp
   mmap_reader.cpp
@@ -86,7 +87,6 @@ geocore_link_libraries(${PROJECT_NAME}
    icu
    geometry
    succinct
-   jansson
    expat
 )
 
