@@ -96,7 +96,7 @@ UNIT_TEST(Geocoder_EnglishNames)
   ScopedFile const regionsJsonFile("regions.jsonl", kData);
   geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath());
 
-  TestGeocoder(geocoder, "Moscow, New Arbat", {{Id{0x11}, 1.0}, {Id{0x10}, 0.6}});
+  TestGeocoder(geocoder, "Moscow, New Arbat", {{Id{0x11}, 1.0}, {Id{0x10}, 0.5555}});
 }
 
 UNIT_TEST(Geocoder_OnlyBuildings)
@@ -126,8 +126,8 @@ UNIT_TEST(Geocoder_OnlyBuildings)
   base::GeoObjectId const building10(0x32);
 
   TestGeocoder(geocoder, "some locality", {{localityId, 1.0}});
-  TestGeocoder(geocoder, "some locality good", {{goodStreetId, 1.0}, {localityId, 0.857143}});
-  TestGeocoder(geocoder, "some locality bad", {{badStreetId, 1.0}, {localityId, 0.857143}});
+  TestGeocoder(geocoder, "some locality good", {{goodStreetId, 1.0}, {localityId, 0.833333}});
+  TestGeocoder(geocoder, "some locality bad", {{badStreetId, 1.0}, {localityId, 0.833333}});
 
   TestGeocoder(geocoder, "some locality good 5", {{building5, 1.0}});
   TestGeocoder(geocoder, "some locality bad 10", {{building10, 1.0}});
@@ -142,7 +142,7 @@ UNIT_TEST(Geocoder_OnlyBuildings)
   base::GeoObjectId const numberedStreet(0x41);
   base::GeoObjectId const houseOnANonNumberedStreet(0x42);
   TestGeocoder(geocoder, "some locality maybenumbered 3",
-               {{numberedStreet, 1.0}, {houseOnANonNumberedStreet, 0.8875}});
+               {{numberedStreet, 1.0}, {houseOnANonNumberedStreet, 0.864286}});
 }
 
 UNIT_TEST(Geocoder_MismatchedLocality)
@@ -187,10 +187,10 @@ UNIT_TEST(Geocoder_MoscowLocalityRank)
   ScopedFile const regionsJsonFile("regions.jsonl", kData);
   geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath());
 
-  TestGeocoder(geocoder, "Москва", {{Id{0x10}, 1.0}, {Id{0x11}, 0.61}, {Id{0x21}, 0.6}});
-  TestGeocoder(geocoder, "Москва, Ленинский проспект", {{Id{0x12}, 1.0}, {Id{0x22}, 0.70922},
-                                                        {Id{0x10}, 0.70922}, {Id{0x11}, 0.432624},
-                                                        {Id{0x21}, 0.425532}});
+  TestGeocoder(geocoder, "Москва", {{Id{0x11}, 1.0}, {Id{0x21}, 0.990099}, {Id{0x10}, 0.792079}});
+  TestGeocoder(geocoder, "Москва, Ленинский проспект", {{Id{0x12}, 1.0}, {Id{0x22}, 0.994475},
+                                                        {Id{0x11}, 0.558011}, {Id{0x21}, 0.552486},
+                                                        {Id{0x10}, 0.441989}});
 }
 
 // Geocoder_StreetWithNumber* ----------------------------------------------------------------------
@@ -333,7 +333,7 @@ UNIT_TEST(Geocoder_LocalityAndStreetBuildingsRank)
   ScopedFile const regionsJsonFile("regions.jsonl", kData);
   geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath());
 
-  TestGeocoder(geocoder, "Zelenograd, Krymskaya 2", {{Id{0x32}, 1.0}, {Id{0x22}, 0.7560}});
+  TestGeocoder(geocoder, "Zelenograd, Krymskaya 2", {{Id{0x32}, 1.0}, {Id{0x22}, 0.71831}});
 }
 
 // Geocoder_Subregion* -----------------------------------------------------------------------------
@@ -351,8 +351,8 @@ UNIT_TEST(Geocoder_SubregionInLocality)
 
   TestGeocoder(geocoder, "Северный административный округ", {{Id{0x12}, 1.0}});
   TestGeocoder(geocoder, "Москва, Северный административный округ",
-               {{Id{0x12}, 1.0}, {Id{0x10}, 0.293255}, {Id{0x11}, 0.178886}});
-  TestGeocoder(geocoder, "Москва", {{Id{0x10}, 1.0}, {Id{0x11}, 0.61}});
+               {{Id{0x12}, 1.0}, {Id{0x11}, 0.314642}, {Id{0x10}, 0.249221}});
+  TestGeocoder(geocoder, "Москва", {{Id{0x11}, 1.0}, {Id{0x10}, 0.792079}});
 }
 
 // Geocoder_NumericalSuburb* ----------------------------------------------------------------------

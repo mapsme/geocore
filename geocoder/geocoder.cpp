@@ -45,7 +45,7 @@ size_t const kMaxResults = 100;
 // possible with respect to the IsParentTo relation on entries.
 // In other words, non-scaled post-probabilities are
 //   log(Prob(Country|token)) ~ 10
-//   log(Prob(Region|token)) ~ 5
+//   log(Prob(Region|token)) ~ 4
 //   etc.
 // The greater their sum, the more likely it is that we guessed the
 // token types right.
@@ -62,12 +62,12 @@ double GetWeight(Type t)
   switch (t)
   {
   case Type::Country: return 10.0;
-  case Type::Region: return 5.0;
+  case Type::Region: return 4.0;
   case Type::Subregion: return 4.0;
-  case Type::Locality: return 3.0;
-  case Type::Suburb: return 3.0;
-  case Type::Sublocality: return 2.0;
-  case Type::Street: return 1.0;
+  case Type::Locality: return 5.0;
+  case Type::Suburb: return 1.0;
+  case Type::Sublocality: return 1.0;
+  case Type::Street: return 2.0;
   case Type::Building: return 0.1;
   case Type::Count: return 0.0;
   }
