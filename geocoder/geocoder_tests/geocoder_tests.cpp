@@ -320,6 +320,24 @@ UNIT_TEST(Geocoder_LocalityBuilding)
 }
 
 //--------------------------------------------------------------------------------------------------
+UNIT_TEST(Geocoder_LocalityBuildingRankWithSuburb)
+{
+  string const kData = R"#(
+10 {"properties": {"locales": {"default": {"address": {"locality": "Москва"}}}}}
+11 {"properties": {"locales": {"default": {"address": {"suburb": "Арбат", "locality": "Москва"}}}}}
+12 {"properties": {"locales": {"default": {"address": {"building": "1", "suburb": "Арбат", "locality": "Москва"}}}}}
+13 {"properties": {"locales": {"default": {"address": {"suburb": "район Северный", "locality": "Москва"}}}}}
+14 {"properties": {"locales": {"default": {"address": {"building": "1", "suburb": "район Северный", "locality": "Москва"}}}}}
+)#";
+
+  Geocoder geocoder;
+  ScopedFile const regionsJsonFile("regions.jsonl", kData);
+  geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath());
+
+  TestGeocoder(geocoder, "Москва, Арбат 1", {{Id{0x12}, 1.0}, {Id{0x14}, 0.836066}});
+}
+
+//--------------------------------------------------------------------------------------------------
 UNIT_TEST(Geocoder_LocalityAndStreetBuildingsRank)
 {
   string const kData = R"#(
