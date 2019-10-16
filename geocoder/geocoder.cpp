@@ -447,17 +447,23 @@ void Geocoder::FillBuildingsLayer(Context & ctx, Tokens const & subquery, vector
     // let's stay on the safer side and mark the tokens as potential house number.
     ctx.MarkHouseNumberPositionsInQuery(subqueryTokenIds);
 
+    auto const & lastLayer = ctx.GetLayers().back();
+    auto const forSublocalityLayer =
+        lastLayer.m_type == Type::Suburb || lastLayer.m_type == Type::Sublocality;
     for (auto const & docId : layer.m_entries)
     {
       m_index.ForEachRelatedBuilding(docId, [&](Index::DocId const & buildingDocId) {
-        auto const & bld = m_index.GetDoc(buildingDocId);
-        auto const & multipleHN = bld.GetNormalizedMultipleNames(
+        auto const & building = m_index.GetDoc(buildingDocId);
+        auto const & multipleHN = building.GetNormalizedMultipleNames(
             Type::Building, m_hierarchy.GetNormalizedNameDictionary());
         auto const & realHN = multipleHN.GetMainName();
         auto const & realHNUniStr = strings::MakeUniString(realHN);
         if (search::house_numbers::HouseNumbersMatch(realHNUniStr, subqueryHN,
                                                      false /* queryIsPrefix */))
         {
+          if (forSublocalityLayer && !HasParent(ctx.GetLayers(), building))
+            return;
+
           curLayer.m_entries.emplace_back(buildingDocId);
         }
       });
