@@ -3,18 +3,14 @@ project(generator_tests)
 set(
   SRC
   coasts_test.cpp
-  collector_city_area_tests.cpp
   common.cpp
   common.hpp
   feature_builder_test.cpp
   feature_merger_test.cpp
-  filter_elements_tests.cpp
   geo_objects_tests.cpp
   intermediate_data_test.cpp
   merge_collectors_tests.cpp
   metadata_parser_test.cpp
-  metalines_tests.cpp
-  node_mixer_test.cpp
   osm2meta_test.cpp
   osm_o5m_source_test.cpp
   osm_type_test.cpp

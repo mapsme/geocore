@@ -5,13 +5,7 @@ set(
   affiliation.cpp
   affiliation.hpp
   boost_helpers.hpp
-  check_model.cpp
-  check_model.hpp
   collection_base.hpp
-  collector_addresses.cpp
-  collector_addresses.hpp
-  collector_city_area.cpp
-  collector_city_area.hpp
   collector_collection.cpp
   collector_collection.hpp
   collector_interface.hpp
@@ -40,11 +34,7 @@ set(
   features_processing_helpers.hpp
   filter_collection.cpp
   filter_collection.hpp
-  filter_elements.cpp
-  filter_elements.hpp
   filter_interface.hpp
-  filter_planet.cpp
-  filter_planet.hpp
   filter_world.cpp
   filter_world.hpp
   final_processor_intermediate_mwm.cpp
@@ -69,10 +59,6 @@ set(
   key_value_storage.hpp
   locality_sorter.cpp
   locality_sorter.hpp
-  metalines_builder.cpp
-  metalines_builder.hpp
-  node_mixer.cpp
-  node_mixer.hpp
   osm2meta.cpp
   osm2meta.hpp
   osm2type.cpp
@@ -84,21 +70,16 @@ set(
   osm_o5m_source.hpp
   osm_source.cpp
   osm_xml_source.hpp
-  place.cpp
-  place.hpp
   place_node.hpp
   processor_factory.hpp
   processor_interface.hpp
   processor_noop.hpp
   processor_simple.cpp
   processor_simple.hpp
-  promo_catalog_cities.hpp
   raw_generator.cpp
   raw_generator.hpp
   raw_generator_writer.cpp
   raw_generator_writer.hpp
-  region_meta.cpp
-  region_meta.hpp
   regions/admin_suburbs_marker.cpp
   regions/admin_suburbs_marker.hpp
   regions/collector_region_info.cpp
@@ -131,8 +112,6 @@ set(
   relation_tags.hpp
   relation_tags_enricher.cpp
   relation_tags_enricher.hpp
-  routing_helpers.cpp
-  routing_helpers.hpp
   statistics.cpp
   statistics.hpp
   streets/street_geometry.cpp
