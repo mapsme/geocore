@@ -22,10 +22,12 @@ bool Hierarchy::Entry::DeserializeFromJSON(string const & jsonStr,
 {
   try
   {
-    base::Json root(jsonStr.c_str());
-    return DeserializeFromJSONImpl(root.get(), jsonStr, normalizedNameDictionaryBuilder, stats);
+    coding::JsonDocument document;
+    document.Parse(jsonStr);
+
+    return DeserializeFromJSONImpl(document, jsonStr, normalizedNameDictionaryBuilder, stats);
   }
-  catch (base::Json::Exception const & e)
+  catch (coding::JsonException const & e)
   {
     LOG(LDEBUG, ("Can't parse entry:", e.Msg(), jsonStr));
   }
@@ -34,21 +36,22 @@ bool Hierarchy::Entry::DeserializeFromJSON(string const & jsonStr,
 
 // todo(@m) Factor out to geojson.hpp? Add geojson to myjansson?
 bool Hierarchy::Entry::DeserializeFromJSONImpl(
-    json_t * const root, string const & jsonStr,
+    coding::JsonDocument const & root, string const & jsonStr,
     NameDictionaryBuilder & normalizedNameDictionaryBuilder, ParsingStats & stats)
 {
-  if (!json_is_object(root))
+  if (!root.IsObject())
   {
     ++stats.m_badJsons;
-    MYTHROW(base::Json::Exception, ("Not a json object."));
+    MYTHROW(coding::JsonException, ("Not a json object."));
   }
 
   if (!DeserializeAddressFromJSON(root, normalizedNameDictionaryBuilder, stats))
     return false;
 
-  auto const defaultLocale = base::GetJSONObligatoryFieldByPath(root, "properties", "locales",
-                                                                "default");
-  FromJSONObjectOptionalField(defaultLocale, "name", m_name);
+  coding::JsonValue const & defaultLocale =
+      coding::GetJsonObligatoryFieldByPath(root, "properties", "locales", "default");
+  coding::FromJsonObjectOptionalField(defaultLocale, "name", m_name);
+
   if (m_name.empty())
     ++stats.m_emptyNames;
 
@@ -61,18 +64,18 @@ bool Hierarchy::Entry::DeserializeFromJSONImpl(
 }
 
 bool Hierarchy::Entry::DeserializeAddressFromJSON(
-    json_t * const root, NameDictionaryBuilder & normalizedNameDictionaryBuilder,
+    coding::JsonDocument const & root, NameDictionaryBuilder & normalizedNameDictionaryBuilder,
     ParsingStats & stats)
 {
-  auto const properties = base::GetJSONObligatoryField(root, "properties");
-  auto const locales = base::GetJSONObligatoryField(properties, "locales");
-  m_normalizedAddress= {};
+  coding::JsonValue const & properties = coding::GetJsonObligatoryField(root, "properties");
+  coding::JsonValue const & locales = coding::GetJsonObligatoryField(properties, "locales");
+
+  m_normalizedAddress = {};
   for (size_t i = 0; i < static_cast<size_t>(Type::Count); ++i)
   {
     Type const type = static_cast<Type>(i);
     MultipleNames multipleNames;
-    if (!FetchAddressFieldNames(locales, type, multipleNames, normalizedNameDictionaryBuilder,
-                                stats))
+    if (!FetchAddressFieldNames(locales, type, multipleNames))
     {
       return false;
     }
@@ -84,9 +87,9 @@ bool Hierarchy::Entry::DeserializeAddressFromJSON(
     }
   }
 
-  if (auto const rank = FromJSONObjectOptional<uint8_t>(properties, "rank"))
+  if (coding::JsonValue const * rank = coding::GetJsonOptionalField(properties, "rank"))
   {
-    auto const type = RankToType(*rank);
+    auto const type = RankToType(rank->GetInt());
     if (type != Type::Count &&
         m_normalizedAddress[static_cast<size_t>(type)] != NameDictionary::kUnspecifiedPosition)
     {
@@ -113,26 +116,26 @@ bool Hierarchy::Entry::DeserializeAddressFromJSON(
 }
 
 // static
-bool Hierarchy::Entry::FetchAddressFieldNames(
-    json_t * const locales, Type type, MultipleNames & multipleNames,
-    NameDictionaryBuilder & /*normalizedNameDictionaryBuilder*/, ParsingStats & /*stats*/)
+bool Hierarchy::Entry::FetchAddressFieldNames(coding::JsonValue const & locales, Type type,
+                                              MultipleNames & multipleNames)
 {
-  char const * localeName = nullptr;
-  json_t * localisedNames = nullptr;
   string const & levelKey = ToString(type);
   Tokens tokens;
-  json_object_foreach(locales, localeName, localisedNames)
+
+  for (coding::JsonValue::ConstMemberIterator itr = locales.MemberBegin();
+       itr != locales.MemberEnd(); ++itr)
   {
-    auto const address = base::GetJSONObligatoryField(localisedNames, "address");
-    auto const levelJson = base::GetJSONOptionalField(address, levelKey);
+    coding::JsonValue const & address = coding::GetJsonObligatoryField(itr->value, "address");
+    coding::JsonValue const * levelJson = coding::GetJsonOptionalField(address, levelKey);
+
     if (!levelJson)
       continue;
 
-    if (base::JSONIsNull(levelJson))
+    if (levelJson->IsNull())
       return false;
 
-    string levelValue;
-    FromJSON(levelJson, levelValue);
+    std::string levelValue;
+    coding::FromJson(*levelJson, levelValue);
     if (levelValue.empty())
       continue;
 
@@ -142,7 +145,7 @@ bool Hierarchy::Entry::FetchAddressFieldNames(
 
     auto normalizedValue = strings::JoinStrings(tokens, " ");
     static std::string defaultLocale = "default";
-    if (localeName == defaultLocale)
+    if (itr->name == defaultLocale)
       multipleNames.SetMainName(normalizedValue);
     else
       multipleNames.AddAltName(normalizedValue);
@@ -168,14 +171,10 @@ Type Hierarchy::Entry::RankToType(uint8_t rank)
 {
   switch (rank)
   {
-  case 1:
-    return Type::Country;
-  case 2:
-    return Type::Region;
-  case 3:
-    return Type::Subregion;
-  case 4:
-    return Type::Locality;
+  case 1: return Type::Country;
+  case 2: return Type::Region;
+  case 3: return Type::Subregion;
+  case 4: return Type::Locality;
   }
 
   return Type::Count;
@@ -195,10 +194,7 @@ Hierarchy::Hierarchy(vector<Entry> && entries, NameDictionary && normalizedNameD
   }
 }
 
-vector<Hierarchy::Entry> const & Hierarchy::GetEntries() const
-{
-  return m_entries;
-}
+vector<Hierarchy::Entry> const & Hierarchy::GetEntries() const { return m_entries; }
 
 NameDictionary const & Hierarchy::GetNormalizedNameDictionary() const
 {

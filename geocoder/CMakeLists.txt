@@ -25,7 +25,6 @@ geocore_link_libraries(
   ${PROJECT_NAME}
   base
   indexer
-  jansson
   ${Boost_SERIALIZATION_LIBRARY}
   ${Boost_IOSTREAMS_LIBRARY})
 

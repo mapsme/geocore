@@ -16,5 +16,4 @@ geocore_link_libraries(
   platform
   coding
   base
-  jansson
 )
