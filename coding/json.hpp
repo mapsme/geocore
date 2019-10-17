@@ -14,6 +14,7 @@
 #include <iomanip>
 #include <sstream>
 
+
 namespace coding
 {
 DECLARE_EXCEPTION(JsonException, RootException);
@@ -21,14 +22,6 @@ DECLARE_EXCEPTION(JsonException, RootException);
 using JsonValue = rapidjson::Value;
 using JsonDocument = rapidjson::Document;
 using JsonParseResult = rapidjson::ParseResult;
-
-template <typename T>
-inline T FromJson(JsonDocument const & root)
-{
-  T result{};
-  FromJson(root, result);
-  return result;
-}
 
 inline void FromJson(JsonValue const & root, double & result)
 {
@@ -51,9 +44,7 @@ inline void FromJson(JsonValue const & root, std::string & result)
   result = root.GetString();
 }
 
-static const coding::JsonValue nullValue;
-
-inline coding::JsonValue const & GetJsonOptionalField(coding::JsonValue const & root,
+inline coding::JsonValue const * GetJsonOptionalField(coding::JsonValue const & root,
                                                       std::string const & field)
 {
   if (!root.IsObject())
@@ -62,32 +53,32 @@ inline coding::JsonValue const & GetJsonOptionalField(coding::JsonValue const & 
   coding::JsonValue::ConstMemberIterator it = root.FindMember(field);
 
   if (it == root.MemberEnd())
-    return nullValue;
+    return nullptr;
 
-  return it->value;
+  return &it->value;
 }
 
 inline coding::JsonValue const & GetJsonObligatoryField(coding::JsonValue const & root,
                                                         std::string const & field)
 {
-  coding::JsonValue const & value = GetJsonOptionalField(root, field);
-  if (value.IsNull())
+  coding::JsonValue const * value = GetJsonOptionalField(root, field);
+  if (!value)
     MYTHROW(coding::JsonException, ("Obligatory field", field, "is absent."));
 
-  return value;
+  return *value;
 }
 
 template <typename T>
 void FromJsonObjectOptionalField(JsonValue const & root, std::string const & field, T & result)
 {
-  coding::JsonValue const & value = GetJsonOptionalField(root, field);
+  coding::JsonValue const * value = GetJsonOptionalField(root, field);
 
-  if (value.IsNull())
+  if (!value)
   {
     result = T{};
     return;
   }
-  FromJson(value, result);
+  FromJson(*value, result);
 }
 
 template <class First>

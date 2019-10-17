@@ -86,11 +86,10 @@ bool Hierarchy::Entry::DeserializeAddressFromJSON(
       m_type = static_cast<Type>(i);
     }
   }
-  coding::JsonValue const & rank = coding::GetJsonOptionalField(properties, "rank");
 
-  if (!rank.IsNull())
+  if (coding::JsonValue const * rank = coding::GetJsonOptionalField(properties, "rank"))
   {
-    auto const type = RankToType(rank.GetInt());
+    auto const type = RankToType(rank->GetInt());
     if (type != Type::Count &&
         m_normalizedAddress[static_cast<size_t>(type)] != NameDictionary::kUnspecifiedPosition)
     {
@@ -127,13 +126,16 @@ bool Hierarchy::Entry::FetchAddressFieldNames(coding::JsonValue const & locales,
        itr != locales.MemberEnd(); ++itr)
   {
     coding::JsonValue const & address = coding::GetJsonObligatoryField(itr->value, "address");
-    coding::JsonValue const & levelJson = coding::GetJsonOptionalField(address, levelKey);
+    coding::JsonValue const * levelJson = coding::GetJsonOptionalField(address, levelKey);
 
-    if (levelJson.IsNull())
+    if (!levelJson)
       continue;
 
+    if (levelJson->IsNull())
+      return false;
+
     std::string levelValue;
-    coding::FromJson(levelJson, levelValue);
+    coding::FromJson(*levelJson, levelValue);
     if (levelValue.empty())
       continue;
 
