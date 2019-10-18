@@ -8,7 +8,6 @@
 #include <unordered_map>
 #include <utility>
 
-#include <boost/optional.hpp>
 #include <boost/variant.hpp>
 
 #include "3party/jansson/myjansson.hpp"

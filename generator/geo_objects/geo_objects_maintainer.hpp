@@ -90,6 +90,7 @@ public:
 
   void StoreAndEnrich(feature::FeatureBuilder & fb);
   void WriteToStorage(base::GeoObjectId id, JsonValue && value);
+  void Flush() { m_geoObjectsKvStorage.flush(); }
 
   size_t Size() const { return m_geoId2GeoData.size(); }
 

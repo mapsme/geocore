@@ -271,6 +271,55 @@ UNIT_CLASS_TEST(TestWithClassificator, FeatureBuilder_SerializeLocalityObjectFor
   });
 }
 
+UNIT_CLASS_TEST(TestWithClassificator, FeatureBuilder_SerializeLocalityObjectForLine)
+{
+  FeatureBuilder fb;
+  FeatureParams params;
+
+  char const * arr1[][2] = {
+    { "highway", "residential"},
+  };
+  AddTypes(params, arr1);
+  params.FinishAddingTypes();
+  params.AddName("default", "Arbat Street");
+
+  fb.AddOsmId(base::MakeOsmNode(1));
+  fb.SetParams(params);
+  fb.SetLinear();
+  fb.AddPoint(m2::PointD(10.1, 15.8));
+  fb.AddPoint(m2::PointD(10.2, 15.9));
+  fb.AddPoint(m2::PointD(10.4, 15.9));
+
+  TEST(fb.RemoveInvalidTypes(), ());
+  Check(fb);
+
+  feature::DataHeader header;
+  header.SetGeometryCodingParams(serial::GeometryCodingParams());
+  header.SetScales({scales::GetUpperScale()});
+  feature::GeometryHolder holder(fb, header,
+                                 std::numeric_limits<uint32_t>::max() /* maxTrianglesNumber */);
+  holder.AddPoints(holder.GetSourcePoints(), 0 /* scaleIndex */);
+
+  auto & buffer = holder.GetBuffer();
+  auto preserialize = fb.PreSerializeAndRemoveUselessNamesForMwm(buffer);
+  CHECK(preserialize, ());
+  fb.SerializeLocalityObject(serial::GeometryCodingParams(), buffer);
+
+  using indexer::LocalityObject;
+  LocalityObject object;
+  object.Deserialize(buffer.m_buffer.data());
+
+  TEST_EQUAL(LocalityObject::FromStoredId(object.GetStoredId()), base::MakeOsmNode(1), ());
+  auto localityObjectsPoints = std::vector<m2::PointD>{};
+  object.ForEachPoint([&] (auto && point) {
+    localityObjectsPoints.push_back(point);
+  });
+  TEST_EQUAL(localityObjectsPoints.size(), 3, ());
+  TEST(base::AlmostEqualAbs(localityObjectsPoints[0], {10.1, 15.8}, 1e-6), ());
+  TEST(base::AlmostEqualAbs(localityObjectsPoints[1], {10.2, 15.9}, 1e-6), ());
+  TEST(base::AlmostEqualAbs(localityObjectsPoints[2], {10.4, 15.9}, 1e-6), ());
+}
+
 UNIT_TEST(FeatureBuilder_SerializeAccuratelyForIntermediate)
 {
   FeatureBuilder fb1;

@@ -21,6 +21,7 @@ set(
   source_to_element_test.cpp
   street_geometry_tests.cpp
   street_regions_tracing_tests.cpp
+  streets_builder_tests.cpp
   tag_admixer_test.cpp
   translation_test.cpp
   types_helper.hpp

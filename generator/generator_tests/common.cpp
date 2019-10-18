@@ -1,8 +1,10 @@
 #include "generator/generator_tests/common.hpp"
 
+#include "generator/feature_generator.hpp"
 #include "generator/osm2type.hpp"
 
 #include "indexer/classificator.hpp"
+#include "indexer/classificator_loader.hpp"
 
 #include "platform/platform.hpp"
 
@@ -36,8 +38,14 @@ OsmElement MakeOsmElement(OsmElementData const & elementData)
 {
   OsmElement el;
   el.m_id = elementData.m_id;
-  el.m_type = elementData.m_polygon.size() > 1 ? OsmElement::EntityType::Relation
-                                               : OsmElement::EntityType::Node;
+
+  if (elementData.m_points.size() == 1)
+    el.m_type = OsmElement::EntityType::Node;
+  else if (elementData.m_points.front() == elementData.m_points.back())
+    el.m_type = OsmElement::EntityType::Relation;
+  else
+    el.m_type = OsmElement::EntityType::Way;
+
   for (auto const & tag : elementData.m_tags)
     el.AddTag(tag.m_key, tag.m_value);
   el.m_members = elementData.m_members;
@@ -49,24 +57,42 @@ feature::FeatureBuilder FeatureBuilderFromOmsElementData(OsmElementData const & 
 {
   auto el = MakeOsmElement(elementData);
   feature::FeatureBuilder fb;
-  CHECK(elementData.m_polygon.size() == 1 || elementData.m_polygon.size() == 2, ());
-  if (elementData.m_polygon.size() == 1)
+  CHECK_GREATER_OR_EQUAL(elementData.m_points.size(), 1, ());
+  if (elementData.m_points.size() == 1)
   {
-    fb.SetCenter(elementData.m_polygon[0]);
+    fb.SetCenter(elementData.m_points[0]);
   }
-  else if (elementData.m_polygon.size() == 2)
+  else if (elementData.m_points.front() == elementData.m_points.back())
   {
-    auto const & p1 = elementData.m_polygon[0];
-    auto const & p2 = elementData.m_polygon[1];
-    std::vector<m2::PointD> poly = {
-      {p1.x, p1.y}, {p1.x, p2.y}, {p2.x, p2.y}, {p2.x, p1.y}, {p1.x, p1.y}};
+    auto poly = elementData.m_points;
     fb.AddPolygon(poly);
     fb.SetHoles({});
     fb.SetArea();
   }
+  else
+  {
+    fb.SetLinear();
+    for (auto const & point : elementData.m_points)
+      fb.AddPoint(point);
+  }
 
-  auto osmId = el.m_type == OsmElement::EntityType::Relation ? base::MakeOsmRelation(el.m_id)
-                                                             : base::MakeOsmNode(el.m_id);
+  using base::GeoObjectId;
+  auto osmIdType = GeoObjectId::Type{};
+  switch (el.m_type)
+  {
+  case OsmElement::EntityType::Node:
+    osmIdType = GeoObjectId::Type::ObsoleteOsmNode;
+    break;
+  case OsmElement::EntityType::Way:
+    osmIdType = GeoObjectId::Type::ObsoleteOsmWay;
+    break;
+  case OsmElement::EntityType::Relation:
+    osmIdType = GeoObjectId::Type::ObsoleteOsmRelation;
+    break;
+  default:
+    UNREACHABLE();
+  }
+  auto osmId = GeoObjectId{osmIdType, el.m_id};
   fb.SetOsmId(osmId);
 
   ftype::GetNameAndType(&el, fb.GetParams(),
@@ -74,4 +100,16 @@ feature::FeatureBuilder FeatureBuilderFromOmsElementData(OsmElementData const & 
   return fb;
 }
 
+void WriteFeatures(std::vector<OsmElementData> const & osmElements, ScopedFile const & featuresFile)
+{
+  classificator::Load();
+
+  feature::FeaturesCollector collector(featuresFile.GetFullPath());
+  for (auto const & elementData : osmElements)
+  {
+    auto fb = FeatureBuilderFromOmsElementData(elementData);
+    collector.Collect(fb);
+  }
+  collector.Finish();
+}
 }  // namespace generator_tests

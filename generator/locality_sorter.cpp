@@ -2,6 +2,7 @@
 
 #include "generator/geo_objects/geo_objects_filter.hpp"
 #include "generator/geometry_holder.hpp"
+#include "generator/streets/streets_filter.hpp"
 #include "generator/utils.hpp"
 
 #include "indexer/data_header.hpp"
@@ -106,6 +107,9 @@ public:
     m2::SquaredDistanceFromSegmentToPoint<m2::PointD> distFn;
 
     SimplifyPoints(distFn, scales::GetUpperScale(), holder.GetSourcePoints(), points);
+
+    if (fb.IsLine())
+      holder.AddPoints(points, 0);
 
     // For areas we save outer geometry only.
     if (fb.IsArea() && holder.NeedProcessTriangles())
@@ -229,20 +233,37 @@ bool GenerateLocalityDataImpl(FeaturesCollector & collector,
 
 namespace feature
 {
-bool GenerateGeoObjectsData(string const & featuresFile, string const & nodesFile,
-                            string const & dataFile)
+bool GenerateGeoObjectsData(string const & geoObjectsFeaturesFile,
+                            string const & streetFeaturesFile,
+                            string const & nodesFile, string const & dataFile)
 {
+  auto featuresFile = geoObjectsFeaturesFile;
+  auto const geoObjectsAndStreetsFeaturesFile = GetPlatform().TmpPathForFile();
+  SCOPE_GUARD(geoObjectsAndStreetsFeaturesFileGuard,
+              std::bind(Platform::RemoveFileIfExists, geoObjectsAndStreetsFeaturesFile));
+  if (!streetFeaturesFile.empty())
+  {
+    auto features = std::ofstream{geoObjectsAndStreetsFeaturesFile, std::ios_base::binary};
+    for (auto const & file : {geoObjectsFeaturesFile, streetFeaturesFile})
+    {
+      auto fileStream = std::ifstream{file, std::ios_base::binary};
+      features << fileStream.rdbuf();
+    }
+    featuresFile = geoObjectsAndStreetsFeaturesFile;
+  }
+
   set<uint64_t> nodeIds;
   if (!ParseNodes(nodesFile, nodeIds))
     return false;
 
   auto const needSerialize = [&nodeIds](FeatureBuilder & fb) {
-    if (!fb.IsPoint() && !fb.IsArea())
-      return false;
-
     using generator::geo_objects::GeoObjectsFilter;
+    using generator::streets::StreetsFilter;
 
     if (GeoObjectsFilter::IsBuilding(fb) || GeoObjectsFilter::HasHouse(fb))
+      return true;
+
+    if (StreetsFilter::IsStreet(fb))
       return true;
 
     if (GeoObjectsFilter::IsPoi(fb))

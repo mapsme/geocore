@@ -212,7 +212,8 @@ boost::optional<indexer::GeoObjectsIndex<IndexReader>> MakeTempGeoObjectsIndex(
 {
   auto const dataFile = GetPlatform().TmpPathForFile();
   SCOPE_GUARD(removeDataFile, std::bind(Platform::RemoveFileIfExists, std::cref(dataFile)));
-  if (!GenerateGeoObjectsData(pathToGeoObjectsTmpMwm, "" /* nodesFile */, dataFile))
+  if (!GenerateGeoObjectsData(pathToGeoObjectsTmpMwm, "" /* streetFeaturesFile */,
+                              "" /* nodesFile */, dataFile))
   {
     LOG(LCRITICAL, ("Error generating geo objects data."));
     return {};

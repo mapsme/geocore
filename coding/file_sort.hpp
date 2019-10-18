@@ -67,13 +67,13 @@ public:
       FileReader reader(m_TmpFileName);
       ItemIndexPairGreater fGreater(m_Less);
       PriorityQueue q(fGreater);
-      for (uint32_t i = 0; i < m_ItemCount; i += m_BufferCapacity)
+      for (uint64_t i = 0; i < m_ItemCount; i += m_BufferCapacity)
         Push(q, i, reader);
 
       while (!q.empty())
       {
         m_OutputSink(q.top().first);
-        uint32_t const i = q.top().second + 1;
+        uint64_t const i = q.top().second + 1;
         q.pop();
         if (i % m_BufferCapacity != 0 && i < m_ItemCount)
           Push(q, i, reader);
@@ -105,7 +105,7 @@ private:
   struct ItemIndexPairGreater
   {
     explicit ItemIndexPairGreater(LessT fLess) : m_Less(fLess) {}
-    inline bool operator()(std::pair<T, uint32_t> const & a, std::pair<T, uint32_t> const & b) const
+    inline bool operator()(std::pair<T, uint64_t> const & a, std::pair<T, uint64_t> const & b) const
     {
       return m_Less(b.first, a.first);
     }
@@ -113,7 +113,7 @@ private:
   };
 
   using PriorityQueue =
-      std::priority_queue<std::pair<T, uint32_t>, std::vector<std::pair<T, uint32_t>>,
+      std::priority_queue<std::pair<T, uint64_t>, std::vector<std::pair<T, uint64_t>>,
                           ItemIndexPairGreater>;
 
   void FlushToTmpFile()
@@ -126,11 +126,11 @@ private:
     m_Buffer.clear();
   }
 
-  void Push(PriorityQueue & q, uint32_t i, FileReader const & reader)
+  void Push(PriorityQueue & q, uint64_t i, FileReader const & reader)
   {
     T item;
-    reader.Read(static_cast<uint64_t>(i) * sizeof(T), &item, sizeof(T));
-    q.push(std::pair<T, uint32_t>(item, i));
+    reader.Read(i * sizeof(T), &item, sizeof(T));
+    q.push(std::pair<T, uint64_t>(item, i));
   }
 
   std::string const m_TmpFileName;
@@ -138,6 +138,6 @@ private:
   OutputSinkT & m_OutputSink;
   std::unique_ptr<FileWriter> m_pTmpWriter;
   std::vector<T> m_Buffer;
-  uint32_t m_ItemCount;
+  uint64_t m_ItemCount;
   LessT m_Less;
 };

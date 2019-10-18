@@ -21,8 +21,18 @@ void LocalityObject::Deserialize(char const * data)
     return;
   }
 
-  ASSERT_EQUAL(type, feature::GeomType::Area, ("Only supported types are Point and Area."));
-  uint32_t trgCount;
+  if (type == feature::GeomType::Line)
+  {
+    uint32_t ptsCount{};
+    ReadPrimitiveFromSource(src, ptsCount);
+    CHECK_GREATER(ptsCount, 1, ());
+    char const * start = src.PtrC();
+    src = ArrayByteSource(serial::LoadInnerPath(start, ptsCount, cp, m_points));
+    return;
+  }
+
+  ASSERT_EQUAL(type, feature::GeomType::Area, ());
+  uint32_t trgCount{};
   ReadPrimitiveFromSource(src, trgCount);
   CHECK_GREATER(trgCount, 0, ());
   trgCount += 2;

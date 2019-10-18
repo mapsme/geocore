@@ -64,7 +64,7 @@ public:
 
     buffer_vector<m2::PointD, 32> strip;
     auto const index = FindSingleStrip(
-        m_points.size(), IsDiagonalVisibleFunctor<std::vector<m2::PointD>::const_iterator>(
+        m_points.size(), IsDiagonalVisibleFunctor<buffer_vector<m2::PointD, 32>::const_iterator>(
                              m_points.begin(), m_points.end()));
     MakeSingleStripFromIndex(index, m_points.size(),
                              [&](size_t i) { strip.push_back(m_points[i]); });
@@ -73,7 +73,7 @@ public:
 
 private:
   uint64_t m_id = 0;
-  std::vector<m2::PointD> m_points;
+  buffer_vector<m2::PointD, 32> m_points;
   // m_triangles[3 * i], m_triangles[3 * i + 1], m_triangles[3 * i + 2] form the i-th triangle.
   buffer_vector<m2::PointD, 32> m_triangles;
 };

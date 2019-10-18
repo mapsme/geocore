@@ -647,7 +647,16 @@ void FeatureBuilder::SerializeLocalityObject(serial::GeometryCodingParams const 
     return;
   }
 
-  CHECK_EQUAL(type, GeomType::Area, ("Supported types are Point and Area"));
+  if (type == GeomType::Line)
+  {
+    uint32_t const ptsCount = base::asserted_cast<uint32_t>(data.m_innerPts.size());
+    CHECK_GREATER(ptsCount, 1, ());
+    WriteToSink(sink, ptsCount);
+    serial::SaveInnerPath(data.m_innerPts, params, sink);
+    return;
+  }
+
+  CHECK_EQUAL(type, GeomType::Area, ());
 
   uint32_t trgCount = base::asserted_cast<uint32_t>(data.m_innerTrg.size());
   CHECK_GREATER(trgCount, 2, ());

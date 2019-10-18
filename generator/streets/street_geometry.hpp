@@ -32,6 +32,8 @@ public:
   Pin GetOrChoosePin() const;
   // Bbox may be the minimum bounding box with feature type margin.
   m2::RectD GetBbox() const;
+  boost::optional<Pin> const & GetPin() const;
+  HighwayGeometry const * GetHighwayGeometry() const;
 
   void SetPin(Pin && pin);
   void AddHighwayLine(base::GeoObjectId const & osmId, std::vector<m2::PointD> const & line);
@@ -49,13 +51,6 @@ private:
 class HighwayGeometry
 {
 public:
-  Pin ChoosePin() const;
-  m2::RectD const & GetBbox() const;
-
-  void AddLine(base::GeoObjectId const & osmId, std::vector<m2::PointD> const & line);
-  void AddArea(base::GeoObjectId const & osmId, std::vector<m2::PointD> const & border);
-
-private:
   struct LineSegment
   {
     LineSegment(base::GeoObjectId const & osmId, std::vector<m2::PointD> const & points);
@@ -93,13 +88,23 @@ private:
 
   struct AreaPart
   {
-    AreaPart(base::GeoObjectId const & osmId, std::vector<m2::PointD> const & polygon);
+    AreaPart(base::GeoObjectId const & osmId, std::vector<m2::PointD> const & border);
 
     base::GeoObjectId m_osmId;
+    std::vector<m2::PointD> m_border;
     m2::PointD m_center;
     double m_area;
   };
 
+  Pin ChoosePin() const;
+  m2::RectD const & GetBbox() const;
+  std::vector<AreaPart> const & GetAreaParts() const;
+  MultiLine const & GetMultiLine() const;
+
+  void AddLine(base::GeoObjectId const & osmId, std::vector<m2::PointD> const & line);
+  void AddArea(base::GeoObjectId const & osmId, std::vector<m2::PointD> const & border);
+
+private:
   Pin ChooseMultilinePin() const;
   Pin ChooseLinePin(Line const & line, double disposeDistance) const;
   Pin ChooseAreaPin() const;
