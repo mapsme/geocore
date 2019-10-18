@@ -14,8 +14,7 @@ namespace generator
 class RawGeneratorWriter
 {
 public:
-  RawGeneratorWriter(std::shared_ptr<FeatureProcessorQueue> const & queue,
-                     std::string const & path);
+  RawGeneratorWriter(std::shared_ptr<FeatureProcessorQueue> const & queue);
   ~RawGeneratorWriter();
 
   void Run();
@@ -29,7 +28,6 @@ private:
 
   std::thread m_thread;
   std::shared_ptr<FeatureProcessorQueue> m_queue;
-  std::string m_path;
   std::unordered_map<std::string, std::unique_ptr<FileWriter>> m_writers;
 };
 }  // namespace generator

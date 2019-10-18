@@ -20,7 +20,8 @@ public:
   explicit RawGenerator(feature::GenerateInfo & genInfo, size_t threadsCount = 1,
                         size_t chunkSize = 1024);
 
-  void GenerateRegionFeatures(std::string const & filename);
+  void GenerateRegionFeatures(
+      std::string const & regionsFeaturesPath, std::string const & regionsInfoPath);
   void GenerateStreetsFeatures(std::string const & filename);
   void GenerateGeoObjectsFeatures(std::string const & filename);
   void GenerateCustom(std::shared_ptr<TranslatorInterface> const & translator);

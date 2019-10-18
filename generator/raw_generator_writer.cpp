@@ -8,9 +8,9 @@
 
 namespace generator
 {
-RawGeneratorWriter::RawGeneratorWriter(std::shared_ptr<FeatureProcessorQueue> const & queue,
-                                       std::string const & path)
-  : m_queue(queue), m_path(path) {}
+RawGeneratorWriter::RawGeneratorWriter(std::shared_ptr<FeatureProcessorQueue> const & queue)
+  : m_queue(queue)
+{ }
 
 
 RawGeneratorWriter::~RawGeneratorWriter()
@@ -59,8 +59,7 @@ void RawGeneratorWriter::Write(std::vector<ProcessedData> const & vecChunks)
       auto writerIt = m_writers.find(affiliation);
       if (writerIt == std::cend(m_writers))
       {
-        auto path = base::JoinPath(m_path, affiliation + DATA_FILE_EXTENSION_TMP);
-        auto writer = std::make_unique<FileWriter>(std::move(path));
+        auto writer = std::make_unique<FileWriter>(std::move(affiliation));
         writerIt = m_writers.emplace(affiliation, std::move(writer)).first;
       }
 

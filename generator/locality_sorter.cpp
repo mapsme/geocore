@@ -13,8 +13,10 @@
 
 #include "geometry/convex_hull.hpp"
 
+#include "platform/platform.hpp"
 
 #include "base/logging.hpp"
+#include "base/scope_guard.hpp"
 #include "base/string_utils.hpp"
 #include "base/timer.hpp"
 

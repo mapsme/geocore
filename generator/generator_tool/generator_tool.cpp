@@ -57,7 +57,6 @@ struct CliCommandOptions
   std::string m_osm_file_name;
   std::string m_node_storage;
   std::string m_user_resource_path;
-  std::string m_output;
   std::string m_data_path;
   std::string m_nodes_list_path;
   std::string m_regions_features;
@@ -69,6 +68,8 @@ struct CliCommandOptions
   std::string m_streets_key_value;
   std::string m_streets_features;
   std::string m_geo_objects_features;
+  std::string m_geo_objects_index;
+  std::string m_geocoder_token_index;
   std::string m_key_value;
   bool m_preprocess = false;
   bool m_generate_region_features = false;
@@ -102,9 +103,6 @@ CliCommandOptions DefineOptions(int argc, char * argv[])
      ("user_resource_path",
          po::value(&o.m_user_resource_path)->default_value(""),
          "User defined resource path for classificator.txt and etc.")
-     ("output",
-         po::value(&o.m_output)->default_value(""),
-         "File name for process (without 'mwm' ext).")
      ("node_storage",
          po::value(&o.m_node_storage)->default_value("map"),
          "Type of storage for intermediate points representation. Available: raw, map, mem.")
@@ -137,34 +135,40 @@ CliCommandOptions DefineOptions(int argc, char * argv[])
          "Path to file containing list of node ids we need to add to locality index. May be empty.")
      ("regions_index",
          po::value(&o.m_regions_index)->default_value(""),
-         "Input regions index file.")
+         "Input/Output regions index file.")
      ("regions_key_value",
          po::value(&o.m_regions_key_value)->default_value(""),
-         "Input regions key-value file.")
+         "Input/Output regions key-value file.")
      ("streets_features",
          po::value(&o.m_streets_features)->default_value(""),
-         "Input tmp.mwm file with streets.")
+         "Input/Output tmp.mwm file with streets.")
      ("streets_key_value",
          po::value(&o.m_streets_key_value)->default_value(""),
          "Output streets key-value file.")
      ("geo_objects_features",
          po::value(&o.m_geo_objects_features)->default_value(""),
-         "Input tmp.mwm file with geo objects.")
+         "Input/Output tmp.mwm file with geo objects.")
      ("ids_without_addresses",
          po::value(&o.m_ids_without_addresses)->default_value(""),
          "Output file with objects ids without addresses.")
+     ("geo_objects_index",
+         po::value(&o.m_geo_objects_index)->default_value(""),
+         "Input/Output geo objects index file.")
      ("geo_objects_key_value",
          po::value(&o.m_geo_objects_key_value)->default_value(""),
-         "Output geo objects key-value file.")
+         "Input/Output geo objects key-value file.")
      ("allow_addressless_for_countries",
          po::value(&o.m_allow_addressless_for_countries)->default_value("*"),
          "Allow addressless buildings for only specified countries separated by commas.")
      ("regions_features",
          po::value(&o.m_regions_features)->default_value(""),
-         "Input tmp.mwm file with regions.")
+         "Input/Output tmp.mwm file with regions.")
      ("generate_geocoder_token_index",
          po::value(&o.m_generate_geocoder_token_index)->default_value(false),
          "Generate geocoder token index.")
+     ("geocoder_token_index",
+         po::value(&o.m_geocoder_token_index)->default_value(""),
+         "Geocoder token index file.")
      ("key_value",
          po::value(&o.m_key_value)->default_value(""),
          "Input key-value file (.jsonl or .jsonl.gz).")
@@ -227,7 +231,8 @@ int GeneratorToolMain(int argc, char ** argv)
   feature::GenerateInfo genInfo;
   genInfo.m_verbose = options.m_verbose;
   genInfo.m_dataPath = path;
-  genInfo.m_targetDir = genInfo.m_tmpDir = path;
+  genInfo.m_targetDir = path;
+  genInfo.m_tmpDir = path;
 
   /// @todo Probably, it's better to add separate option for .mwm.tmp files.
   if (!options.m_data_path.empty())
@@ -242,7 +247,9 @@ int GeneratorToolMain(int argc, char ** argv)
     genInfo.SetOsmFileType(options.m_osm_file_type);
 
   genInfo.m_osmFileName = options.m_osm_file_name;
-  genInfo.m_fileName = options.m_output;
+
+  auto const regionsInfoPath =
+      genInfo.GetTmpFileName("region", regions::CollectorRegionInfo::kDefaultExt);
 
   // Use merged style.
   GetStyleReader().SetCurrentStyle(MapStyleMerged);
@@ -265,20 +272,15 @@ int GeneratorToolMain(int argc, char ** argv)
   {
     RawGenerator rawGenerator(genInfo, threadsCount);
     if (options.m_generate_region_features)
-      rawGenerator.GenerateRegionFeatures(options.m_output);
+      rawGenerator.GenerateRegionFeatures(options.m_regions_features, regionsInfoPath);
     if (options.m_generate_streets_features)
-      rawGenerator.GenerateStreetsFeatures(options.m_output);
+      rawGenerator.GenerateStreetsFeatures(options.m_streets_features);
     if (options.m_generate_geo_objects_features)
-      rawGenerator.GenerateGeoObjectsFeatures(options.m_output);
+      rawGenerator.GenerateGeoObjectsFeatures(options.m_geo_objects_features);
 
     if (!rawGenerator.Execute())
       return EXIT_FAILURE;
-
-    genInfo.m_bucketNames = rawGenerator.GetNames();
   }
-
-  if (genInfo.m_bucketNames.empty() && !options.m_output.empty())
-    genInfo.m_bucketNames.push_back(options.m_output);
 
   if (!options.m_streets_key_value.empty())
   {
@@ -296,71 +298,72 @@ int GeneratorToolMain(int argc, char ** argv)
       return EXIT_FAILURE;
   }
 
-  if (options.m_generate_geo_objects_index || options.m_generate_regions)
+  if (options.m_generate_geo_objects_index)
   {
-    if (options.m_output.empty())
+    if (options.m_geo_objects_index.empty())
     {
-      LOG(LCRITICAL, ("Bad output or intermediate_data_path. Output:", options.m_output));
+      LOG(LCRITICAL, ("Unspecified geo_objects_index file."));
       return EXIT_FAILURE;
     }
 
-    auto const locDataFile = base::JoinPath(path, options.m_output + LOC_DATA_FILE_EXTENSION);
-    auto const outFile = base::JoinPath(path, options.m_output + LOC_IDX_FILE_EXTENSION);
-    if (options.m_generate_geo_objects_index)
+    auto const locDataFile =
+        base::FilenameWithoutExt(options.m_geo_objects_index) + LOC_DATA_FILE_EXTENSION;
+    if (!feature::GenerateGeoObjectsData(options.m_geo_objects_features,
+                                         options.m_streets_features,
+                                         options.m_nodes_list_path, locDataFile))
     {
-      if (!feature::GenerateGeoObjectsData(options.m_geo_objects_features,
-                                           options.m_streets_features,
-                                           options.m_nodes_list_path, locDataFile))
-      {
-        LOG(LCRITICAL, ("Error generating geo objects data."));
-        return EXIT_FAILURE;
-      }
-
-      LOG(LINFO, ("Saving geo objects index to", outFile));
-      if (!indexer::BuildGeoObjectsIndexFromDataFile(
-              locDataFile, outFile, DataVersion::LoadFromPath(path).GetVersionJson(),
-              DataVersion::kFileTag))
-      {
-        LOG(LCRITICAL, ("Error generating geo objects index."));
-        return EXIT_FAILURE;
-      }
+      LOG(LCRITICAL, ("Error generating geo objects data."));
+      return EXIT_FAILURE;
     }
 
-    if (options.m_generate_regions)
+    LOG(LINFO, ("Saving geo objects index to", options.m_geo_objects_index));
+    if (!indexer::BuildGeoObjectsIndexFromDataFile(
+            locDataFile, options.m_geo_objects_index,
+            DataVersion::LoadFromPath(path).GetVersionJson(),
+            DataVersion::kFileTag))
     {
-      if (!feature::GenerateRegionsData(options.m_regions_features, locDataFile))
-      {
-        LOG(LCRITICAL, ("Error generating regions data."));
-        return EXIT_FAILURE;
-      }
+      LOG(LCRITICAL, ("Error generating geo objects index."));
+      return EXIT_FAILURE;
+    }
+  }
 
-      LOG(LINFO, ("Saving regions index to", outFile));
+  if (options.m_generate_regions)
+  {
+    if (options.m_regions_index.empty())
+    {
+      LOG(LCRITICAL, ("Unspecified regions_index file."));
+      return EXIT_FAILURE;
+    }
 
-      if (!indexer::BuildRegionsIndexFromDataFile(locDataFile, outFile,
-                                                  DataVersion::LoadFromPath(path).GetVersionJson(),
-                                                  DataVersion::kFileTag))
-      {
-        LOG(LCRITICAL, ("Error generating regions index."));
-        return EXIT_FAILURE;
-      }
-      if (!feature::GenerateBorders(options.m_regions_features, outFile))
-      {
-        LOG(LCRITICAL, ("Error generating regions borders."));
-        return EXIT_FAILURE;
-      }
+    auto const locDataFile =
+        base::FilenameWithoutExt(options.m_regions_index) + LOC_DATA_FILE_EXTENSION;
+
+    if (!feature::GenerateRegionsData(options.m_regions_features, locDataFile))
+    {
+      LOG(LCRITICAL, ("Error generating regions data."));
+      return EXIT_FAILURE;
+    }
+
+    LOG(LINFO, ("Saving regions index to", options.m_regions_index));
+
+    if (!indexer::BuildRegionsIndexFromDataFile(locDataFile, options.m_regions_index,
+                                                DataVersion::LoadFromPath(path).GetVersionJson(),
+                                                DataVersion::kFileTag))
+    {
+      LOG(LCRITICAL, ("Error generating regions index."));
+      return EXIT_FAILURE;
+    }
+    if (!feature::GenerateBorders(options.m_regions_features, options.m_regions_index))
+    {
+      LOG(LCRITICAL, ("Error generating regions borders."));
+      return EXIT_FAILURE;
     }
   }
 
   if (options.m_generate_regions_kv)
   {
-    auto const pathInRegionsCollector =
-        genInfo.GetTmpFileName(genInfo.m_fileName, regions::CollectorRegionInfo::kDefaultExt);
-    auto const pathInRegionsTmpMwm = genInfo.GetTmpFileName(genInfo.m_fileName);
-    auto const pathOutRepackedRegionsTmpMwm =
-        genInfo.GetTmpFileName(genInfo.m_fileName + "_repacked");
-    auto const pathOutRegionsKv = genInfo.GetIntermediateFileName(genInfo.m_fileName, ".jsonl");
-    regions::GenerateRegions(pathInRegionsTmpMwm, pathInRegionsCollector, pathOutRegionsKv,
-                             pathOutRepackedRegionsTmpMwm, options.m_verbose, threadsCount);
+    regions::GenerateRegions(options.m_regions_features, regionsInfoPath,
+                             options.m_regions_key_value, options.m_verbose, threadsCount);
   }
 
   if (options.m_generate_geocoder_token_index)
@@ -370,12 +373,15 @@ int GeneratorToolMain(int argc, char ** argv)
       LOG(LCRITICAL, ("Unspecified key-value file."));
       return EXIT_FAILURE;
     }
+    if (options.m_geocoder_token_index.empty())
+    {
+      LOG(LCRITICAL, ("Unspecified geocoder_token_index file."));
+      return EXIT_FAILURE;
+    }
 
     geocoder::Geocoder geocoder;
     geocoder.LoadFromJsonl(options.m_key_value, threadsCount);
-
-    auto const tokenIndexFile = base::JoinPath(path, options.m_output);
-    geocoder.SaveToBinaryIndex(tokenIndexFile);
+    geocoder.SaveToBinaryIndex(options.m_geocoder_token_index);
   }
 
   return 0;

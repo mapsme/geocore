@@ -6,10 +6,9 @@ namespace generator
 {
 namespace regions
 {
-void GenerateRegions(std::string const & pathInRegionsTmpMwm,
+void GenerateRegions(std::string const & pathRegionsTmpMwm,
                      std::string const & pathInRegionsCollector,
                      std::string const & pathOutRegionsKv,
-                     std::string const & pathOutRepackedRegionsTmpMwm,
                      bool verbose,
                      size_t threadsCount = 1);
 }  // namespace regions
