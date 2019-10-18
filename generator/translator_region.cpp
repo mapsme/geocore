@@ -53,14 +53,12 @@ public:
 
 TranslatorRegion::TranslatorRegion(std::shared_ptr<FeatureProcessorInterface> const & processor,
                                    std::shared_ptr<cache::IntermediateData> const & cache,
-                                   feature::GenerateInfo const & info)
+                                   std::string const & regionsInfoPath)
   : Translator(processor, cache, std::make_shared<FeatureMakerSimple>(cache))
 
 {
   SetFilter(std::make_shared<FilterRegions>());
-
-  auto filename = info.GetTmpFileName(info.m_fileName, regions::CollectorRegionInfo::kDefaultExt);
-  SetCollector(std::make_shared<regions::CollectorRegionInfo>(filename));
+  SetCollector(std::make_shared<regions::CollectorRegionInfo>(regionsInfoPath));
 }
 
 std::shared_ptr<TranslatorInterface>

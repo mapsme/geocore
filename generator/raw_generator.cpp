@@ -36,10 +36,12 @@ std::shared_ptr<FeatureProcessorQueue> RawGenerator::GetQueue()
   return m_queue;
 }
 
-void RawGenerator::GenerateRegionFeatures(string const & filename)
+void RawGenerator::GenerateRegionFeatures(
+    string const & regionsFeaturesPath, std::string const & regionsInfoPath)
 {
-  auto processor = CreateProcessor(ProcessorType::Simple, m_queue, filename);
-  m_translators->Append(CreateTranslator(TranslatorType::Regions, processor, m_cache, m_genInfo));
+  auto processor = CreateProcessor(ProcessorType::Simple, m_queue, regionsFeaturesPath);
+  m_translators->Append(
+      CreateTranslator(TranslatorType::Regions, processor, m_cache, regionsInfoPath));
 }
 
 void RawGenerator::GenerateStreetsFeatures(string const & filename)
@@ -112,7 +114,7 @@ bool RawGenerator::GenerateFilteredFeatures()
   CHECK(sourceProcessor, ());
 
   TranslatorsPool translators(m_translators, m_threadsCount);
-  RawGeneratorWriter rawGeneratorWriter(m_queue, m_genInfo.m_tmpDir);
+  RawGeneratorWriter rawGeneratorWriter(m_queue);
   rawGeneratorWriter.Run();
 
   size_t element_pos = 0;

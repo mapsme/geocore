@@ -9,9 +9,11 @@
 
 #include "geometry/mercator.hpp"
 
+#include "platform/platform.hpp"
 
 #include "base/assert.hpp"
 #include "base/logging.hpp"
+#include "base/scope_guard.hpp"
 #include "base/timer.hpp"
 
 #include <algorithm>
@@ -35,24 +37,23 @@ namespace
 class RegionsGenerator
 {
 public:
-  RegionsGenerator(std::string const & pathInRegionsTmpMwm,
-                   std::string const & pathInRegionsCollector, std::string const & pathOutRegionsKv,
-                   std::string const & pathOutRepackedRegionsTmpMwm, bool verbose,
-                   size_t threadsCount)
-    : m_pathInRegionsTmpMwm{pathInRegionsTmpMwm}
+  RegionsGenerator(std::string const & pathRegionsTmpMwm,
+                   std::string const & pathInRegionsCollector,
+                   std::string const & pathOutRegionsKv,
+                   bool verbose, size_t threadsCount)
+    : m_pathRegionsTmpMwm{pathRegionsTmpMwm}
     , m_pathOutRegionsKv{pathOutRegionsKv}
-    , m_pathOutRepackedRegionsTmpMwm{pathOutRepackedRegionsTmpMwm}
     , m_verbose{verbose}
     , m_regionsInfoCollector{pathInRegionsCollector}
     , m_regionsKv{pathOutRegionsKv, std::ofstream::out}
   {
-    LOG(LINFO, ("Start generating regions from", m_pathInRegionsTmpMwm));
+    LOG(LINFO, ("Start generating regions from", m_pathRegionsTmpMwm));
     auto timer = base::Timer{};
 
     RegionsBuilder::Regions regions;
     PlacePointsMap placePointsMap;
     std::tie(regions, placePointsMap) =
-        ReadDatasetFromTmpMwm(m_pathInRegionsTmpMwm, m_regionsInfoCollector);
+        ReadDatasetFromTmpMwm(m_pathRegionsTmpMwm, m_regionsInfoCollector);
     RegionsBuilder builder{std::move(regions), std::move(placePointsMap), threadsCount};
 
     GenerateRegions(builder);
@@ -252,7 +253,9 @@ private:
 
   void RepackTmpMwm()
   {
-    feature::FeaturesCollector featuresCollector{m_pathOutRepackedRegionsTmpMwm};
+    auto const repackedTmpMwm = GetPlatform().TmpPathForFile();
+    SCOPE_GUARD(removeRepackedTmpMwm, std::bind(Platform::RemoveFileIfExists, repackedTmpMwm));
+    feature::FeaturesCollector featuresCollector{repackedTmpMwm};
     std::set<base::GeoObjectId> processedObjects;
     auto const toDo = [&](FeatureBuilder & fb, uint64_t /* currPos */) {
       auto const id = fb.GetMostGenericOsmId();
@@ -272,9 +275,10 @@ private:
       }
     };
 
-    LOG(LINFO, ("Start regions repacking from", m_pathInRegionsTmpMwm));
-    feature::ForEachFromDatRawFormat(m_pathInRegionsTmpMwm, toDo);
-    LOG(LINFO, ("Repacked regions temporary mwm saved to", m_pathOutRepackedRegionsTmpMwm));
+    LOG(LINFO, ("Start regions repacking for", m_pathRegionsTmpMwm));
+    feature::ForEachFromDatRawFormat(m_pathRegionsTmpMwm, toDo);
+    CHECK(base::RenameFileX(repackedTmpMwm, m_pathRegionsTmpMwm), ());
+    LOG(LINFO, ("Repacked regions temporary mwm saved to", m_pathRegionsTmpMwm));
   }
 
   void ResetGeometry(FeatureBuilder & fb, Region const & region)
@@ -304,9 +308,8 @@ private:
     return seq;
   }
 
-  std::string m_pathInRegionsTmpMwm;
+  std::string m_pathRegionsTmpMwm;
   std::string m_pathOutRegionsKv;
-  std::string m_pathOutRepackedRegionsTmpMwm;
 
   bool m_verbose{false};
 
@@ -319,14 +322,13 @@ private:
 };
 }  // namespace
 
-void GenerateRegions(std::string const & pathInRegionsTmpMwm,
+void GenerateRegions(std::string const & pathRegionsTmpMwm,
                      std::string const & pathInRegionsCollector,
                      std::string const & pathOutRegionsKv,
-                     std::string const & pathOutRepackedRegionsTmpMwm, bool verbose,
-                     size_t threadsCount)
+                     bool verbose, size_t threadsCount)
 {
-  RegionsGenerator(pathInRegionsTmpMwm, pathInRegionsCollector, pathOutRegionsKv,
-                   pathOutRepackedRegionsTmpMwm, verbose, threadsCount);
+  RegionsGenerator(pathRegionsTmpMwm, pathInRegionsCollector, pathOutRegionsKv,
+                   verbose, threadsCount);
 }
 }  // namespace regions
 }  // namespace generator

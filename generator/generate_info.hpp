@@ -35,16 +35,10 @@ struct GenerateInfo
   // Directory for all files.
   std::string m_dataPath;
 
-  // Current generated file name if --output option is defined.
-  std::string m_fileName;
-
   NodeStorageType m_nodeStorageType;
   OsmSourceType m_osmFileType;
   std::string m_osmFileName;
 
-  std::vector<std::string> m_bucketNames;
-
-  bool m_genAddresses = false;
   bool m_preloadCache = false;
   bool m_verbose = false;
 
@@ -88,12 +82,6 @@ struct GenerateInfo
                                       std::string const & ext = "") const
   {
     return base::JoinPath(m_dataPath, fileName + ext);
-  }
-
-  std::string GetAddressesFileName() const
-  {
-    return m_genAddresses && !m_fileName.empty() ?
-          GetTargetFileName(m_fileName, ADDR_FILE_EXTENSION) : "";
   }
 };
 }  // namespace feature
