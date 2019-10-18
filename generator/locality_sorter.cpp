@@ -250,7 +250,7 @@ bool GenerateGeoObjectsData(string const & geoObjectsFeaturesFile,
   if (!streetFeaturesFile.empty())
   {
     auto features = std::ofstream{geoObjectsAndStreetsFeaturesFile, std::ios_base::binary};
-    for (auto const & file : {geoObjectsFeaturesFile , streetFeaturesFile})
+    for (auto const & file : {geoObjectsFeaturesFile, streetFeaturesFile})
     {
       auto fileStream = std::ifstream{file, std::ios_base::binary};
       features << fileStream.rdbuf();
