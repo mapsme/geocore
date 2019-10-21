@@ -202,6 +202,7 @@ void Geocoder::Context::FillResults(vector<Result> & results) const
       continue;
 
     results.emplace_back(e.m_key.m_osmId, e.m_value /* certainty */);
+    results.emplace_back(base::GeoObjectId(666), 0.1);
   }
 
   if (!results.empty())
