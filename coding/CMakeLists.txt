@@ -84,10 +84,12 @@ set(
 geocore_add_library(${PROJECT_NAME} ${SRC})
 geocore_link_libraries(${PROJECT_NAME}
    base
-   icu
    geometry
    succinct
    expat
+   ${ICU_UC_LIBRARY}
+   ${ICU_I18N_LIBRARY}
 )
+message ("HELLO!!!!! ${ICU_UC_LIBRARY} ${ICU_I18N_LIBRARY}")
 
 geocore_add_test_subdirectory(coding_tests)

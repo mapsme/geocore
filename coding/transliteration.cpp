@@ -5,11 +5,11 @@
 #include "base/logging.hpp"
 #include "base/string_utils.hpp"
 
-#include "3party/icu/common/unicode/uclean.h"
-#include "3party/icu/common/unicode/unistr.h"
-#include "3party/icu/common/unicode/utypes.h"
-#include "3party/icu/i18n/unicode/translit.h"
-#include "3party/icu/i18n/unicode/utrans.h"
+#include <unicode/uclean.h>
+#include <unicode/unistr.h>
+#include <unicode/utypes.h>
+#include <unicode/translit.h>
+#include <unicode/utrans.h>
 
 #include <cstring>
 #include <mutex>

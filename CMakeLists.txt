@@ -123,10 +123,12 @@ endif()
 
 
 # Include subdirectories
-add_subdirectory(3party/expat)
-add_subdirectory(3party/icu)
+find_package(ICU REQUIRED i18n uc) 
+message ("Hello: ${ICU_INCLUDE_DIRS}") 
+find_package(Protobuf REQUIRED)
+find_package(EXPAT REQUIRED)
+
 add_subdirectory(3party/jansson)
-add_subdirectory(3party/protobuf)
 add_subdirectory(3party/succinct)
 
 # Only options related to warnings should be placed here.
