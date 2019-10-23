@@ -3,6 +3,8 @@
 #include "base/string_utils.hpp"
 #include "coding/parse_xml.hpp"
 
+#include "3party/cttrie/cttrie.h"
+
 #include <algorithm>
 #include <cstring>
 #include <sstream>
@@ -40,31 +42,31 @@ void OsmElement::AddTag(char const * key, char const * value)
   if (key[0] == '\0' || value[0] == '\0')
     return;
 
-#define SKIP_KEY_BY_PREFIX(skippedKey) if (std::strncmp(key, skippedKey, sizeof(skippedKey)-1) == 0) return;
   // OSM technical info tags
-  SKIP_KEY_BY_PREFIX("created_by");
-  SKIP_KEY_BY_PREFIX("source");
-  SKIP_KEY_BY_PREFIX("odbl");
-  SKIP_KEY_BY_PREFIX("note");
-  SKIP_KEY_BY_PREFIX("fixme");
-  SKIP_KEY_BY_PREFIX("iemv");
+  bool match = TRIE(key) return false;
+  CASE("created_by") return true;
+  CASE("source") return true;
+  CASE("odbl") return true;
+  CASE("note") return true;
+  CASE("fixme") return true;
+  CASE("iemv") return true;
+  CASE("not:") return true;
+  CASE("artist_name") return true;
+  CASE("whitewater") return true; /* https://wiki.openstreetmap.org/wiki/Whitewater_sports */
 
-  // Skip tags for speedup, now we don't use it
-  SKIP_KEY_BY_PREFIX("not:");
-  SKIP_KEY_BY_PREFIX("artist_name");
-  SKIP_KEY_BY_PREFIX("whitewater"); // https://wiki.openstreetmap.org/wiki/Whitewater_sports
-
-  // In future we can use this tags for improve our search
-  SKIP_KEY_BY_PREFIX("old_name");
-  SKIP_KEY_BY_PREFIX("alt_name");
-  SKIP_KEY_BY_PREFIX("nat_name");
-  SKIP_KEY_BY_PREFIX("reg_name");
-  SKIP_KEY_BY_PREFIX("loc_name");
-  SKIP_KEY_BY_PREFIX("lock_name");
-  SKIP_KEY_BY_PREFIX("local_name");
-  SKIP_KEY_BY_PREFIX("short_name");
-  SKIP_KEY_BY_PREFIX("official_name");
-#undef SKIP_KEY_BY_PREFIX
+  /* In future we can use this tags for improve our search */
+  CASE("old_name") return true;
+  CASE("alt_name") return true;
+  CASE("nat_name") return true;
+  CASE("reg_name") return true;
+  CASE("loc_name") return true;
+  CASE("lock_name") return true;
+  CASE("local_name") return true;
+  CASE("short_name") return true;
+  CASE("official_name") return true;
+  ENDTRIE;
+  if (match)
+    return;
 
   std::string val{value};
   strings::Trim(val);
