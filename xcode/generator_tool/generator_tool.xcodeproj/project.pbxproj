@@ -102,7 +102,6 @@
 		674A28E11B1C80EA001A525C /* libexpat.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674A28C71B1C7FC9001A525C /* libexpat.a */; };
 		674A28E21B1C80EA001A525C /* libgenerator.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674A28CA1B1C7FED001A525C /* libgenerator.a */; };
 		674A28E31B1C80EA001A525C /* libgeometry.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674A28CB1B1C7FED001A525C /* libgeometry.a */; };
-		674A28E41B1C80EA001A525C /* libgflags.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674A28CC1B1C7FED001A525C /* libgflags.a */; };
 		674A28E51B1C80EA001A525C /* libindexer.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674A28CD1B1C7FED001A525C /* libindexer.a */; };
 		674A28E61B1C80EA001A525C /* libplatform.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674A28D31B1C8001001A525C /* libplatform.a */; };
 		674A28E71B1C80EA001A525C /* libprotobuf.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 674A28DB1B1C801D001A525C /* libprotobuf.a */; };
@@ -162,6 +161,8 @@
 			compilerSpec = com.apple.compilers.proxy.script;
 			filePatterns = "*.hpp.in";
 			fileType = pattern.proxy;
+			inputFiles = (
+			);
 			isEditable = 1;
 			outputFiles = (
 				"$(DERIVED_FILE_DIR)/${INPUT_FILE_BASE}",
@@ -414,7 +415,6 @@
 				674A28E11B1C80EA001A525C /* libexpat.a in Frameworks */,
 				674A28E21B1C80EA001A525C /* libgenerator.a in Frameworks */,
 				674A28E31B1C80EA001A525C /* libgeometry.a in Frameworks */,
-				674A28E41B1C80EA001A525C /* libgflags.a in Frameworks */,
 				674A28E51B1C80EA001A525C /* libindexer.a in Frameworks */,
 				674A28E61B1C80EA001A525C /* libplatform.a in Frameworks */,
 				674A28E71B1C80EA001A525C /* libprotobuf.a in Frameworks */,
@@ -723,6 +723,7 @@
 					};
 					675341571A3F54D800A0A8C3 = {
 						CreatedOnToolsVersion = 6.1;
+						DevelopmentTeam = 5P46UQ2Y83;
 					};
 					6796245C1D100F2500AE4E3C = {
 						CreatedOnToolsVersion = 7.3.1;
@@ -899,6 +900,9 @@
 		675341601A3F54D800A0A8C3 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 5P46UQ2Y83;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -908,6 +912,9 @@
 		675341611A3F54D800A0A8C3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 5P46UQ2Y83;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -944,6 +951,9 @@
 		A8E541511F9FBD9900A1B8FA /* Production Full */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				CODE_SIGN_IDENTITY = "-";
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 5P46UQ2Y83;
 				GCC_INLINES_ARE_PRIVATE_EXTERN = NO;
 				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
 				PRODUCT_NAME = "$(TARGET_NAME)";
