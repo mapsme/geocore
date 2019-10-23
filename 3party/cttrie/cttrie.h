@@ -119,13 +119,13 @@ namespace detail {
 
   // handle trivial cases already here
   template <typename Stringview,typename FnE,typename... Fns>
-  constexpr auto checkTrie(TrieNode<>,Stringview&&,FnE&& fne,Fns&&...) // possible via Transition<-1>
+  constexpr auto checkTrie(TrieNode<> trie,Stringview&& str,FnE&& fne,Fns&&... fns) // possible via Transition<-1>
     -> decltype(fne())
   {
     return fne();
   }
   template <int Char,typename Next,typename Stringview,typename FnE,typename... Fns,typename =Sfinae<(Char>=0)>>
-  constexpr auto checkTrie(TrieNode<Transition<Char,Next>>,Stringview&& str,FnE&& fne,Fns&&... fns)
+  constexpr auto checkTrie(TrieNode<Transition<Char,Next>> trie,Stringview&& str,FnE&& fne,Fns&&... fns)
     -> decltype(fne())
   {
     return (!str.empty() && (*str==Char)) ? checkTrie(Next(),str.substr(1),(FnE&&)fne,(Fns&&)fns...) : fne();

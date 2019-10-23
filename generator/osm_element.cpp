@@ -3,7 +3,7 @@
 #include "base/string_utils.hpp"
 #include "coding/parse_xml.hpp"
 
-#include "3party/cttrie/cttrie.h"
+#include "3party/cttrie/cttrie.hpp"
 
 #include <algorithm>
 #include <cstring>

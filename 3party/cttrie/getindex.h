@@ -17,13 +17,13 @@ namespace detail {
   }
 
   template <typename T0,typename... Ts>
-  constexpr T0&& get_index_impl(int_c<0>,T0&& t0,Ts&&...)
+  constexpr T0&& get_index_impl(int_c<0>,T0&& t0,Ts&&... ts)
   {
     return (T0&&)t0;
   }
 
   template <unsigned int I,typename T0,typename... Ts>
-  constexpr auto get_index_impl(int_c<I>,T0&&,Ts&&... ts)
+  constexpr auto get_index_impl(int_c<I>,T0&& t0,Ts&&... ts)
     -> decltype(get_index_impl(int_c<I-1>(),(Ts&&)ts...))
   {
     return get_index_impl(int_c<I-1>(),(Ts&&)ts...);
