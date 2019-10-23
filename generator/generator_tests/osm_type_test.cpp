@@ -770,3 +770,51 @@ UNIT_CLASS_TEST(TestWithClassificator, OsmType_Cuisine)
     TEST(params.IsTypeExist(GetType({"cuisine", "coffee_shop"})), (params));
   }
 }
+
+UNIT_CLASS_TEST(TestWithClassificator, OsmAddTag)
+{
+  std::vector<std::string> values = {"    ",
+                                     "    blabla",
+                                     "   hole   hole   ",
+                                     "blabla",
+                                     "blabla    ",
+                                     "blabla ",
+                                     " blabla"};
+
+  std::vector<std::string> shouldSkip = {
+      "created_by", "source",      "odbl",       "note",       "fixme",      "iemv",
+      "not:",       "artist_name", "whitewater", "old_name",   "alt_name",   "nat_name",
+      "reg_name",   "loc_name",    "lock_name",  "local_name", "short_name", "official_name"};
+
+  std::vector<std::string> shouldNotSkip = {
+      "cucumber",
+      "milk"
+      "road",
+  };
+
+  for (std::string const & value: values)
+  {
+    for (std::string const & tag: shouldSkip)
+    {
+      OsmElement e;
+      e.AddTag(tag, value);
+      EXPECT_TRUE(!e.HasTag(tag));
+    }
+  }
+
+  for (std::string const & value: values)
+  {
+    for (std::string const & tag: shouldNotSkip)
+    {
+      OsmElement e;
+      e.AddTag(tag, value);
+      EXPECT_TRUE(e.HasTag(tag));
+      if (value.find("hole")!=std::string::npos)
+        EXPECT_EQ(e.GetTag(tag), "hole   hole");
+      else if (value.find("blabla")!=std::string::npos)
+        EXPECT_EQ(e.GetTag(tag), "blabla");
+      else
+        EXPECT_EQ(e.GetTag(tag), "");
+    }
+  }
+}
