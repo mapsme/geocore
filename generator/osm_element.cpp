@@ -6,7 +6,6 @@
 #include "3party/cttrie/cttrie.hpp"
 
 #include <algorithm>
-#include <cstring>
 #include <sstream>
 
 std::string DebugPrint(OsmElement::EntityType type)
