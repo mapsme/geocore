@@ -16,7 +16,7 @@ MACOSX_DEPLOYMENT_TARGET = 10.12
 SUPPORTED_PLATFORMS = macosx iphonesimulator iphoneos
 
 // Linked frameworks
-OTHER_LDFLAGS[sdk=macosx*] = -framework Cocoa -framework IOKit -framework SystemConfiguration -framework CFNetwork -lboost_filesystem -lboost_serialization -lboost_iostreams -lgtest
+OTHER_LDFLAGS[sdk=macosx*] = -framework Cocoa -framework IOKit -framework SystemConfiguration -framework CFNetwork -lboost_filesystem -lboost_serialization -lboost_iostreams -lgtest -lboost_program_options
 OTHER_LDFLAGS[sdk=iphone*] = -framework Foundation -framework IOKit -framework SystemConfiguration -framework CFNetwork -ObjC
 
 // Warnings settings
