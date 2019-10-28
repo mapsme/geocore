@@ -61,16 +61,6 @@ void AddToIndex(Index & index, Key relationId, Container const & values)
     index.Add(v.first, relationId);
 }
 
-class PointStorageWriterBase : public PointStorageWriterInterface
-{
-public:
-  // PointStorageWriterInterface overrides:
-  uint64_t GetNumProcessedPoints() const override { return m_numProcessedPoints; }
-
-private:
-  uint64_t m_numProcessedPoints;
-};
-
 // RawFilePointStorageMmapReader -------------------------------------------------------------------
 class RawFilePointStorageMmapReader : public PointStorageReaderInterface
 {
@@ -96,7 +86,7 @@ private:
 };
 
 // RawFilePointStorageWriter -----------------------------------------------------------------------
-class RawFilePointStorageWriter : public PointStorageWriterBase
+class RawFilePointStorageWriter : public PointStorageWriterInterface
 {
 public:
   explicit RawFilePointStorageWriter(string const & name) :
@@ -114,6 +104,7 @@ public:
 
     ++m_numProcessedPoints;
   }
+  uint64_t GetNumProcessedPoints() const override { return m_numProcessedPoints; }
 
 private:
   FileWriter m_fileWriter;
@@ -148,7 +139,7 @@ private:
 };
 
 // RawMemPointStorageWriter ------------------------------------------------------------------------
-class RawMemPointStorageWriter : public PointStorageWriterBase
+class RawMemPointStorageWriter : public PointStorageWriterInterface
 {
 public:
   explicit RawMemPointStorageWriter(string const & name) :
@@ -173,6 +164,7 @@ public:
 
     ++m_numProcessedPoints;
   }
+  uint64_t GetNumProcessedPoints() const override { return m_numProcessedPoints; }
 
 private:
   FileWriter m_fileWriter;
@@ -228,7 +220,7 @@ private:
 };
 
 // MapFilePointStorageWriter -----------------------------------------------------------------------
-class MapFilePointStorageWriter : public PointStorageWriterBase
+class MapFilePointStorageWriter : public PointStorageWriterInterface
 {
 public:
   explicit MapFilePointStorageWriter(string const & name) :
@@ -251,6 +243,7 @@ public:
 
     ++m_numProcessedPoints;
   }
+  uint64_t GetNumProcessedPoints() const override { return m_numProcessedPoints; }
 
 private:
   FileWriter m_fileWriter;
