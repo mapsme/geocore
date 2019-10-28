@@ -50,24 +50,61 @@ uint64_t SourceReader::Read(char * buffer, uint64_t bufferSize)
 }
 
 // Functions ---------------------------------------------------------------------------------------
+
+void BuildIntermediateNode(OsmElement const & element, NodeElement & node)
+{
+  auto position = MercatorBounds::FromLatLon(element.m_lat, element.m_lon);
+  node = {element.m_id, position.y, position.x};
+}
+
+bool BuildIntermediateWay(OsmElement const & element, WayElement & way)
+{
+  way.m_wayOsmId = element.m_id;
+  way.nodes = element.Nodes();
+  return way.IsValid();
+}
+
+bool BuildIntermediateRelation(OsmElement const & element, RelationElement & relation)
+{
+  for (auto const & member : element.Members())
+  {
+    switch (member.m_type) {
+    case OsmElement::EntityType::Node:
+      relation.nodes.emplace_back(member.m_ref, string(member.m_role));
+      break;
+    case OsmElement::EntityType::Way:
+      relation.ways.emplace_back(member.m_ref, string(member.m_role));
+      break;
+    case OsmElement::EntityType::Relation:
+      // we just ignore type == "relation"
+      break;
+    default:
+      break;
+    }
+  }
+
+  for (auto const & tag : element.Tags())
+    relation.tags.emplace(tag.m_key, tag.m_value);
+
+  return relation.IsValid();
+}
+
 void AddElementToCache(cache::IntermediateDataWriter & cache, OsmElement & element)
 {
   switch (element.m_type)
   {
   case OsmElement::EntityType::Node:
   {
-    auto const pt = MercatorBounds::FromLatLon(element.m_lat, element.m_lon);
-    cache.AddNode(element.m_id, pt.y, pt.x);
+    NodeElement node;
+    BuildIntermediateNode(element, node);
+    cache.AddNode(node.m_nodeOsmId, node.m_lat, node.m_lon);
     break;
   }
   case OsmElement::EntityType::Way:
   {
     // Store way.
     WayElement way(element.m_id);
-    for (uint64_t nd : element.Nodes())
-      way.nodes.push_back(nd);
-
-    if (way.IsValid())
+    if (BuildIntermediateWay(element, way))
       cache.AddWay(element.m_id, way);
     break;
   }
@@ -75,29 +112,8 @@ void AddElementToCache(cache::IntermediateDataWriter & cache, OsmElement & eleme
   {
     // store relation
     RelationElement relation;
-    for (auto const & member : element.Members())
-    {
-      switch (member.m_type) {
-      case OsmElement::EntityType::Node:
-        relation.nodes.emplace_back(member.m_ref, string(member.m_role));
-        break;
-      case OsmElement::EntityType::Way:
-        relation.ways.emplace_back(member.m_ref, string(member.m_role));
-        break;
-      case OsmElement::EntityType::Relation:
-        // we just ignore type == "relation"
-        break;
-      default:
-        break;
-      }
-    }
-
-    for (auto const & tag : element.Tags())
-      relation.tags.emplace(tag.m_key, tag.m_value);
-
-    if (relation.IsValid())
+    if (BuildIntermediateRelation(element, relation))
       cache.AddRelation(element.m_id, relation);
-
     break;
   }
   default:
