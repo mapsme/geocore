@@ -15,6 +15,13 @@
 #include <utility>
 #include <vector>
 
+struct NodeElement
+{
+  uint64_t m_nodeOsmId;
+  double m_lat;
+  double m_lon;
+};
+
 struct WayElement
 {
   std::vector<uint64_t> nodes;
