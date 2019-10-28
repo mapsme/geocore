@@ -18,7 +18,7 @@ namespace cache
 {
 namespace
 {
-size_t const kFlushCount = 1024;
+size_t const kFlushCount = 10'000'000;
 double const kValueOrder = 1e7;
 string const kShortExtension = ".short";
 
@@ -321,6 +321,7 @@ bool IndexFileReader::GetValueByKey(Key key, Value & value) const
 IndexFileWriter::IndexFileWriter(string const & name) :
   m_fileWriter(name.c_str())
 {
+  m_elements.reserve(kFlushCount);
 }
 
 void IndexFileWriter::WriteAll()
@@ -356,7 +357,10 @@ OSMElementCacheReader::OSMElementCacheReader(string const & name, bool preload, 
 
 // OSMElementCacheWriter ---------------------------------------------------------------------------
 OSMElementCacheWriter::OSMElementCacheWriter(string const & name, bool preload)
-  : m_fileWriter(name), m_offsets(name + OFFSET_EXT), m_name(name), m_preload(preload)
+  : m_fileWriter(name, FileWriter::OP_WRITE_TRUNCATE, 10 * 1024 * 1024 /* bufferSize */)
+  , m_offsets(name + OFFSET_EXT)
+  , m_name(name)
+  , m_preload(preload)
 {
 }
 

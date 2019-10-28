@@ -3,6 +3,7 @@
 #include "generator/generate_info.hpp"
 #include "generator/intermediate_elements.hpp"
 
+#include "coding/buffered_file_writer.hpp"
 #include "coding/file_reader.hpp"
 #include "coding/file_writer.hpp"
 #include "coding/mmap_reader.hpp"
@@ -189,7 +190,7 @@ public:
   void SaveOffsets();
 
 protected:
-  FileWriter m_fileWriter;
+  BufferedFileWriter m_fileWriter;
   IndexFileWriter m_offsets;
   std::string m_name;
   std::vector<uint8_t> m_data;
