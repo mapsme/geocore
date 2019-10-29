@@ -15,6 +15,7 @@
 
 #include "platform/platform.hpp"
 
+#include "base/file_name_utils.hpp"
 #include "base/logging.hpp"
 #include "base/scope_guard.hpp"
 #include "base/string_utils.hpp"
@@ -235,27 +236,38 @@ bool GenerateLocalityDataImpl(FeaturesCollector & collector,
 
 namespace feature
 {
+bool GenerateGeoObjectsData(string const & featuresFile,
+                            NeedSerialize const & needSerialize,
+                            string const & dataFile)
+{
+  DataHeader header;
+  header.SetGeometryCodingParams(serial::GeometryCodingParams());
+  header.SetScales({scales::GetUpperScale()});
+
+  LocalityCollector localityCollector(dataFile, header,
+                                      static_cast<uint32_t>(base::SecondsSinceEpoch()));
+  return GenerateLocalityDataImpl(
+      localityCollector,
+      static_cast<int (*)(TypesHolder const & types, m2::RectD limitRect)>(GetMinDrawableScale),
+      needSerialize, featuresFile, dataFile);
+}
+
 bool GenerateGeoObjectsData(string const & geoObjectsFeaturesFile,
                             string const & streetFeaturesFile,
-                            string const & nodesFile, string const & dataFile)
+                            boost::optional<string> const & nodesFile,
+                            string const & dataFile)
 {
-  auto featuresFile = geoObjectsFeaturesFile;
-  auto const geoObjectsAndStreetsFeaturesFile = GetPlatform().TmpPathForFile();
-  SCOPE_GUARD(geoObjectsAndStreetsFeaturesFileGuard,
-              std::bind(Platform::RemoveFileIfExists, geoObjectsAndStreetsFeaturesFile));
-  if (!streetFeaturesFile.empty())
-  {
-    auto features = std::ofstream{geoObjectsAndStreetsFeaturesFile, std::ios_base::binary};
-    for (auto const & file : {geoObjectsFeaturesFile, streetFeaturesFile})
-    {
-      auto fileStream = std::ifstream{file, std::ios_base::binary};
-      features << fileStream.rdbuf();
-    }
-    featuresFile = geoObjectsAndStreetsFeaturesFile;
-  }
+  auto featuresDirectory = base::GetDirectory(geoObjectsFeaturesFile);
+  auto featuresFile =
+      base::JoinPath(featuresDirectory,
+                     std::string{"geo_objects_and_streets"} + DATA_FILE_EXTENSION_TMP);
+  SCOPE_GUARD(featuresFileGuard, std::bind(Platform::RemoveFileIfExists, featuresFile));
+
+  base::AppendFileToFile(geoObjectsFeaturesFile, featuresFile);
+  base::AppendFileToFile(streetFeaturesFile, featuresFile);
 
   set<uint64_t> nodeIds;
-  if (!ParseNodes(nodesFile, nodeIds))
+  if (nodesFile && !ParseNodes(*nodesFile, nodeIds))
     return false;
 
   auto const needSerialize = [&nodeIds](FeatureBuilder & fb) {
@@ -274,16 +286,30 @@ bool GenerateGeoObjectsData(string const & geoObjectsFeaturesFile,
     return false;
   };
 
-  DataHeader header;
-  header.SetGeometryCodingParams(serial::GeometryCodingParams());
-  header.SetScales({scales::GetUpperScale()});
+  return GenerateGeoObjectsData(featuresFile, needSerialize, dataFile);
+}
 
-  LocalityCollector localityCollector(dataFile, header,
-                                      static_cast<uint32_t>(base::SecondsSinceEpoch()));
-  return GenerateLocalityDataImpl(
-      localityCollector,
-      static_cast<int (*)(TypesHolder const & types, m2::RectD limitRect)>(GetMinDrawableScale),
-      needSerialize, featuresFile, dataFile);
+bool GenerateGeoObjectsData(string const & geoObjectsFeaturesFile,
+                            boost::optional<string> const & nodesFile,
+                            string const & dataFile)
+{
+  set<uint64_t> nodeIds;
+  if (nodesFile && !ParseNodes(*nodesFile, nodeIds))
+    return false;
+
+  auto const needSerialize = [&nodeIds](FeatureBuilder & fb) {
+    using generator::geo_objects::GeoObjectsFilter;
+
+    if (GeoObjectsFilter::IsBuilding(fb) || GeoObjectsFilter::HasHouse(fb))
+      return true;
+
+    if (GeoObjectsFilter::IsPoi(fb))
+      return 0 != nodeIds.count(fb.GetMostGenericOsmId().GetEncodedId());
+
+    return false;
+  };
+
+  return GenerateGeoObjectsData(geoObjectsFeaturesFile, needSerialize, dataFile);
 }
 
 bool GenerateRegionsData(string const & featuresFile, string const & dataFile)
