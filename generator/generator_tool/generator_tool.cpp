@@ -25,6 +25,7 @@
 
 #include "base/file_name_utils.hpp"
 
+#include <boost/optional.hpp>
 #include <boost/program_options.hpp>
 
 #include <csignal>
@@ -309,9 +310,22 @@ int GeneratorToolMain(int argc, char ** argv)
 
     auto const locDataFile =
         base::FilenameWithoutExt(options.m_geo_objects_index) + LOC_DATA_FILE_EXTENSION;
-    if (!feature::GenerateGeoObjectsData(options.m_geo_objects_features,
-                                         options.m_streets_features,
-                                         options.m_nodes_list_path, locDataFile))
+
+    auto nodesListPath =
+        boost::make_optional(!options.m_nodes_list_path.empty(), options.m_nodes_list_path);
+    bool dataGenerated = false;
+    if (!options.m_streets_features.empty())
+    {
+      dataGenerated = feature::GenerateGeoObjectsData(options.m_geo_objects_features,
+                                                      options.m_streets_features,
+                                                      nodesListPath, locDataFile);
+    }
+    else
+    {
+      dataGenerated = feature::GenerateGeoObjectsData(options.m_geo_objects_features,
+                                                      nodesListPath, locDataFile);
+    }
+    if (!dataGenerated)
     {
       LOG(LCRITICAL, ("Error generating geo objects data."));
       return EXIT_FAILURE;

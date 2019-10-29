@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include <boost/optional.hpp>
+
 namespace feature
 {
 // Generates data for GeoObjectsIndexBuilder from input feature-dat-files.
@@ -9,8 +11,11 @@ namespace feature
 // @param nodesFile - path to file with list of node ids we need to add to output;
 // @param out - output file name;
 bool GenerateGeoObjectsData(std::string const & geoObjectsFeaturesFile,
+                            boost::optional<std::string> const & nodesFile,
+                            std::string const & out);
+bool GenerateGeoObjectsData(std::string const & geoObjectsFeaturesFile,
                             std::string const & streetFeaturesFile,
-                            std::string const & nodesFile,
+                            boost::optional<std::string> const & nodesFile,
                             std::string const & out);
 
 // Generates data for RegionsIndexBuilder from input feature-dat-files.
