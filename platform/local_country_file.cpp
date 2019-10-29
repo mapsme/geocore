@@ -4,7 +4,6 @@
 #include "platform/platform.hpp"
 
 #include "coding/internal/file_data.hpp"
-#include "coding/sha1.hpp"
 
 #include "base/file_name_utils.hpp"
 #include "base/logging.hpp"
@@ -107,13 +106,6 @@ bool LocalCountryFile::operator==(LocalCountryFile const & rhs) const
 {
   return m_directory == rhs.m_directory && m_countryFile == rhs.m_countryFile &&
          m_version == rhs.m_version && m_files == rhs.m_files;
-}
-
-bool LocalCountryFile::ValidateIntegrity() const
-{
-  auto calculatedSha1 = coding::SHA1::CalculateBase64(GetPath(MapOptions::Map));
-  ASSERT_EQUAL(calculatedSha1, m_countryFile.GetSha1(), ("Integrity failure"));
-  return calculatedSha1 == m_countryFile.GetSha1();
 }
 
 // static
