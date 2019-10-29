@@ -37,11 +37,9 @@ SourceReader::SourceReader(string const & filename)
   LOG_SHORT(LINFO, ("Reading OSM data from", filename));
 }
 
-SourceReader::SourceReader(istringstream & stream)
+SourceReader::SourceReader(std::istream & stream)
   : m_file(unique_ptr<istream, Deleter>(&stream, Deleter(false)))
-{
-  LOG_SHORT(LINFO, ("Reading OSM data from memory"));
-}
+{ }
 
 uint64_t SourceReader::Read(char * buffer, uint64_t bufferSize)
 {
@@ -133,6 +131,13 @@ void BuildIntermediateDataFromXML(SourceReader & stream, cache::IntermediateData
   }
 }
 
+void BuildIntermediateDataFromXML(
+    std::string const & filename, cache::IntermediateDataWriter & cache, TownsDumper & towns)
+{
+  SourceReader reader = filename.empty() ? SourceReader() : SourceReader(filename);
+  BuildIntermediateDataFromXML(reader, cache, towns);
+}
+
 void ProcessOsmElementsFromXML(SourceReader & stream, function<void(OsmElement *)> processor)
 {
   ProcessorOsmElementsFromXml processorOsmElementsFromXml(stream);
@@ -154,9 +159,28 @@ void BuildIntermediateDataFromO5M(SourceReader & stream, cache::IntermediateData
   ProcessOsmElementsFromO5M(stream, processor);
 }
 
+void BuildIntermediateDataFromO5M(
+    std::string const & filename, cache::IntermediateDataWriter & cache, TownsDumper & towns)
+{
+  if (filename.empty())
+  {
+    // Read form stdin.
+    SourceReader reader{};
+    return BuildIntermediateDataFromO5M(reader, cache, towns);
+  }
+
+  LOG_SHORT(LINFO, ("Reading OSM data from", filename));
+
+  auto && stream = std::ifstream{filename, std::ios::binary};
+  auto && reader = SourceReader(stream);
+
+  BuildIntermediateDataFromO5M(reader, cache, towns);
+}
+
 void ProcessOsmElementsFromO5M(SourceReader & stream, function<void(OsmElement *)> processor)
 {
   ProcessorOsmElementsFromO5M processorOsmElementsFromO5M(stream);
+
   OsmElement element;
   while (processorOsmElementsFromO5M.TryRead(element))
     processor(&element);
@@ -265,17 +289,16 @@ bool GenerateIntermediateData(feature::GenerateInfo & info)
                                                info.GetIntermediateFileName(NODES_FILE));
   cache::IntermediateDataWriter cache(*nodes, info);
   TownsDumper towns;
-  SourceReader reader = info.m_osmFileName.empty() ? SourceReader() : SourceReader(info.m_osmFileName);
 
   LOG(LINFO, ("Data source:", info.m_osmFileName));
 
   switch (info.m_osmFileType)
   {
   case feature::GenerateInfo::OsmSourceType::XML:
-    BuildIntermediateDataFromXML(reader, cache, towns);
+    BuildIntermediateDataFromXML(info.m_osmFileName, cache, towns);
     break;
   case feature::GenerateInfo::OsmSourceType::O5M:
-    BuildIntermediateDataFromO5M(reader, cache, towns);
+    BuildIntermediateDataFromO5M(info.m_osmFileName, cache, towns);
     break;
   }
 
