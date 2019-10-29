@@ -60,8 +60,6 @@ set(
   reader_wrapper.hpp
   reader_writer_ops.cpp
   reader_writer_ops.hpp
-  sha1.cpp
-  sha1.hpp
   simple_dense_coding.cpp
   simple_dense_coding.hpp
   string_utf8_multilang.cpp

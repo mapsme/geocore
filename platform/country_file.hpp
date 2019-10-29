@@ -25,9 +25,6 @@ public:
   void SetRemoteSizes(MwmSize mapSize, MwmSize routingSize);
   MwmSize GetRemoteSize(MapOptions file) const;
 
-  void SetSha1(std::string const & base64Sha1) { m_sha1 = base64Sha1; }
-  std::string const & GetSha1() const { return m_sha1; }
-
   inline bool operator<(const CountryFile & rhs) const { return m_name < rhs.m_name; }
   inline bool operator==(const CountryFile & rhs) const { return m_name == rhs.m_name; }
   inline bool operator!=(const CountryFile & rhs) const { return !(*this == rhs); }
@@ -39,8 +36,6 @@ private:
   std::string m_name;
   MwmSize m_mapSize = 0;
   MwmSize m_routingSize = 0;
-  /// \note SHA1 is encoded to base64.
-  std::string m_sha1;
 };
 
 /// \returns This method returns file name with extension. For example Abkhazia.mwm or
