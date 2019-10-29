@@ -38,7 +38,7 @@ class SourceReader
 public:
   SourceReader();
   explicit SourceReader(std::string const & filename);
-  explicit SourceReader(std::istringstream & stream);
+  explicit SourceReader(std::istream & stream);
 
   uint64_t Read(char * buffer, uint64_t bufferSize);
 };
