@@ -27,7 +27,7 @@ namespace generator
 namespace streets
 {
 StreetsBuilder::StreetsBuilder(RegionFinder const & regionFinder,
-                               size_t threadsCount)
+                               unsigned int threadsCount)
   : m_regionFinder{regionFinder}, m_threadsCount{threadsCount}
 {
 }

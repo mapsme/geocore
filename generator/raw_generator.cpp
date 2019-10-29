@@ -16,9 +16,8 @@ using namespace std;
 
 namespace generator
 {
-RawGenerator::RawGenerator(feature::GenerateInfo & genInfo, size_t threadsCount, size_t chunkSize)
+RawGenerator::RawGenerator(feature::GenerateInfo & genInfo, size_t chunkSize)
   : m_genInfo(genInfo)
-  , m_threadsCount(threadsCount)
   , m_chunkSize(chunkSize)
   , m_cache(std::make_shared<generator::cache::IntermediateData>(genInfo))
   , m_queue(std::make_shared<FeatureProcessorQueue>())
@@ -75,7 +74,7 @@ bool RawGenerator::Execute()
 
   while (!m_finalProcessors.empty())
   {
-    base::thread_pool::computational::ThreadPool threadPool(m_threadsCount);
+    base::thread_pool::computational::ThreadPool threadPool(m_genInfo.m_threadsCount);
     while (true)
     {
       auto const finalProcessor = m_finalProcessors.top();
@@ -113,7 +112,7 @@ bool RawGenerator::GenerateFilteredFeatures()
   }
   CHECK(sourceProcessor, ());
 
-  TranslatorsPool translators(m_translators, m_threadsCount);
+  TranslatorsPool translators(m_translators, m_genInfo.m_threadsCount);
   RawGeneratorWriter rawGeneratorWriter(m_queue);
   rawGeneratorWriter.Run();
 

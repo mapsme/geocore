@@ -21,7 +21,8 @@ public:
   GeoObjectsGenerator(GeoObjectMaintainer::RegionInfoGetter && regionInfoGetter,
                       GeoObjectMaintainer::RegionIdGetter && regionIdGetter,
                       std::string pathInGeoObjectsTmpMwm, std::string pathOutIdsWithoutAddress,
-                      std::string pathOutGeoObjectsKv, bool verbose, size_t threadsCount);
+                      std::string pathOutGeoObjectsKv,
+                      bool verbose, unsigned int threadsCount);
 
   // This function generates key-value pairs for geo objects.
   // First, we try to generate key-value pairs only for houses, since we cannot say anything about
@@ -42,13 +43,13 @@ private:
   std::string m_pathOutGeoObjectsKv;
 
   bool m_verbose = false;
-  size_t m_threadsCount = 1;
+  unsigned int m_threadsCount = 1;
   GeoObjectMaintainer m_geoObjectMaintainer;
 };
 
 bool GenerateGeoObjects(std::string const & regionsIndex, std::string const & regionsKeyValue,
                         std::string const & geoObjectsFeatures,
                         std::string const & nodesListToIndex, std::string const & geoObjectKeyValue,
-                        bool verbose, size_t threadsCount);
+                        bool verbose, unsigned int threadsCount);
 }  // namespace geo_objects
 }  // namespace generator

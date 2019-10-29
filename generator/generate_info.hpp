@@ -39,6 +39,8 @@ struct GenerateInfo
   OsmSourceType m_osmFileType;
   std::string m_osmFileName;
 
+  unsigned int m_threadsCount;
+
   bool m_preloadCache = false;
   bool m_verbose = false;
 

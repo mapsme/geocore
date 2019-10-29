@@ -28,7 +28,7 @@ GeoObjectsGenerator::GeoObjectsGenerator(
     GeoObjectMaintainer::RegionInfoGetter && regionInfoGetter,
     GeoObjectMaintainer::RegionIdGetter && regionIdGetter, std::string pathInGeoObjectsTmpMwm,
     std::string pathOutIdsWithoutAddress, std::string pathOutGeoObjectsKv, bool verbose,
-    size_t threadsCount)
+    unsigned int threadsCount)
   : m_pathInGeoObjectsTmpMwm(std::move(pathInGeoObjectsTmpMwm))
   , m_pathOutPoiIdsToAddToLocalityIndex(std::move(pathOutIdsWithoutAddress))
   , m_pathOutGeoObjectsKv(std::move(pathOutGeoObjectsKv))
@@ -86,7 +86,7 @@ bool GeoObjectsGenerator::GenerateGeoObjectsPrivate()
 bool GenerateGeoObjects(std::string const & regionsIndex, std::string const & regionsKeyValue,
                         std::string const & geoObjectsFeatures,
                         std::string const & nodesListToIndex, std::string const & geoObjectKeyValue,
-                        bool verbose, size_t threadsCount)
+                        bool verbose, unsigned int threadsCount)
 
 {
   auto regionInfoGetter = regions::RegionInfoGetter(regionsIndex, regionsKeyValue);

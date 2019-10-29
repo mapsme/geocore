@@ -22,7 +22,7 @@ namespace generator
 namespace regions
 {
 RegionsBuilder::RegionsBuilder(Regions && regions, PlacePointsMap && placePointsMap,
-                               size_t threadsCount)
+                               unsigned int threadsCount)
   : m_threadsCount(threadsCount)
 {
   ASSERT(m_threadsCount != 0, ());

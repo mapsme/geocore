@@ -338,7 +338,7 @@ void ForEachFromDatRawFormat(std::string const & filename, ToDo && toDo)
 
 /// Parallel process features in .dat file.
 template <class SerializationPolicy = serialization_policy::MinSize, class ToDo>
-void ForEachParallelFromDatRawFormat(size_t threadsCount, std::string const & filename,
+void ForEachParallelFromDatRawFormat(unsigned int threadsCount, std::string const & filename,
                                      ToDo && toDo)
 {
   CHECK_GREATER_OR_EQUAL(threadsCount, 1, ());

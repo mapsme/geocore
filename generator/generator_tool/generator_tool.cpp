@@ -209,7 +209,6 @@ int GeneratorToolMain(int argc, char ** argv)
   options = DefineOptions(argc, argv);
 
   Platform & pl = GetPlatform();
-  auto threadsCount = pl.CpuCores();
 
   if (options.m_user_resource_path.empty())
   {
@@ -229,6 +228,7 @@ int GeneratorToolMain(int argc, char ** argv)
   string const path = base::AddSlashIfNeeded(options.m_data_path);
 
   feature::GenerateInfo genInfo;
+  genInfo.m_threadsCount = pl.CpuCores();
   genInfo.m_verbose = options.m_verbose;
   genInfo.m_dataPath = path;
   genInfo.m_targetDir = path;
@@ -270,7 +270,7 @@ int GeneratorToolMain(int argc, char ** argv)
   if (options.m_generate_features || options.m_generate_region_features ||
       options.m_generate_streets_features || options.m_generate_geo_objects_features)
   {
-    RawGenerator rawGenerator(genInfo, threadsCount);
+    RawGenerator rawGenerator(genInfo);
     if (options.m_generate_region_features)
       rawGenerator.GenerateRegionFeatures(options.m_regions_features, regionsInfoPath);
     if (options.m_generate_streets_features)
@@ -286,7 +286,8 @@ int GeneratorToolMain(int argc, char ** argv)
   {
     streets::GenerateStreets(options.m_regions_index, options.m_regions_key_value,
                              options.m_streets_features, options.m_geo_objects_features,
-                             options.m_streets_key_value, options.m_verbose, threadsCount);
+                             options.m_streets_key_value, options.m_verbose,
+                             genInfo.m_threadsCount);
   }
 
   if (!options.m_geo_objects_key_value.empty())
@@ -294,7 +295,7 @@ int GeneratorToolMain(int argc, char ** argv)
     if (!geo_objects::GenerateGeoObjects(
             options.m_regions_index, options.m_regions_key_value, options.m_geo_objects_features,
             options.m_ids_without_addresses, options.m_geo_objects_key_value, options.m_verbose,
-            threadsCount))
+            genInfo.m_threadsCount))
       return EXIT_FAILURE;
   }
 
@@ -363,7 +364,8 @@ int GeneratorToolMain(int argc, char ** argv)
   if (options.m_generate_regions_kv)
   {
     regions::GenerateRegions(options.m_regions_features, regionsInfoPath,
-                             options.m_regions_key_value, options.m_verbose, threadsCount);
+                             options.m_regions_key_value, options.m_verbose,
+                             genInfo.m_threadsCount);
   }
 
   if (options.m_generate_geocoder_token_index)
@@ -380,7 +382,7 @@ int GeneratorToolMain(int argc, char ** argv)
     }
 
     geocoder::Geocoder geocoder;
-    geocoder.LoadFromJsonl(options.m_key_value, threadsCount);
+    geocoder.LoadFromJsonl(options.m_key_value, genInfo.m_threadsCount);
     geocoder.SaveToBinaryIndex(options.m_geocoder_token_index);
   }
 

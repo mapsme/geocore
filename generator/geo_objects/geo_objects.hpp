@@ -29,7 +29,7 @@ bool JsonHasBuilding(JsonValue const & json);
 
 void AddBuildingsAndThingsWithHousesThenEnrichAllWithRegionAddresses(
     GeoObjectMaintainer & geoObjectMaintainer, std::string const & pathInGeoObjectsTmpMwm,
-    bool verbose, size_t threadsCount);
+    bool verbose, unsigned int threadsCount);
 
 struct NullBuildingsInfo
 {
@@ -42,18 +42,18 @@ struct NullBuildingsInfo
 
 NullBuildingsInfo EnrichPointsWithOuterBuildingGeometry(
     GeoObjectMaintainer & geoObjectMaintainer, std::string const & pathInGeoObjectsTmpMwm,
-    size_t threadsCount);
+    unsigned int threadsCount);
 
 void AddPoisEnrichedWithHouseAddresses(GeoObjectMaintainer & geoObjectMaintainer,
                                        NullBuildingsInfo const & buildingsInfo,
                                        std::string const & pathInGeoObjectsTmpMwm,
                                        std::ostream & streamPoiIdsToAddToLocalityIndex,
-                                       bool verbose, size_t threadsCount);
+                                       bool verbose, unsigned int threadsCount);
 
 
 void FilterAddresslessThanGaveTheirGeometryToInnerPoints(std::string const & pathInGeoObjectsTmpMwm,
                                                          NullBuildingsInfo const & buildingsInfo,
-                                                         size_t threadsCount);
+                                                         unsigned int threadsCount);
 
 }  // namespace geo_objects
 }  // namespace generator

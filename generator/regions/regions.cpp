@@ -40,7 +40,7 @@ public:
   RegionsGenerator(std::string const & pathRegionsTmpMwm,
                    std::string const & pathInRegionsCollector,
                    std::string const & pathOutRegionsKv,
-                   bool verbose, size_t threadsCount)
+                   bool verbose, unsigned int threadsCount)
     : m_pathRegionsTmpMwm{pathRegionsTmpMwm}
     , m_pathOutRegionsKv{pathOutRegionsKv}
     , m_verbose{verbose}
@@ -325,7 +325,7 @@ private:
 void GenerateRegions(std::string const & pathRegionsTmpMwm,
                      std::string const & pathInRegionsCollector,
                      std::string const & pathOutRegionsKv,
-                     bool verbose, size_t threadsCount)
+                     bool verbose, unsigned int threadsCount)
 {
   RegionsGenerator(pathRegionsTmpMwm, pathInRegionsCollector, pathOutRegionsKv,
                    verbose, threadsCount);
