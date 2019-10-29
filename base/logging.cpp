@@ -50,7 +50,7 @@ array<char const *, NUM_LOG_LEVELS> const & GetLogLevelNames()
 
 class LogHelper
 {
-  int m_threadsCount;
+  unsigned int m_threadsCount{0};
   map<threads::ThreadID, int> m_threadID;
 
   int GetThreadID()
@@ -67,7 +67,7 @@ class LogHelper
   array<size_t, NUM_LOG_LEVELS> m_lens;
 
 public:
-  LogHelper() : m_threadsCount(0)
+  LogHelper()
   {
     // This code highly depends on the fact that GetLogLevelNames()
     // always returns the same constant array of strings.

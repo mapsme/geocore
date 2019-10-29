@@ -33,7 +33,7 @@ public:
       m2::PointD const & point, std::function<bool(KeyValue const & json)> const & selector)>;
   using RegionGetter = std::function<std::shared_ptr<JsonValue>(uint64_t key)>;
 
-  explicit StreetsBuilder(RegionFinder const & regionFinder, size_t threadsCount = 1);
+  explicit StreetsBuilder(RegionFinder const & regionFinder, unsigned int threadsCount = 1);
 
   void AssembleStreets(std::string const & pathInStreetsTmpMwm);
   void AssembleBindings(std::string const & pathInGeoObjectsTmpMwm);
@@ -81,7 +81,7 @@ private:
   std::unordered_multimap<base::GeoObjectId, Street const *> m_streetFeatures2Streets;
   RegionFinder m_regionFinder;
   uint64_t m_osmSurrogateCounter{0};
-  size_t m_threadsCount;
+  unsigned int m_threadsCount;
   std::mutex m_updateMutex;
 };
 }  // namespace streets

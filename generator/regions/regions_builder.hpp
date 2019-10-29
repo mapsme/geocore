@@ -27,7 +27,7 @@ public:
   using CountryFn = std::function<void(std::string const &, Node::PtrList const &)>;
 
   explicit RegionsBuilder(Regions && regions, PlacePointsMap && placePointsMap,
-                          size_t threadsCount = 1);
+                          unsigned int threadsCount = 1);
 
   Regions const & GetCountriesOuters() const;
   StringsList GetCountryInternationalNames() const;
@@ -71,7 +71,7 @@ private:
   Regions m_countriesOuters;
   Regions m_regionsInAreaOrder;
   PlacePointsMap m_placePointsMap;
-  size_t m_threadsCount;
+  unsigned int m_threadsCount;
 };
 }  // namespace regions
 }  // namespace generator

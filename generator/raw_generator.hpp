@@ -17,8 +17,7 @@ namespace generator
 class RawGenerator
 {
 public:
-  explicit RawGenerator(feature::GenerateInfo & genInfo, size_t threadsCount = 1,
-                        size_t chunkSize = 1024);
+  explicit RawGenerator(feature::GenerateInfo & genInfo, size_t chunkSize = 1024);
 
   void GenerateRegionFeatures(
       std::string const & regionsFeaturesPath, std::string const & regionsInfoPath);
@@ -46,7 +45,6 @@ private:
   bool GenerateFilteredFeatures();
 
   feature::GenerateInfo & m_genInfo;
-  size_t m_threadsCount;
   size_t m_chunkSize;
   std::shared_ptr<cache::IntermediateData> m_cache;
   std::shared_ptr<FeatureProcessorQueue> m_queue;

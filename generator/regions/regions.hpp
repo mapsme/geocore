@@ -10,6 +10,6 @@ void GenerateRegions(std::string const & pathRegionsTmpMwm,
                      std::string const & pathInRegionsCollector,
                      std::string const & pathOutRegionsKv,
                      bool verbose,
-                     size_t threadsCount = 1);
+                     unsigned int threadsCount = 1);
 }  // namespace regions
 }  // namespace generator
