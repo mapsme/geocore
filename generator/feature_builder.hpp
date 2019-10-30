@@ -289,24 +289,6 @@ struct MaxAccuracy
 };
 }  // namespace serialization_policy
 
-// TODO(maksimandrianov): I would like to support the verification of serialization versions,
-// but this requires reworking of FeatureCollector class and its derived classes. It is in future
-// plans
-
-// template <class SerializationPolicy, class Source>
-// void TryReadAndCheckVersion(Source & src)
-//{
-//  if (src.Size() - src.Pos() >= sizeof(serialization_policy::TypeSerializationVersion))
-//  {
-//    auto const type = ReadVarUint<serialization_policy::TypeSerializationVersion>(src);
-//    CHECK_EQUAL(type, SerializationPolicy::kSerializationVersion, ());
-//  }
-//  else
-//  {
-//    LOG(LWARNING, ("Unable to read file version."))
-//  }
-//}
-
 // Read feature from feature source.
 template <class SerializationPolicy = serialization_policy::MinSize, class Source>
 void ReadFromSourceRawFormat(Source & src, FeatureBuilder & fb)
@@ -323,7 +305,6 @@ void ForEachFromDatRawFormat(std::string const & filename, ToDo && toDo)
 {
   FileReader reader(filename);
   ReaderSource<FileReader> src(reader);
-  // TryReadAndCheckVersion<SerializationPolicy>(src);
   auto const fileSize = reader.Size();
   auto currPos = src.Pos();
   // read features one by one
@@ -347,7 +328,6 @@ void ForEachParallelFromDatRawFormat(unsigned int threadsCount, std::string cons
 
   FileReader reader(filename);
   ReaderSource<FileReader> src(reader);
-  //  TryReadAndCheckVersion<SerializationPolicy>(src);
   auto const fileSize = reader.Size();
   auto currPos = src.Pos();
   std::mutex readMutex;
