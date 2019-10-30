@@ -30,7 +30,7 @@ using namespace generator;
 using namespace std;
 using namespace std::literals;
 
-using OsmFormatParser = std::function<void(SourceReader &, function<void(OsmElement *)>)>;
+using OsmFormatParser = std::function<void(SourceReader &, function<void(OsmElement &&)>)>;
 
 UNIT_TEST(Intermediate_Data_empty_way_element_save_load_test)
 {
@@ -130,10 +130,10 @@ std::vector<OsmElement> ReadOsmElements(
 
   auto stream = std::fstream{filename};
   SourceReader reader(stream);
-  parser(reader, [&elements, type](OsmElement * e)
+  parser(reader, [&elements, type](OsmElement && e)
   {
-    if (e->m_type == type)
-      elements.push_back(*e);
+    if (e.m_type == type)
+      elements.push_back(std::move(e));
   });
 
   return elements;
