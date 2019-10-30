@@ -49,29 +49,29 @@ uint64_t SourceReader::Read(char * buffer, uint64_t bufferSize)
 
 // Functions ---------------------------------------------------------------------------------------
 
-void BuildIntermediateNode(OsmElement const & element, NodeElement & node)
+void BuildIntermediateNode(OsmElement && element, NodeElement & node)
 {
   auto position = MercatorBounds::FromLatLon(element.m_lat, element.m_lon);
   node = {element.m_id, position.y, position.x};
 }
 
-bool BuildIntermediateWay(OsmElement const & element, WayElement & way)
+bool BuildIntermediateWay(OsmElement && element, WayElement & way)
 {
   way.m_wayOsmId = element.m_id;
-  way.nodes = element.Nodes();
+  way.nodes = std::move(element.Nodes());
   return way.IsValid();
 }
 
-bool BuildIntermediateRelation(OsmElement const & element, RelationElement & relation)
+bool BuildIntermediateRelation(OsmElement && element, RelationElement & relation)
 {
-  for (auto const & member : element.Members())
+  for (auto & member : element.Members())
   {
     switch (member.m_type) {
     case OsmElement::EntityType::Node:
-      relation.nodes.emplace_back(member.m_ref, string(member.m_role));
+      relation.nodes.emplace_back(member.m_ref, std::move(member.m_role));
       break;
     case OsmElement::EntityType::Way:
-      relation.ways.emplace_back(member.m_ref, string(member.m_role));
+      relation.ways.emplace_back(member.m_ref, std::move(member.m_role));
       break;
     case OsmElement::EntityType::Relation:
       // we just ignore type == "relation"
@@ -81,37 +81,39 @@ bool BuildIntermediateRelation(OsmElement const & element, RelationElement & rel
     }
   }
 
-  for (auto const & tag : element.Tags())
-    relation.tags.emplace(tag.m_key, tag.m_value);
+  for (auto & tag : element.Tags())
+    relation.tags.emplace(std::move(tag.m_key), std::move(tag.m_value));
 
   return relation.IsValid();
 }
 
-void AddElementToCache(cache::IntermediateDataWriter & cache, OsmElement & element)
+void AddElementToCache(cache::IntermediateDataWriter & cache, OsmElement && element)
 {
   switch (element.m_type)
   {
   case OsmElement::EntityType::Node:
   {
     NodeElement node;
-    BuildIntermediateNode(element, node);
+    BuildIntermediateNode(std::move(element), node);
     cache.AddNode(node.m_nodeOsmId, node.m_lat, node.m_lon);
     break;
   }
   case OsmElement::EntityType::Way:
   {
     // Store way.
-    WayElement way(element.m_id);
-    if (BuildIntermediateWay(element, way))
-      cache.AddWay(element.m_id, way);
+    auto const id = element.m_id;
+    WayElement way(id);
+    if (BuildIntermediateWay(std::move(element), way))
+      cache.AddWay(id, way);
     break;
   }
   case OsmElement::EntityType::Relation:
   {
     // store relation
+    auto const id = element.m_id;
     RelationElement relation;
-    if (BuildIntermediateRelation(element, relation))
-      cache.AddRelation(element.m_id, relation);
+    if (BuildIntermediateRelation(std::move(element), relation))
+      cache.AddRelation(id, relation);
     break;
   }
   default:
@@ -127,7 +129,7 @@ void BuildIntermediateDataFromXML(SourceReader & stream, cache::IntermediateData
   while (processorOsmElementsFromXml.TryRead(element))
   {
     towns.CheckElement(element);
-    AddElementToCache(cache, element);
+    AddElementToCache(cache, std::move(element));
   }
 }
 
@@ -138,20 +140,20 @@ void BuildIntermediateDataFromXML(
   BuildIntermediateDataFromXML(reader, cache, towns);
 }
 
-void ProcessOsmElementsFromXML(SourceReader & stream, function<void(OsmElement *)> processor)
+void ProcessOsmElementsFromXML(SourceReader & stream, function<void(OsmElement &&)> processor)
 {
   ProcessorOsmElementsFromXml processorOsmElementsFromXml(stream);
   OsmElement element;
   while (processorOsmElementsFromXml.TryRead(element))
-    processor(&element);
+    processor(std::move(element));
 }
 
 void BuildIntermediateDataFromO5M(SourceReader & stream, cache::IntermediateDataWriter & cache,
                                   TownsDumper & towns)
 {
-  auto processor = [&](OsmElement * element) {
-    towns.CheckElement(*element);
-    AddElementToCache(cache, *element);
+  auto processor = [&](OsmElement && element) {
+    towns.CheckElement(element);
+    AddElementToCache(cache, std::move(element));
   };
 
   // Use only this function here, look into ProcessOsmElementsFromO5M
@@ -177,13 +179,13 @@ void BuildIntermediateDataFromO5M(
   BuildIntermediateDataFromO5M(reader, cache, towns);
 }
 
-void ProcessOsmElementsFromO5M(SourceReader & stream, function<void(OsmElement *)> processor)
+void ProcessOsmElementsFromO5M(SourceReader & stream, function<void(OsmElement &&)> processor)
 {
   ProcessorOsmElementsFromO5M processorOsmElementsFromO5M(stream);
 
   OsmElement element;
   while (processorOsmElementsFromO5M.TryRead(element))
-    processor(&element);
+    processor(std::move(element));
 }
 
 ProcessorOsmElementsFromO5M::ProcessorOsmElementsFromO5M(SourceReader & stream)

@@ -45,8 +45,8 @@ public:
 
 bool GenerateIntermediateData(feature::GenerateInfo & info);
 
-void ProcessOsmElementsFromO5M(SourceReader & stream, std::function<void(OsmElement *)> processor);
-void ProcessOsmElementsFromXML(SourceReader & stream, std::function<void(OsmElement *)> processor);
+void ProcessOsmElementsFromO5M(SourceReader & stream, std::function<void(OsmElement &&)> processor);
+void ProcessOsmElementsFromXML(SourceReader & stream, std::function<void(OsmElement &&)> processor);
 
 class ProcessorOsmElementsInterface
 {
