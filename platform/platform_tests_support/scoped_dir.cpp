@@ -11,10 +11,11 @@ namespace platform
 {
 namespace tests_support
 {
-ScopedDir::ScopedDir(std::string const & relativePath)
+ScopedDir::ScopedDir(std::string const & relativePath, bool recursiveForceRemove)
   : m_fullPath(base::JoinPath(GetPlatform().WritableDir(), relativePath))
   , m_relativePath(relativePath)
   , m_reset(false)
+  , m_recursiveForceRemove{recursiveForceRemove}
 {
   Platform::EError ret = Platform::MkDir(GetFullPath());
   switch (ret)
@@ -43,20 +44,28 @@ ScopedDir::~ScopedDir()
     return;
 
   std::string const fullPath = GetFullPath();
-  Platform::EError ret = Platform::RmDir(fullPath);
-  switch (ret)
+  if (m_recursiveForceRemove)
   {
-    case Platform::ERR_OK:
-      break;
-    case Platform::ERR_FILE_DOES_NOT_EXIST:
-      LOG(LERROR, (fullPath, "was deleted before destruction of ScopedDir."));
-      break;
-    case Platform::ERR_DIRECTORY_NOT_EMPTY:
-      LOG(LERROR, ("There are files in", fullPath));
-      break;
-    default:
-      LOG(LERROR, ("Platform::RmDir() error for", fullPath, ":", ret));
-      break;
+    if (!Platform::RmDirRecursively(fullPath))
+      LOG(LERROR, ("Fail to force remove directory", fullPath));
+  }
+  else
+  {
+    Platform::EError const ret = Platform::RmDir(fullPath);
+    switch (ret)
+    {
+      case Platform::ERR_OK:
+        break;
+      case Platform::ERR_FILE_DOES_NOT_EXIST:
+        LOG(LERROR, (fullPath, "was deleted before destruction of ScopedDir."));
+        break;
+      case Platform::ERR_DIRECTORY_NOT_EMPTY:
+        LOG(LERROR, ("There are files in", fullPath));
+        break;
+      default:
+        LOG(LERROR, ("Platform::RmDir() error for", fullPath, ":", ret));
+        break;
+    }
   }
 }
 
