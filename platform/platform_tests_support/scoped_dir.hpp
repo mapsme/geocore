@@ -16,7 +16,7 @@ class ScopedDir
 public:
   /// Creates test dir in a writable directory.
   /// @param path Path for a testing directory, should be relative to writable-dir.
-  ScopedDir(std::string const & relativePath);
+  ScopedDir(std::string const & relativePath, bool recursiveForceRemove = false);
 
   ScopedDir(ScopedDir const & parent, std::string const & name);
 
@@ -34,6 +34,7 @@ private:
   std::string const m_fullPath;
   std::string const m_relativePath;
   bool m_reset;
+  bool m_recursiveForceRemove;
 
   DISALLOW_COPY_AND_MOVE(ScopedDir);
 };
