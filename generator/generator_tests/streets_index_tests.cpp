@@ -28,9 +28,8 @@ GeoObjectsIndex<IndexReader> GenerateStreetsIndex(std::vector<OsmElementData> co
 
   auto const locDataFile = GetFileName("streets"s + LOC_DATA_FILE_EXTENSION);
   bool locDataGeneration =
-      feature::GenerateGeoObjectsAndStreetsData(geoObjectsFeatures.GetFullPath(),
-                                                streetsFeatures.GetFullPath(),
-                                                boost::none /* nodesFile */, locDataFile);
+      feature::GenerateGeoObjectsData(locDataFile, geoObjectsFeatures.GetFullPath(),
+                                      boost::none /* nodesFile */, streetsFeatures.GetFullPath());
   CHECK(locDataGeneration, ());
 
   ScopedFile const streetsIndex{"streets"s + LOC_IDX_FILE_EXTENSION, ScopedFile::Mode::DoNotCreate};
