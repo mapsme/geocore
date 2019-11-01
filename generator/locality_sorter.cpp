@@ -196,7 +196,7 @@ using NeedSerialize = function<bool(FeatureBuilder & fb1)>;
 bool GenerateLocalityDataImpl(FeaturesCollector & collector,
                               CalculateMidPoints::MinDrawableScalePolicy const & minDrawableScalePolicy,
                               NeedSerialize const & needSerialize,
-                              string const & featuresFile, string const & /*dataFile*/)
+                              string const & featuresFile)
 {
   // Transform features from raw format to LocalityObject format.
   try
@@ -236,97 +236,81 @@ bool GenerateLocalityDataImpl(FeaturesCollector & collector,
 
 namespace feature
 {
-bool GenerateGeoObjectsData(string const & featuresFile,
-                            NeedSerialize const & needSerialize,
-                            string const & dataFile)
+bool GenerateGeoObjectsData(string const & toDataFile, string const & featuresFile,
+                            NeedSerialize const & needSerialize)
 {
   DataHeader header;
   header.SetGeometryCodingParams(serial::GeometryCodingParams());
   header.SetScales({scales::GetUpperScale()});
 
-  LocalityCollector localityCollector(dataFile, header,
+  LocalityCollector localityCollector(toDataFile, header,
                                       static_cast<uint32_t>(base::SecondsSinceEpoch()));
   return GenerateLocalityDataImpl(
       localityCollector,
       static_cast<int (*)(TypesHolder const & types, m2::RectD limitRect)>(GetMinDrawableScale),
-      needSerialize, featuresFile, dataFile);
+      needSerialize, featuresFile);
 }
 
-bool IsGeoObjectAccepted(FeatureBuilder & fb, bool allowStreet, set<uint64_t> const & includedPois)
+bool GenerateGeoObjectsData(string const & toDataFile,
+                            string const & geoObjectsFeaturesFile,
+                            boost::optional<string> const & nodesFile,
+                            boost::optional<string> const & streetsFeaturesFile)
+
 {
-  using generator::geo_objects::GeoObjectsFilter;
-  using generator::streets::StreetsFilter;
+  set<uint64_t> nodeIds;
+  if (nodesFile && !ParseNodes(*nodesFile, nodeIds))
+    return false;
 
-  if (GeoObjectsFilter::IsBuilding(fb) || GeoObjectsFilter::HasHouse(fb))
-    return true;
+  bool const allowStreet = bool{streetsFeaturesFile};
+  bool const allowPoi = !nodeIds.empty();
+  auto const needSerialize = [&nodeIds, allowStreet, allowPoi](FeatureBuilder & fb) {
+    using generator::geo_objects::GeoObjectsFilter;
+    using generator::streets::StreetsFilter;
 
-  if (allowStreet && StreetsFilter::IsStreet(fb))
-    return true;
+    if (GeoObjectsFilter::IsBuilding(fb) || GeoObjectsFilter::HasHouse(fb))
+      return true;
 
-  if (GeoObjectsFilter::IsPoi(fb))
-    return 0 != includedPois.count(fb.GetMostGenericOsmId().GetEncodedId());
+    if (allowStreet && StreetsFilter::IsStreet(fb))
+      return true;
 
-  return false;
-}
+    if (allowPoi && GeoObjectsFilter::IsPoi(fb))
+      return 0 != nodeIds.count(fb.GetMostGenericOsmId().GetEncodedId());
 
-bool GenerateGeoObjectsAndStreetsData(string const & geoObjectsFeaturesFile,
-                                      string const & streetFeaturesFile,
-                                      boost::optional<string> const & nodesFile,
-                                      string const & dataFile)
-{
-  auto featuresDirectory = base::GetDirectory(geoObjectsFeaturesFile);
-  auto featuresFile =
-      base::JoinPath(featuresDirectory,
-                     std::string{"geo_objects_and_streets"} + DATA_FILE_EXTENSION_TMP);
+    return false;
+  };
+
+  if (!streetsFeaturesFile)
+    return GenerateGeoObjectsData(toDataFile, geoObjectsFeaturesFile, needSerialize);
+
+  auto const featuresDirectory = base::GetDirectory(geoObjectsFeaturesFile);
+  auto const featuresFile = base::JoinPath(
+      featuresDirectory, std::string{"geo_objects_and_streets"} + DATA_FILE_EXTENSION_TMP);
   SCOPE_GUARD(featuresFileGuard, std::bind(Platform::RemoveFileIfExists, featuresFile));
 
   base::AppendFileToFile(geoObjectsFeaturesFile, featuresFile);
-  base::AppendFileToFile(streetFeaturesFile, featuresFile);
+  base::AppendFileToFile(*streetsFeaturesFile, featuresFile);
 
-  set<uint64_t> nodeIds;
-  if (nodesFile && !ParseNodes(*nodesFile, nodeIds))
-    return false;
-
-  auto const needSerialize = [&nodeIds](FeatureBuilder & fb) {
-    return IsGeoObjectAccepted(fb, true /* allowStreet */, nodeIds);
-  };
-
-  return GenerateGeoObjectsData(featuresFile, needSerialize, dataFile);
+  return GenerateGeoObjectsData(toDataFile, featuresFile, needSerialize);
 }
 
-bool GenerateGeoObjectsData(string const & geoObjectsFeaturesFile,
-                            boost::optional<string> const & nodesFile,
-                            string const & dataFile)
-{
-  set<uint64_t> nodeIds;
-  if (nodesFile && !ParseNodes(*nodesFile, nodeIds))
-    return false;
-
-  auto const needSerialize = [&nodeIds](FeatureBuilder & fb) {
-    return IsGeoObjectAccepted(fb, false /* allowStreet */, nodeIds);
-  };
-
-  return GenerateGeoObjectsData(geoObjectsFeaturesFile, needSerialize, dataFile);
-}
-
-bool GenerateRegionsData(string const & featuresFile, string const & dataFile)
+bool GenerateRegionsData(std::string const & toDataFile, string const & featuresFile)
 {
   DataHeader header;
   header.SetGeometryCodingParams(serial::GeometryCodingParams());
   header.SetScales({scales::GetUpperScale()});
 
-  LocalityCollector regionsCollector(dataFile, header,
+  LocalityCollector regionsCollector(toDataFile, header,
                                      static_cast<uint32_t>(base::SecondsSinceEpoch()));
   auto const needSerialize = [](FeatureBuilder const & fb) { return fb.IsArea(); };
   return GenerateLocalityDataImpl(regionsCollector, GetMinDrawableScaleGeometryOnly,
-                                  needSerialize, featuresFile, dataFile);
+                                  needSerialize, featuresFile);
 }
 
-bool GenerateBorders(string const & featuresFile, string const & dataFile)
+bool GenerateBorders(std::string const & toDataFile, string const & featuresFile)
 {
-  BordersCollector bordersCollector(dataFile);
+  BordersCollector bordersCollector(toDataFile);
   auto const needSerialize = [](FeatureBuilder const & fb) { return fb.IsArea(); };
   return GenerateLocalityDataImpl(bordersCollector, GetMinDrawableScaleGeometryOnly,
-                                  needSerialize, featuresFile, dataFile);
+                                  needSerialize, featuresFile);
 }
 }  // namespace feature

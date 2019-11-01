@@ -7,24 +7,14 @@
 namespace feature
 {
 // Generates data for GeoObjectsIndexBuilder from input feature-dat-files.
-// @param featuresDir - path to folder with pregenerated features data;
-// @param nodesFile - path to file with list of node ids we need to add to output;
-// @param out - output file name;
-bool GenerateGeoObjectsData(std::string const & geoObjectsFeaturesFile,
-                            boost::optional<std::string> const & nodesFile,
-                            std::string const & out);
-bool GenerateGeoObjectsAndStreetsData(std::string const & geoObjectsFeaturesFile,
-                                      std::string const & streetFeaturesFile,
-                                      boost::optional<std::string> const & nodesFile,
-                                      std::string const & out);
+bool GenerateGeoObjectsData(std::string const & toDataFile,
+                            std::string const & geoObjectsFeaturesFile,
+                            boost::optional<std::string> const & nodesFile = {},
+                            boost::optional<std::string> const & streetsFeaturesFile = {});
 
 // Generates data for RegionsIndexBuilder from input feature-dat-files.
-// @param featuresDir - path to folder with pregenerated features data;
-// @param out - output file name;
-bool GenerateRegionsData(std::string const & featuresFile, std::string const & out);
+bool GenerateRegionsData(std::string const & toDataFile, std::string const & featuresFile);
 
 // Generates borders section for server-side reverse geocoder from input feature-dat-files.
-// @param featuresDir - path to folder with pregenerated features data;
-// @param out - output file to add borders section;
-bool GenerateBorders(std::string const & featuresDir, std::string const & out);
+bool GenerateBorders(std::string const & toDataFile, std::string const & featuresDir);
 }  // namespace feature
