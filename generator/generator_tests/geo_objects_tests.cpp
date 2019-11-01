@@ -122,7 +122,9 @@ void TestFindReverse(std::vector<OsmElementData> const & osmElements,
                      )
 {
   classificator::Load();
-  ScopedFile const geoObjectsFeatures{"geo_objects_features.mwm", ScopedFile::Mode::DoNotCreate};
+  ScopedDir const dataTmpDir{"tmp"};
+  ScopedFile const geoObjectsFeatures{"tmp/geo_objects_features.mwm",
+                                      ScopedFile::Mode::DoNotCreate};
   ScopedFile const idsWithoutAddresses{"ids_without_addresses.txt", ScopedFile::Mode::DoNotCreate};
   ScopedFile const geoObjectsKeyValue{"geo_objects.jsonl", ScopedFile::Mode::DoNotCreate};
 
@@ -227,7 +229,9 @@ UNIT_TEST(GenerateGeoObjects_AddNullBuildingPointToPoint)
 void TestPoiHasAddress(std::vector<OsmElementData> const & osmElements)
 {
   classificator::Load();
-  ScopedFile const geoObjectsFeatures{"geo_objects_features.mwm", ScopedFile::Mode::DoNotCreate};
+  ScopedDir const dataTmpDir{"tmp"};
+  ScopedFile const geoObjectsFeatures{"tmp/geo_objects_features.mwm",
+                                      ScopedFile::Mode::DoNotCreate};
   ScopedFile const idsWithoutAddresses{"ids_without_addresses.txt", ScopedFile::Mode::DoNotCreate};
   ScopedFile const geoObjectsKeyValue{"geo_objects.jsonl", ScopedFile::Mode::DoNotCreate};
 
