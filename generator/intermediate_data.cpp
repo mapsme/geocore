@@ -358,6 +358,7 @@ OSMElementCacheReader::OSMElementCacheReader(string const & name, bool preload, 
 // OSMElementCacheWriter ---------------------------------------------------------------------------
 OSMElementCacheWriter::OSMElementCacheWriter(string const & name, bool preload)
   : m_fileWriter(name, FileWriter::OP_WRITE_TRUNCATE, 10 * 1024 * 1024 /* bufferSize */)
+  , m_currOffset{m_fileWriter.Pos()}
   , m_offsets(name + OFFSET_EXT)
   , m_name(name)
   , m_preload(preload)

@@ -175,7 +175,7 @@ public:
   template <typename Value>
   void Write(Key id, Value const & value)
   {
-    m_offsets.Add(id, m_fileWriter.Pos());
+    m_offsets.Add(id, m_currOffset);
     m_data.clear();
     MemWriter<decltype(m_data)> w(m_data);
 
@@ -185,12 +185,14 @@ public:
     uint32_t sz = static_cast<uint32_t>(m_data.size());
     m_fileWriter.Write(&sz, sizeof(sz));
     m_fileWriter.Write(m_data.data(), sz);
+    m_currOffset += sizeof(sz) + sz;
   }
 
   void SaveOffsets();
 
 protected:
   BufferedFileWriter m_fileWriter;
+  uint64_t m_currOffset{0};
   IndexFileWriter m_offsets;
   std::string m_name;
   std::vector<uint8_t> m_data;
