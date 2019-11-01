@@ -252,10 +252,27 @@ bool GenerateGeoObjectsData(string const & featuresFile,
       needSerialize, featuresFile, dataFile);
 }
 
-bool GenerateGeoObjectsData(string const & geoObjectsFeaturesFile,
-                            string const & streetFeaturesFile,
-                            boost::optional<string> const & nodesFile,
-                            string const & dataFile)
+bool IsGeoObjectAccepted(FeatureBuilder & fb, bool allowStreet, set<uint64_t> const & includedPois)
+{
+  using generator::geo_objects::GeoObjectsFilter;
+  using generator::streets::StreetsFilter;
+
+  if (GeoObjectsFilter::IsBuilding(fb) || GeoObjectsFilter::HasHouse(fb))
+    return true;
+
+  if (allowStreet && StreetsFilter::IsStreet(fb))
+    return true;
+
+  if (GeoObjectsFilter::IsPoi(fb))
+    return 0 != includedPois.count(fb.GetMostGenericOsmId().GetEncodedId());
+
+  return false;
+}
+
+bool GenerateGeoObjectsAndStreetsData(string const & geoObjectsFeaturesFile,
+                                      string const & streetFeaturesFile,
+                                      boost::optional<string> const & nodesFile,
+                                      string const & dataFile)
 {
   auto featuresDirectory = base::GetDirectory(geoObjectsFeaturesFile);
   auto featuresFile =
@@ -271,19 +288,7 @@ bool GenerateGeoObjectsData(string const & geoObjectsFeaturesFile,
     return false;
 
   auto const needSerialize = [&nodeIds](FeatureBuilder & fb) {
-    using generator::geo_objects::GeoObjectsFilter;
-    using generator::streets::StreetsFilter;
-
-    if (GeoObjectsFilter::IsBuilding(fb) || GeoObjectsFilter::HasHouse(fb))
-      return true;
-
-    if (StreetsFilter::IsStreet(fb))
-      return true;
-
-    if (GeoObjectsFilter::IsPoi(fb))
-      return 0 != nodeIds.count(fb.GetMostGenericOsmId().GetEncodedId());
-
-    return false;
+    return IsGeoObjectAccepted(fb, true /* allowStreet */, nodeIds);
   };
 
   return GenerateGeoObjectsData(featuresFile, needSerialize, dataFile);
@@ -298,15 +303,7 @@ bool GenerateGeoObjectsData(string const & geoObjectsFeaturesFile,
     return false;
 
   auto const needSerialize = [&nodeIds](FeatureBuilder & fb) {
-    using generator::geo_objects::GeoObjectsFilter;
-
-    if (GeoObjectsFilter::IsBuilding(fb) || GeoObjectsFilter::HasHouse(fb))
-      return true;
-
-    if (GeoObjectsFilter::IsPoi(fb))
-      return 0 != nodeIds.count(fb.GetMostGenericOsmId().GetEncodedId());
-
-    return false;
+    return IsGeoObjectAccepted(fb, false /* allowStreet */, nodeIds);
   };
 
   return GenerateGeoObjectsData(geoObjectsFeaturesFile, needSerialize, dataFile);

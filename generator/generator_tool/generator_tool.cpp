@@ -316,9 +316,9 @@ int GeneratorToolMain(int argc, char ** argv)
     bool dataGenerated = false;
     if (!options.m_streets_features.empty())
     {
-      dataGenerated = feature::GenerateGeoObjectsData(options.m_geo_objects_features,
-                                                      options.m_streets_features,
-                                                      nodesListPath, locDataFile);
+      dataGenerated = feature::GenerateGeoObjectsAndStreetsData(options.m_geo_objects_features,
+                                                                options.m_streets_features,
+                                                                nodesListPath, locDataFile);
     }
     else
     {

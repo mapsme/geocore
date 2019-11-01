@@ -13,10 +13,10 @@ namespace feature
 bool GenerateGeoObjectsData(std::string const & geoObjectsFeaturesFile,
                             boost::optional<std::string> const & nodesFile,
                             std::string const & out);
-bool GenerateGeoObjectsData(std::string const & geoObjectsFeaturesFile,
-                            std::string const & streetFeaturesFile,
-                            boost::optional<std::string> const & nodesFile,
-                            std::string const & out);
+bool GenerateGeoObjectsAndStreetsData(std::string const & geoObjectsFeaturesFile,
+                                      std::string const & streetFeaturesFile,
+                                      boost::optional<std::string> const & nodesFile,
+                                      std::string const & out);
 
 // Generates data for RegionsIndexBuilder from input feature-dat-files.
 // @param featuresDir - path to folder with pregenerated features data;
