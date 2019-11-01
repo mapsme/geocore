@@ -6,6 +6,8 @@ jobs:
     name: Ubuntu GCC build and unit tests
     runs-on: ubuntu-18.04
     steps:
+    - name: Update package index
+      run:  sudo apt-get update
     - name: Install boost and lcov
       run:  sudo apt install libboost-all-dev lcov
     - name: Clone repo
