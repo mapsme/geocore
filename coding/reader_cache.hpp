@@ -56,6 +56,10 @@ public:
   {
     if (size == 0)
       return;
+
+    if (size > m_Cache.GetCacheSize() * PageSize())
+      return reader.Read(pos, p, size);
+
     ASSERT_LESS_OR_EQUAL(pos + size, reader.Size(), (pos, size, reader.Size()));
     m_Stats.m_ReadSize(static_cast<uint32_t>(size));
     char * pDst = static_cast<char *>(p);
