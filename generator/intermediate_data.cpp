@@ -129,12 +129,14 @@ private:
 class RawMemPointStorageReader : public PointStorageReaderInterface
 {
 public:
-  explicit RawMemPointStorageReader(string const & name):
-    m_fileReader(name),
-    m_data(kMaxNodesInOSM)
+  explicit RawMemPointStorageReader(string const & name)
   {
+    auto fileStream = std::ifstream{};
+    fileStream.exceptions(std::ifstream::failbit);
+    fileStream.open(name, std::ios::binary);
+
     static_assert(sizeof(size_t) == 8, "This code is only for 64-bit architectures");
-    m_fileReader.Read(0, m_data.data(), m_data.size() * sizeof(LatLon));
+    fileStream.read(reinterpret_cast<char*>(m_data.data()), m_data.size() * sizeof(LatLon));
   }
 
   // PointStorageReaderInterface overrides:
@@ -148,8 +150,7 @@ public:
   }
 
 private:
-  FileReader m_fileReader;
-  vector<LatLon> m_data;
+  vector<LatLon> m_data{kMaxNodesInOSM};
 };
 
 // RawMemPointStorageWriter ------------------------------------------------------------------------
@@ -218,21 +219,19 @@ private:
 class MapFilePointStorageReader : public PointStorageReaderInterface
 {
 public:
-  explicit MapFilePointStorageReader(string const & name) :
-    m_fileReader(name + kShortExtension)
+  explicit MapFilePointStorageReader(string const & name)
   {
     LOG(LINFO, ("Nodes reading is started"));
 
-    uint64_t const count = m_fileReader.Size();
+    auto filename = name + kShortExtension;
+    auto fileStream = std::ifstream{filename, std::ios::binary};
+    if (!fileStream.is_open())
+      MYTHROW(Writer::OpenException, ("Failed to open", filename));
 
-    uint64_t pos = 0;
     LatLonPos llp;
-    LatLon ll;
-    while (pos < count)
+    while (fileStream.good() && fileStream.read(reinterpret_cast<char*>(&llp), sizeof(llp)))
     {
-      m_fileReader.Read(pos, &llp, sizeof(llp));
-      pos += sizeof(llp);
-
+      LatLon ll;
       ll.m_lat = llp.m_lat;
       ll.m_lon = llp.m_lon;
       m_map.emplace(llp.m_pos, ll);
@@ -257,7 +256,6 @@ public:
   }
 
 private:
-  FileReader m_fileReader;
   unordered_map<uint64_t, LatLon> m_map;
 };
 
@@ -330,13 +328,15 @@ GetOrCreatePointStorageReader(feature::GenerateInfo::NodeStorageType type, strin
 // IndexFileReader ---------------------------------------------------------------------------------
 IndexFileReader::IndexFileReader(string const & name)
 {
-  FileReader fileReader(name);
-  m_elements.clear();
-  size_t const fileSize = fileReader.Size();
+  size_t const fileSize = boost::filesystem::file_size(name);
   if (fileSize == 0)
     return;
 
-  LOG_SHORT(LINFO, ("Offsets reading is started for file", fileReader.GetName()));
+  auto fileStream = std::ifstream{};
+  fileStream.exceptions(std::ifstream::failbit);
+  fileStream.open(name, std::ios::binary);
+
+  LOG_SHORT(LINFO, ("Offsets reading is started for file", name));
   CHECK_EQUAL(0, fileSize % sizeof(Element), ("Damaged file."));
 
   try
@@ -348,7 +348,7 @@ IndexFileReader::IndexFileReader(string const & name)
     LOG(LCRITICAL, ("Insufficient memory for required offset map"));
   }
 
-  fileReader.Read(0, &m_elements[0], base::checked_cast<size_t>(fileSize));
+  fileStream.read(reinterpret_cast<char*>(&m_elements[0]), base::checked_cast<size_t>(fileSize));
 
   sort(m_elements.begin(), m_elements.end(), ElementComparator());
 
@@ -399,6 +399,7 @@ OSMElementCacheReader::OSMElementCacheReader(string const & name, bool preload, 
 {
   if (!m_preload)
     return;
+
   size_t sz = m_fileReader.Size();
   m_data.resize(sz);
   m_fileReader.Read(0, m_data.data(), sz);
