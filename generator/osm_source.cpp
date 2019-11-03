@@ -292,7 +292,7 @@ ProcessorOsmElementsFromO5M::ProcessorOsmElementsFromO5M(
   : m_stream(stream)
   , m_dataset([&](uint8_t * buffer, size_t size) {
       return m_stream.Read(reinterpret_cast<char *>(buffer), size);
-  }, 1024 * 1024)
+    }, 1024 * 1024)
   , m_taskCount{taskCount}
   , m_taskId{taskId}
   , m_chunkSize{chunkSize}
