@@ -154,6 +154,8 @@ set(
   world_map_generator.hpp
 )
 
+find_package(Boost REQUIRED COMPONENTS iostreams)
+
 geocore_add_library(${PROJECT_NAME} ${SRC})
 geocore_link_libraries(${PROJECT_NAME}
   base
@@ -162,6 +164,7 @@ geocore_link_libraries(${PROJECT_NAME}
   platform
   geometry
   jansson
+  ${Boost_LIBRARIES}
 )
 
 geocore_add_test_subdirectory(generator_tests_support)

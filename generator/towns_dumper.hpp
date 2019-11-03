@@ -8,6 +8,7 @@
 
 #include "base/string_utils.hpp"
 
+#include <mutex>
 #include <string>
 #include <vector>
 
@@ -16,7 +17,7 @@ class TownsDumper
 public:
   TownsDumper();
 
-  void CheckElement(OsmElement const & em);
+  void CheckElement(OsmElement const & em, bool concurrent);
 
   void Dump(std::string const & filePath);
 
@@ -43,4 +44,5 @@ private:
   };
 
   std::vector<Town> m_records;
+  std::mutex m_updateMutex;
 };

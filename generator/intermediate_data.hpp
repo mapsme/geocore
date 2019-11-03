@@ -59,8 +59,11 @@ static_assert(std::is_trivially_copyable<LatLonPos>::value, "");
 class PointStorageWriterInterface
 {
 public:
+  using Nodes = std::vector<std::pair<Key, NodeElement>>;
+
   virtual ~PointStorageWriterInterface() {}
   virtual void AddPoint(uint64_t id, double lat, double lon) = 0;
+  virtual void AddPoints(Nodes const & nodes, bool concurrent) = 0;
   virtual uint64_t GetNumProcessedPoints() const = 0;
 };
 
@@ -188,15 +191,69 @@ public:
     m_currOffset += sizeof(sz) + sz;
   }
 
+  template <typename Key, typename Value>
+  void Write(std::vector<std::pair<Key, Value>> const & elements, bool /* concurrent */)
+  {
+    auto data = std::vector<uint8_t>{};
+    data.reserve(elements.size() * 1024);
+
+    auto elementsOffsets = std::vector<std::pair<Key, uint64_t>>{};
+    elementsOffsets.reserve(elements.size());
+
+    auto writer = MemWriter<decltype(data)>{data};
+    for (auto const & element : elements)
+    {
+      auto const pos = writer.Pos();
+      WriteValue(element.second, writer);
+      elementsOffsets.emplace_back(element.first, pos);
+    }
+
+    uint64_t dataOffset = 0;
+
+    {
+      std::lock_guard<std::mutex> lock{m_fileWriterMutex};
+      dataOffset = m_currOffset;
+      m_fileWriter.Write(data.data(), data.size());
+      m_currOffset += data.size();
+    }
+
+    {
+      std::lock_guard<std::mutex> lock{m_offsetsMutex};
+      for (auto const & elementOffset : elementsOffsets)
+        m_offsets.Add(elementOffset.first, dataOffset + elementOffset.second);
+    }
+  }
+
   void SaveOffsets();
 
 protected:
   BufferedFileWriter m_fileWriter;
+  std::mutex m_fileWriterMutex;
   uint64_t m_currOffset{0};
   IndexFileWriter m_offsets;
+  std::mutex m_offsetsMutex;
   std::string m_name;
   std::vector<uint8_t> m_data;
   bool m_preload = false;
+
+private:
+  template <typename Value, typename Writer>
+  void WriteValue(Value const & element, Writer & writer)
+  {
+    auto const sizePos = writer.Pos();
+    auto elementDataSize = uint32_t{0};
+    writer.Write(&elementDataSize, sizeof(elementDataSize));
+
+    auto const elementDataPos = writer.Pos();
+    element.Write(writer);
+
+    auto const elementDataEndPos = writer.Pos();
+    elementDataSize = base::checked_cast<uint32_t>(elementDataEndPos - elementDataPos);
+    ASSERT_LESS(elementDataSize, std::numeric_limits<uint32_t>::max(), ());
+    writer.Seek(sizePos);
+    writer.Write(&elementDataSize, sizeof(elementDataSize));
+    writer.Seek(elementDataEndPos);
+  }
 };
 
 class IntermediateDataReader
@@ -277,12 +334,19 @@ private:
 class IntermediateDataWriter
 {
 public:
+  using Nodes = std::vector<std::pair<Key, NodeElement>>;
+  using Ways = std::vector<std::pair<Key, WayElement>>;
+  using Relations = std::vector<std::pair<Key, RelationElement>>;
+
   IntermediateDataWriter(PointStorageWriterInterface & nodes, feature::GenerateInfo const & info);
 
-  void AddNode(Key id, double lat, double lon) { m_nodes.AddPoint(id, lat, lon); }
-  void AddWay(Key id, WayElement const & e) { m_ways.Write(id, e); }
+  void AddNode(Key id, double lat, double lon);
+  void AddNodes(Nodes const & nodes, bool concurrent);
+  void AddWay(Key id, WayElement const & e);
+  void AddWays(Ways const & ways, bool concurrent);
 
   void AddRelation(Key id, RelationElement const & e);
+  void AddRelations(Relations const & relations, bool concurrent);
   void SaveIndex();
 
   static void AddToIndex(cache::IndexFileWriter & index, Key relationId, std::vector<uint64_t> const & values)
@@ -303,7 +367,9 @@ private:
   cache::OSMElementCacheWriter m_ways;
   cache::OSMElementCacheWriter m_relations;
   cache::IndexFileWriter m_nodeToRelations;
+  std::mutex m_nodeToRelationsUpdateMutex;
   cache::IndexFileWriter m_wayToRelations;
+  std::mutex m_wayToRelationsUpdateMutex;
 };
 
 std::unique_ptr<PointStorageReaderInterface>
