@@ -58,7 +58,7 @@ void TownsDumper::FilterTowns()
   LOG(LINFO, ("Preprocessing finished. Have", m_records.size(), "towns."));
 }
 
-void TownsDumper::CheckElement(OsmElement const & em)
+void TownsDumper::CheckElement(OsmElement const & em, bool /* concurrent */)
 {
   if (em.m_type != OsmElement::EntityType::Node)
     return;
@@ -96,7 +96,10 @@ void TownsDumper::CheckElement(OsmElement const & em)
     capital = false;
 
   if (town || capital)
+  {
+    std::lock_guard<std::mutex> lock{m_updateMutex};
     m_records.emplace_back(em.m_lat, em.m_lon, em.m_id, capital, population);
+  }
 }
 
 void TownsDumper::Dump(std::string const & filePath)

@@ -17,6 +17,11 @@
 #include <fstream>
 #include <memory>
 #include <set>
+#include <thread>
+#include <vector>
+
+#include <boost/iostreams/device/mapped_file.hpp>
+#include <boost/iostreams/stream.hpp>
 
 #include "defines.hpp"
 
@@ -128,7 +133,7 @@ void BuildIntermediateDataFromXML(SourceReader & stream, cache::IntermediateData
   OsmElement element;
   while (processorOsmElementsFromXml.TryRead(element))
   {
-    towns.CheckElement(element);
+    towns.CheckElement(element, false /* concurrent */);
     AddElementToCache(cache, std::move(element));
   }
 }
@@ -148,35 +153,121 @@ void ProcessOsmElementsFromXML(SourceReader & stream, function<void(OsmElement &
     processor(std::move(element));
 }
 
-void BuildIntermediateDataFromO5M(SourceReader & stream, cache::IntermediateDataWriter & cache,
-                                  TownsDumper & towns)
+void BuildIntermediateData(std::vector<OsmElement> && elements,
+                           cache::IntermediateDataWriter & cache, TownsDumper & towns,
+                           bool concurrent)
 {
-  auto processor = [&](OsmElement && element) {
-    towns.CheckElement(element);
-    AddElementToCache(cache, std::move(element));
-  };
+  if (elements.empty())
+    return;
 
-  // Use only this function here, look into ProcessOsmElementsFromO5M
-  // for more details.
-  ProcessOsmElementsFromO5M(stream, processor);
+  auto const firstElementType = elements.front().m_type;
+  auto nodes = cache::IntermediateDataWriter::Nodes{};
+  if (firstElementType == OsmElement::EntityType::Node)
+    nodes.reserve(elements.size());
+
+  auto ways = cache::IntermediateDataWriter::Ways{};
+  if (firstElementType == OsmElement::EntityType::Way)
+    ways.reserve(elements.size());
+
+  auto relations = cache::IntermediateDataWriter::Relations{};
+  if (firstElementType == OsmElement::EntityType::Relation)
+    relations.reserve(elements.size());
+
+  for (auto & osmElement : elements)
+  {
+    towns.CheckElement(osmElement, concurrent);
+
+    auto const id = osmElement.m_id;
+    switch (osmElement.m_type)
+    {
+    case OsmElement::EntityType::Node:
+    {
+      nodes.emplace_back(id, NodeElement{});
+      BuildIntermediateNode(std::move(osmElement), nodes.back().second);
+      break;
+    }
+    case OsmElement::EntityType::Way:
+    {
+      WayElement way{id};
+      if (BuildIntermediateWay(std::move(osmElement), way))
+        ways.emplace_back(id, std::move(way));
+      break;
+    }
+    case OsmElement::EntityType::Relation:
+    {
+      RelationElement relation;
+      if (BuildIntermediateRelation(std::move(osmElement), relation))
+        relations.emplace_back(id, std::move(relation));
+      break;
+    }
+    default:
+      break;
+    }
+  }
+
+  if (!nodes.empty())
+    cache.AddNodes(std::move(nodes), concurrent);
+  if (!ways.empty())
+    cache.AddWays(std::move(ways), concurrent);
+  if (!relations.empty())
+    cache.AddRelations(std::move(relations), concurrent);
 }
 
 void BuildIntermediateDataFromO5M(
-    std::string const & filename, cache::IntermediateDataWriter & cache, TownsDumper & towns)
+    ProcessorOsmElementsFromO5M & o5mReader, cache::IntermediateDataWriter & cache,
+    TownsDumper & towns, bool concurrent)
+{
+  std::vector<OsmElement> elements(o5mReader.ChunkSize());
+  size_t elementsCount = 0;
+  while (o5mReader.TryRead(elements[elementsCount]))
+  {
+    ++elementsCount;
+    if (elementsCount < o5mReader.ChunkSize())
+      continue;
+
+    BuildIntermediateData(std::move(elements), cache, towns, concurrent);
+    elements.resize(o5mReader.ChunkSize());  // restore capacity after std::move(elements)
+    elementsCount = 0;
+  }
+
+  elements.resize(elementsCount);
+  BuildIntermediateData(std::move(elements), cache, towns, concurrent);
+}
+
+void BuildIntermediateDataFromO5M(
+    std::string const & filename, cache::IntermediateDataWriter & cache, TownsDumper & towns,
+    unsigned int threadsCount)
 {
   if (filename.empty())
   {
     // Read form stdin.
-    SourceReader reader{};
-    return BuildIntermediateDataFromO5M(reader, cache, towns);
+    auto && reader = SourceReader{};
+    auto && o5mReader = ProcessorOsmElementsFromO5M(reader);
+    return BuildIntermediateDataFromO5M(o5mReader, cache, towns, false /* concurrent */);
   }
 
   LOG_SHORT(LINFO, ("Reading OSM data from", filename));
 
-  auto && stream = std::ifstream{filename, std::ios::binary};
-  auto && reader = SourceReader(stream);
+  auto sourceMap = boost::iostreams::mapped_file_source{filename};
+  if (!sourceMap.is_open())
+    MYTHROW(Writer::OpenException, ("Failed to open", filename));
 
-  BuildIntermediateDataFromO5M(reader, cache, towns);
+  constexpr size_t chunkSize = 10'000;
+  std::vector<std::thread> threads;
+  for (unsigned int i = 0; i < std::max(threadsCount, 1u); ++i)
+  {
+    threads.emplace_back([&sourceMap, &cache, &towns, threadsCount, i] {
+      namespace io = boost::iostreams;
+      auto && sourceArray = io::array_source{sourceMap.data(), sourceMap.size()};
+      auto && stream = io::stream<io::array_source>{sourceArray, std::ios::binary};
+      auto && reader = SourceReader(stream);
+      auto && o5mReader = ProcessorOsmElementsFromO5M(reader, threadsCount, i, chunkSize);
+      BuildIntermediateDataFromO5M(o5mReader, cache, towns, threadsCount > 1);
+    });
+  }
+
+  for (auto & thread : threads)
+    thread.join();
 }
 
 void ProcessOsmElementsFromO5M(SourceReader & stream, function<void(OsmElement &&)> processor)
@@ -193,7 +284,7 @@ ProcessorOsmElementsFromO5M::ProcessorOsmElementsFromO5M(
   : m_stream(stream)
   , m_dataset([&](uint8_t * buffer, size_t size) {
       return m_stream.Read(reinterpret_cast<char *>(buffer), size);
-  })
+  }, 1024 * 1024)
   , m_taskCount{taskCount}
   , m_taskId{taskId}
   , m_chunkSize{chunkSize}
@@ -319,7 +410,7 @@ bool GenerateIntermediateData(feature::GenerateInfo const & info)
     BuildIntermediateDataFromXML(info.m_osmFileName, cache, towns);
     break;
   case feature::GenerateInfo::OsmSourceType::O5M:
-    BuildIntermediateDataFromO5M(info.m_osmFileName, cache, towns);
+    BuildIntermediateDataFromO5M(info.m_osmFileName, cache, towns, info.m_threadsCount);
     break;
   }
 

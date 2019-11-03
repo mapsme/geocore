@@ -1,8 +1,11 @@
 #include "generator/intermediate_data.hpp"
 
+#include <atomic>
 #include <new>
 #include <set>
 #include <string>
+
+#include <boost/filesystem.hpp>
 
 #include "base/assert.hpp"
 #include "base/checked_cast.hpp"
@@ -104,10 +107,18 @@ public:
 
     ++m_numProcessedPoints;
   }
+  void AddPoints(Nodes const & nodes, bool /* concurrent */) override
+  {
+    std::lock_guard<std::mutex> lock(m_updateMutex);
+    for (auto const & node : nodes)
+      AddPoint(node.first, node.second.m_lat, node.second.m_lon);
+  }
+
   uint64_t GetNumProcessedPoints() const override { return m_numProcessedPoints; }
 
 private:
   FileWriter m_fileWriter;
+  std::mutex m_updateMutex;
   uint64_t m_numProcessedPoints = 0;
 };
 
@@ -162,14 +173,24 @@ public:
     LatLon & ll = m_data[id];
     ToLatLon(lat, lon, ll);
 
-    ++m_numProcessedPoints;
+    m_numProcessedPoints.fetch_add(1, std::memory_order_relaxed);
+  }
+  void AddPoints(Nodes const & nodes, bool /* concurrent */) override
+  {
+    for (auto const & node : nodes)
+    {
+      LatLon & ll = m_data[node.first];
+      ToLatLon(node.second.m_lat, node.second.m_lon, ll);
+    }
+
+    m_numProcessedPoints.fetch_add(nodes.size(), std::memory_order_relaxed);
   }
   uint64_t GetNumProcessedPoints() const override { return m_numProcessedPoints; }
 
 private:
   FileWriter m_fileWriter;
   vector<LatLon> m_data;
-  uint64_t m_numProcessedPoints = 0;
+  std::atomic<uint64_t> m_numProcessedPoints{0};
 };
 
 // MapFilePointStorageReader -----------------------------------------------------------------------
@@ -243,10 +264,17 @@ public:
 
     ++m_numProcessedPoints;
   }
+  void AddPoints(Nodes const & nodes, bool /* concurrent */) override
+  {
+    std::lock_guard<std::mutex> lock(m_updateMutex);
+    for (auto const & node : nodes)
+      AddPoint(node.first, node.second.m_lat, node.second.m_lon);
+  }
   uint64_t GetNumProcessedPoints() const override { return m_numProcessedPoints; }
 
 private:
   FileWriter m_fileWriter;
+  std::mutex m_updateMutex;
   uint64_t m_numProcessedPoints = 0;
 };
 
@@ -386,6 +414,43 @@ IntermediateDataWriter::IntermediateDataWriter(PointStorageWriterInterface & nod
   , m_nodeToRelations(info.GetIntermediateFileName(NODES_FILE, ID2REL_EXT))
   , m_wayToRelations(info.GetIntermediateFileName(WAYS_FILE, ID2REL_EXT))
 {}
+
+void IntermediateDataWriter::AddNode(Key id, double lat, double lon)
+{
+  m_nodes.AddPoint(id, lat, lon);
+}
+
+void IntermediateDataWriter::AddNodes(Nodes const & nodes, bool concurrent)
+{
+  m_nodes.AddPoints(nodes, concurrent);
+}
+
+void IntermediateDataWriter::AddWay(Key id, WayElement const & e)
+{
+  m_ways.Write(id, e);
+}
+
+void IntermediateDataWriter::AddWays(Ways const & ways, bool concurrent)
+{
+  m_ways.Write(ways, concurrent);
+}
+
+void IntermediateDataWriter::AddRelations(Relations const & relations, bool concurrent)
+{
+  m_relations.Write(relations, concurrent);
+
+  {
+    std::lock_guard<std::mutex> lock{m_nodeToRelationsUpdateMutex};
+    for (auto const & relation : relations)
+      AddToIndex(m_nodeToRelations, relation.first, relation.second.nodes);
+  }
+
+  {
+    std::lock_guard<std::mutex> lock{m_wayToRelationsUpdateMutex};
+    for (auto const & relation : relations)
+      AddToIndex(m_wayToRelations, relation.first, relation.second.ways);
+  }
+}
 
 void IntermediateDataWriter::AddRelation(Key id, RelationElement const & e)
 {

@@ -144,7 +144,8 @@ std::vector<OsmElement> ReadOsmElements(std::string const & filename, OsmFormatP
 
 feature::GenerateInfo MakeGenerateInfo(
     std::string const & dataPath, std::string const & osmFilename,
-    std::string const & osmFileType, std::string const & nodeStorageType)
+    std::string const & osmFileType, std::string const & nodeStorageType,
+    unsigned int threadsCount)
 {
   auto genInfo = feature::GenerateInfo{};
   genInfo.m_dataPath = dataPath;
@@ -153,6 +154,7 @@ feature::GenerateInfo MakeGenerateInfo(
   genInfo.m_osmFileName = osmFilename;
   genInfo.SetOsmFileType(osmFileType);
   genInfo.SetNodeStorageType(nodeStorageType);
+  genInfo.m_threadsCount = threadsCount;
   return genInfo;
 }
 
@@ -170,19 +172,23 @@ void TestIntermediateDataGeneration(
     // Skip test for node storage type "mem": 64Gb required.
     for (auto const & nodeStorageType : {"raw"s, "map"s})
     {
-      auto const & osmFile = ScopedFile{"planet." + osmFileTypeExtension, osmFileData};
-      auto const & dataPath = ScopedDir{"intermediate_data", true /* recursiveForceRemove */};
+      for (auto threadsCount : {1, 2, 4})
+      {
+        auto const & osmFile = ScopedFile{"planet." + osmFileTypeExtension, osmFileData};
+        auto const & dataPath = ScopedDir{"intermediate_data", true /* recursiveForceRemove */};
 
-      auto const & genInfo = MakeGenerateInfo(dataPath.GetFullPath(), osmFile.GetFullPath(),
-                                              osmFileTypeExtension, nodeStorageType);
-      auto generation = GenerateIntermediateData(genInfo);
-      CHECK(generation, ());
+        auto const & genInfo = MakeGenerateInfo(dataPath.GetFullPath(), osmFile.GetFullPath(),
+                                                osmFileTypeExtension, nodeStorageType,
+                                                threadsCount);
+        auto generation = GenerateIntermediateData(genInfo);
+        CHECK(generation, ());
 
-      auto osmElements =
-          ReadOsmElements(genInfo.m_osmFileName, osmFormatParsers.at(osmFileTypeExtension));
-      auto const & intermediateData = cache::IntermediateData{genInfo, true /* forceReload */};
-      auto const & cache = intermediateData.GetCache();
-      dataTester(osmElements, *cache);
+        auto osmElements =
+            ReadOsmElements(genInfo.m_osmFileName, osmFormatParsers.at(osmFileTypeExtension));
+        auto const & intermediateData = cache::IntermediateData{genInfo, true /* forceReload */};
+        auto const & cache = intermediateData.GetCache();
+        dataTester(osmElements, *cache);
+      }
     }
   }
 }
