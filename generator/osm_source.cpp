@@ -47,7 +47,8 @@ SourceReader::SourceReader(string const & filename)
 
 SourceReader::SourceReader(std::istream & stream)
   : m_file(unique_ptr<istream, Deleter>(&stream, Deleter(false)))
-{ }
+{
+}
 
 uint64_t SourceReader::Read(char * buffer, uint64_t bufferSize)
 {
