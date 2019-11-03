@@ -188,21 +188,41 @@ void ProcessOsmElementsFromO5M(SourceReader & stream, function<void(OsmElement &
     processor(std::move(element));
 }
 
-ProcessorOsmElementsFromO5M::ProcessorOsmElementsFromO5M(SourceReader & stream)
+ProcessorOsmElementsFromO5M::ProcessorOsmElementsFromO5M(
+    SourceReader & stream, size_t taskCount, size_t taskId, size_t chunkSize)
   : m_stream(stream)
   , m_dataset([&](uint8_t * buffer, size_t size) {
       return m_stream.Read(reinterpret_cast<char *>(buffer), size);
   })
+  , m_taskCount{taskCount}
+  , m_taskId{taskId}
+  , m_chunkSize{chunkSize}
   , m_pos(m_dataset.begin())
 {
 }
 
 bool ProcessorOsmElementsFromO5M::TryRead(OsmElement & element)
 {
-  if (m_pos == m_dataset.end())
-    return false;
+  while (m_pos != m_dataset.end())
+  {
+    auto const chunkId = m_elementCounter / m_chunkSize;
+    auto const chunkTaskId = chunkId % m_taskCount;
+    if (chunkTaskId == m_taskId)
+      return Read(element);
 
+    ++m_pos;
+    ++m_elementCounter;
+  }
+
+  return false;
+}
+
+bool ProcessorOsmElementsFromO5M::Read(OsmElement & element)
+{
   using Type = osm::O5MSource::EntityType;
+
+  element.Clear();
+
   auto const translate = [](Type t) -> OsmElement::EntityType {
     switch (t)
     {
@@ -212,8 +232,6 @@ bool ProcessorOsmElementsFromO5M::TryRead(OsmElement & element)
     default: return OsmElement::EntityType::Unknown;
     }
   };
-
-  element.Clear();
 
   // Be careful, we could call Nodes(), Members(), Tags() from O5MSource::Entity
   // only once (!). Because these functions read data from file simultaneously with
@@ -252,6 +270,7 @@ bool ProcessorOsmElementsFromO5M::TryRead(OsmElement & element)
     element.AddTag(tag.key, tag.value);
 
   ++m_pos;
+  ++m_elementCounter;
   return true;
 }
 

@@ -59,15 +59,25 @@ public:
 class ProcessorOsmElementsFromO5M : public ProcessorOsmElementsInterface
 {
 public:
-  explicit ProcessorOsmElementsFromO5M(SourceReader & stream);
+  explicit ProcessorOsmElementsFromO5M(SourceReader & stream,
+                                       size_t taskCount = 1, size_t taskId = 0,
+                                       size_t chunkSize = 1);
 
   // ProcessorOsmElementsInterface overrides:
   bool TryRead(OsmElement & element) override;
 
+  size_t ChunkSize() const noexcept { return m_chunkSize; }
+
 private:
   SourceReader & m_stream;
   osm::O5MSource m_dataset;
+  size_t const m_taskCount;
+  size_t const m_taskId;
+  size_t const m_chunkSize;
+  uint64_t m_elementCounter{0};
   osm::O5MSource::Iterator m_pos;
+
+  bool Read(OsmElement & element);
 };
 
 class ProcessorOsmElementsFromXml : public ProcessorOsmElementsInterface
