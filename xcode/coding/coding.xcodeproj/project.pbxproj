@@ -42,8 +42,6 @@
 		3DAB4B6E23018E0500F7E5EB /* buffered_file_writer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3DAB4B6C23018E0500F7E5EB /* buffered_file_writer.cpp */; };
 		3DAB4B6F23018E0500F7E5EB /* buffered_file_writer.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 3DAB4B6D23018E0500F7E5EB /* buffered_file_writer.hpp */; };
 		402E9A9321D0DBD9002D3CF4 /* map_uint32_to_val.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 402E9A9221D0DBD9002D3CF4 /* map_uint32_to_val.hpp */; };
-		4563B062205909290057556D /* sha1.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4563B05F205909280057556D /* sha1.cpp */; };
-		4563B063205909290057556D /* sha1.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 4563B060205909280057556D /* sha1.hpp */; };
 		45C108BA1E9CFF8E000FE1F6 /* libgeometry.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 45C108B91E9CFF8E000FE1F6 /* libgeometry.a */; };
 		670BAACB1D0B0C1E000302DA /* huffman.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 394917221BAC3C2F002A8C4F /* huffman.cpp */; };
 		670D04BE1B0BA92D0013A7AC /* file64_api.hpp in Headers */ = {isa = PBXBuildFile; fileRef = 670D04B41B0BA9050013A7AC /* file64_api.hpp */; };
@@ -173,8 +171,6 @@
 		3DAB4B6D23018E0500F7E5EB /* buffered_file_writer.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = buffered_file_writer.hpp; sourceTree = "<group>"; };
 		402E9A9221D0DBD9002D3CF4 /* map_uint32_to_val.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = map_uint32_to_val.hpp; sourceTree = "<group>"; };
 		4098EA6221D12088005612FF /* map_uint32_to_val_tests.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = map_uint32_to_val_tests.cpp; sourceTree = "<group>"; };
-		4563B05F205909280057556D /* sha1.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sha1.cpp; sourceTree = "<group>"; };
-		4563B060205909280057556D /* sha1.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; path = sha1.hpp; sourceTree = "<group>"; };
 		45C108B91E9CFF8E000FE1F6 /* libgeometry.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libgeometry.a; path = "/Users/r.kuznetsov/Dev/Projects/geocore/xcode/geometry/../../../geocore-build/xcode/Debug/libgeometry.a"; sourceTree = "<absolute>"; };
 		670D04B41B0BA9050013A7AC /* file64_api.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = file64_api.hpp; sourceTree = "<group>"; };
 		670D04B51B0BA9050013A7AC /* file_data.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = file_data.cpp; sourceTree = "<group>"; };
@@ -416,8 +412,6 @@
 				675342641A3F588B00A0A8C3 /* reader_writer_ops.hpp */,
 				675342651A3F588B00A0A8C3 /* reader.cpp */,
 				675342661A3F588B00A0A8C3 /* reader.hpp */,
-				4563B05F205909280057556D /* sha1.cpp */,
-				4563B060205909280057556D /* sha1.hpp */,
 				347F33341C4540F0009758CC /* simple_dense_coding.cpp */,
 				347F33351C4540F0009758CC /* simple_dense_coding.hpp */,
 				347F33361C4540F0009758CC /* succinct_mapper.hpp */,
@@ -484,7 +478,6 @@
 				39C3C0BC21A43061003B4712 /* point_coding.hpp in Headers */,
 				3DAB4B6822FDC6DF00F7E5EB /* file_container_writers.hpp in Headers */,
 				39F376C7207D327B0058E8E0 /* geometry_coding.hpp in Headers */,
-				4563B063205909290057556D /* sha1.hpp in Headers */,
 				6753428B1A3F588C00A0A8C3 /* buffer_reader.hpp in Headers */,
 				675342831A3F588C00A0A8C3 /* base64.hpp in Headers */,
 				675342BA1A3F588C00A0A8C3 /* reader_writer_ops.hpp in Headers */,
@@ -628,7 +621,6 @@
 				675342B61A3F588C00A0A8C3 /* reader_streambuf.cpp in Sources */,
 				3DAB4B6E23018E0500F7E5EB /* buffered_file_writer.cpp in Sources */,
 				675342821A3F588C00A0A8C3 /* base64.cpp in Sources */,
-				4563B062205909290057556D /* sha1.cpp in Sources */,
 				347F33371C4540F0009758CC /* compressed_bit_vector.cpp in Sources */,
 				3D74EF221F8F55740081202C /* csv_reader.cpp in Sources */,
 				6753429F1A3F588C00A0A8C3 /* file_reader.cpp in Sources */,
