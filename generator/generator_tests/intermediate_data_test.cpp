@@ -208,3 +208,32 @@ UNIT_TEST(IntermediateData_WaysGenerationTest)
     TEST_EQUAL(intermediateWay.nodes.size(), ways[0].Nodes().size(), ());
   });
 }
+
+UNIT_TEST(IntermediateData_RelationsGenerationTest)
+{
+  auto const osmSamples = std::map<std::string, std::string>{
+      {"xml", relation_xml_data},
+      {"o5m", {std::begin(relation_o5m_data), std::end(relation_o5m_data)}}};
+
+  TestIntermediateDataGeneration(
+      osmSamples, [](auto && osmElements, auto && intermediateData)
+  {
+    auto relations = std::vector<OsmElement>{};
+    std::copy_if(
+        osmElements.begin(), osmElements.end(), std::back_inserter(relations), [](auto && e)
+    {
+      return e.m_type == OsmElement::EntityType::Relation;
+    });
+    TEST_EQUAL(relations.size(), 1, ());
+    TEST_EQUAL(relations[0].m_id, 273177, ());
+
+    auto intermediateWay = WayElement{273163};
+    TEST(intermediateData.GetWay(273163, intermediateWay), ());
+
+    auto relationTesting = [](auto && relationId, auto && /* reader */) {
+      TEST_EQUAL(relationId, 273177, ());
+      return base::ControlFlow::Continue;
+    };
+    intermediateData.ForEachRelationByWayCached(273163, relationTesting);
+  });
+}
