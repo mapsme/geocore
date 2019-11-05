@@ -57,7 +57,7 @@ private:
 
   feature::GenerateInfo & m_genInfo;
   size_t m_chunkSize;
-  std::shared_ptr<cache::IntermediateData> m_cache;
+  std::shared_ptr<cache::IntermediateData const> m_cache;
   std::shared_ptr<FeatureProcessorQueue> m_queue;
   std::shared_ptr<TranslatorCollection> m_translators;
   std::priority_queue<FinalProcessorPtr, std::vector<FinalProcessorPtr>, FinalProcessorPtrCmp> m_finalProcessors;

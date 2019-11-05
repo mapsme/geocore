@@ -19,12 +19,12 @@ class IntermediateData;
 class FeatureMakerBase
 {
 public:
-  explicit FeatureMakerBase(std::shared_ptr<cache::IntermediateData> const & cache = {});
+  explicit FeatureMakerBase(std::shared_ptr<cache::IntermediateData const> const & cache = {});
   virtual ~FeatureMakerBase() = default;
 
   virtual std::shared_ptr<FeatureMakerBase> Clone() const = 0;
 
-  void SetCache(std::shared_ptr<cache::IntermediateData> const & cache);
+  void SetCache(std::shared_ptr<cache::IntermediateData const> const & cache);
 
   // Reference on element is non const because ftype::GetNameAndType will be call.
   virtual bool Add(OsmElement & element);
@@ -40,7 +40,7 @@ protected:
 
   virtual void ParseParams(FeatureParams & params, OsmElement & element) const  = 0;
 
-  std::shared_ptr<cache::IntermediateData> m_cache;
+  std::shared_ptr<cache::IntermediateData const> m_cache;
   std::queue<feature::FeatureBuilder> m_queue;
 };
 

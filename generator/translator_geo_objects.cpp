@@ -11,8 +11,9 @@
 
 namespace generator
 {
-TranslatorGeoObjects::TranslatorGeoObjects(std::shared_ptr<FeatureProcessorInterface> const & processor,
-                                           std::shared_ptr<cache::IntermediateData> const & cache)
+TranslatorGeoObjects::TranslatorGeoObjects(
+    std::shared_ptr<FeatureProcessorInterface> const & processor,
+    std::shared_ptr<cache::IntermediateData const> const & cache)
   : Translator(processor, cache, std::make_shared<FeatureMakerSimple>(cache))
 
 {

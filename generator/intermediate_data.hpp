@@ -138,7 +138,7 @@ public:
                                  bool forceReload = false);
 
   template <class Value>
-  bool Read(Key id, Value & value)
+  bool Read(Key id, Value & value) const
   {
     uint64_t pos = 0;
     if (!m_offsetsReader.GetValueByKey(id, pos))
@@ -254,24 +254,24 @@ public:
 
   // TODO |GetNode()|, |lat|, |lon| are used as y, x in real.
   bool GetNode(Key id, double & lat, double & lon) const { return m_nodes.GetPoint(id, lat, lon); }
-  bool GetWay(Key id, WayElement & e) { return m_ways.Read(id, e); }
+  bool GetWay(Key id, WayElement & e) const { return m_ways.Read(id, e); }
 
   template <typename ToDo>
-  void ForEachRelationByWay(Key id, ToDo && toDo)
+  void ForEachRelationByWay(Key id, ToDo && toDo) const
   {
     RelationProcessor<ToDo> processor(m_relations, std::forward<ToDo>(toDo));
     m_wayToRelations.ForEachByKey(id, processor);
   }
 
   template <typename ToDo>
-  void ForEachRelationByWayCached(Key id, ToDo && toDo)
+  void ForEachRelationByWayCached(Key id, ToDo && toDo) const
   {
     CachedRelationProcessor<ToDo> processor(m_relations, std::forward<ToDo>(toDo));
     m_wayToRelations.ForEachByKey(id, processor);
   }
 
   template <typename ToDo>
-  void ForEachRelationByNodeCached(Key id, ToDo && toDo)
+  void ForEachRelationByNodeCached(Key id, ToDo && toDo) const
   {
     CachedRelationProcessor<ToDo> processor(m_relations, std::forward<ToDo>(toDo));
     m_nodeToRelations.ForEachByKey(id, processor);
@@ -284,7 +284,8 @@ private:
   class ElementProcessorBase
   {
   public:
-    ElementProcessorBase(CacheReader & reader, ToDo & toDo) : m_reader(reader), m_toDo(toDo) {}
+    ElementProcessorBase(CacheReader const & reader, ToDo & toDo) : m_reader(reader), m_toDo(toDo)
+    { }
 
     base::ControlFlow operator()(uint64_t id)
     {
@@ -293,7 +294,7 @@ private:
     }
 
   protected:
-    CacheReader & m_reader;
+    CacheReader const & m_reader;
     ToDo & m_toDo;
   };
 
@@ -302,7 +303,7 @@ private:
   {
     using Base = ElementProcessorBase<RelationElement, ToDo>;
 
-    RelationProcessor(CacheReader & reader, ToDo & toDo) : Base(reader, toDo) {}
+    RelationProcessor(CacheReader const & reader, ToDo & toDo) : Base(reader, toDo) {}
   };
 
   template <typename ToDo>
@@ -310,13 +311,13 @@ private:
   {
     using Base = RelationProcessor<ToDo>;
 
-    CachedRelationProcessor(CacheReader & reader, ToDo & toDo) : Base(reader, toDo) {}
+    CachedRelationProcessor(CacheReader const & reader, ToDo & toDo) : Base(reader, toDo) {}
     base::ControlFlow operator()(uint64_t id) { return this->m_toDo(id, this->m_reader); }
   };
 
   PointStorageReaderInterface const & m_nodes;
-  cache::OSMElementCacheReader m_ways;
-  cache::OSMElementCacheReader m_relations;
+  cache::OSMElementCacheReader const m_ways;
+  cache::OSMElementCacheReader const m_relations;
   cache::IndexFileReader const & m_nodeToRelations;
   cache::IndexFileReader const & m_wayToRelations;
 };
@@ -368,12 +369,12 @@ CreatePointStorageReader(feature::GenerateInfo::NodeStorageType type, std::strin
 std::unique_ptr<PointStorageWriterInterface>
 CreatePointStorageWriter(feature::GenerateInfo::NodeStorageType type, std::string const & name);
 
-class IntermediateData
+class IntermediateData : public std::enable_shared_from_this<IntermediateData>
 {
 public:
   explicit IntermediateData(feature::GenerateInfo const & info, bool forceReload = false);
   std::shared_ptr<IntermediateDataReader> const & GetCache() const;
-  std::shared_ptr<IntermediateData> Clone() const;
+  std::shared_ptr<IntermediateData const> Clone() const;
 
 private:
   feature::GenerateInfo const & m_info;

@@ -11,7 +11,7 @@ using namespace feature;
 namespace generator
 {
 Translator::Translator(std::shared_ptr<FeatureProcessorInterface> const & processor,
-                       std::shared_ptr<cache::IntermediateData> const & cache,
+                       std::shared_ptr<cache::IntermediateData const> const & cache,
                        std::shared_ptr<FeatureMakerBase> const & maker,
                        std::shared_ptr<FilterInterface> const & filter,
                        std::shared_ptr<CollectorInterface> const & collector)
@@ -26,7 +26,7 @@ Translator::Translator(std::shared_ptr<FeatureProcessorInterface> const & proces
 }
 
 Translator::Translator(std::shared_ptr<FeatureProcessorInterface> const & processor,
-                       std::shared_ptr<cache::IntermediateData> const & cache,
+                       std::shared_ptr<cache::IntermediateData const> const & cache,
                        std::shared_ptr<FeatureMakerBase> const & maker)
   : Translator(processor, cache, maker, std::make_shared<FilterCollection>(), std::make_shared<CollectorCollection>())
 {

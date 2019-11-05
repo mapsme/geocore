@@ -18,7 +18,7 @@ class TranslatorStreets : public Translator
 {
 public:
   explicit TranslatorStreets(std::shared_ptr<FeatureProcessorInterface> const & processor,
-                             std::shared_ptr<cache::IntermediateData> const & cache);
+                             std::shared_ptr<cache::IntermediateData const> const & cache);
 
   // TranslatorInterface overrides:
   std::shared_ptr<TranslatorInterface> Clone() const override;

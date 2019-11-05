@@ -547,9 +547,9 @@ shared_ptr<IntermediateDataReader> const & IntermediateData::GetCache() const
   return m_reader;
 }
 
-shared_ptr<IntermediateData> IntermediateData::Clone() const
+shared_ptr<IntermediateData const> IntermediateData::Clone() const
 {
-  return make_shared<IntermediateData>(m_info);
+  return shared_from_this();
 }
 }  // namespace cache
 }  // namespace generator
