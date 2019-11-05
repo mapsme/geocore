@@ -141,8 +141,6 @@ set(
   translator_region.hpp
   translator_streets.cpp
   translator_streets.hpp
-  translators_pool.cpp
-  translators_pool.hpp
   type_helper.cpp
   type_helper.hpp
   unpack_mwm.cpp

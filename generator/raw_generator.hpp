@@ -12,8 +12,14 @@
 #include <string>
 #include <vector>
 
+#include <boost/iostreams/device/mapped_file.hpp>
+#include <boost/optional.hpp>
+
 namespace generator
 {
+class RawGeneratorWriter;
+class ProcessorOsmElementsInterface;
+
 class RawGenerator
 {
 public:
@@ -43,6 +49,11 @@ private:
   };
 
   bool GenerateFilteredFeatures();
+  bool GenerateFeatures(unsigned int threadsCount, RawGeneratorWriter & rawGeneratorWriter);
+  static void TranslateToFeatures(ProcessorOsmElementsInterface & sourceProcessor,
+                                  TranslatorInterface & translator);
+  bool FinishTranslation(std::vector<std::shared_ptr<TranslatorInterface>> & translators);
+  boost::iostreams::mapped_file_source MakeFileMap(std::string const & filename);
 
   feature::GenerateInfo & m_genInfo;
   size_t m_chunkSize;
