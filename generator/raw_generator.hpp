@@ -35,7 +35,6 @@ public:
   bool Execute();
   std::vector<std::string> const & GetNames() const;
   std::shared_ptr<FeatureProcessorQueue> GetQueue();
-  void ForceReloadCache();
 
 private:
   using FinalProcessorPtr = std::shared_ptr<FinalProcessorIntermediateMwmInterface>;

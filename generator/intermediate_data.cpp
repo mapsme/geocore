@@ -299,33 +299,6 @@ private:
   std::mutex m_updateMutex;
   uint64_t m_numProcessedPoints = 0;
 };
-
-IndexFileReader const & GetOrCreateIndexReader(string const & name, bool forceReload)
-{
-  static mutex m;
-  static unordered_map<string, IndexFileReader> indexes;
-
-  lock_guard<mutex> lock(m);
-  if (forceReload || indexes.count(name) == 0)
-    indexes[name] = IndexFileReader(name);
-
-  return indexes[name];
-}
-
-PointStorageReaderInterface const &
-GetOrCreatePointStorageReader(feature::GenerateInfo::NodeStorageType type, string const & name,
-                              bool forceReload)
-{
-  static mutex m;
-  static unordered_map<string, unique_ptr<PointStorageReaderInterface>> readers;
-
-  string const k = to_string(static_cast<int>(type)) + name;
-  lock_guard<mutex> lock(m);
-  if (forceReload || readers.count(k) == 0)
-    readers[k] = CreatePointStorageReader(type, name);
-
-  return *readers[k];
-}
 }  // namespace
 
 // IndexFileReader ---------------------------------------------------------------------------------
@@ -394,8 +367,8 @@ void IndexFileWriter::Add(Key k, Value const & v)
 }
 
 // OSMElementCacheReader ---------------------------------------------------------------------------
-OSMElementCacheReader::OSMElementCacheReader(string const & name, bool /* preload */, bool forceReload)
-  : m_offsetsReader(GetOrCreateIndexReader(name + OFFSET_EXT, forceReload))
+OSMElementCacheReader::OSMElementCacheReader(string const & name)
+  : m_offsetsReader(name + OFFSET_EXT)
   , m_name(name)
 {
   if (!Platform::IsFileExistsByFullPath(name) || !boost::filesystem::file_size(name))
@@ -412,33 +385,32 @@ OSMElementCacheReader::OSMElementCacheReader(string const & name, bool /* preloa
 }
 
 // OSMElementCacheWriter ---------------------------------------------------------------------------
-OSMElementCacheWriter::OSMElementCacheWriter(string const & name, bool preload)
+OSMElementCacheWriter::OSMElementCacheWriter(string const & name)
   : m_fileWriter(name, FileWriter::OP_WRITE_TRUNCATE, 10 * 1024 * 1024 /* bufferSize */)
   , m_currOffset{m_fileWriter.Pos()}
   , m_offsets(name + OFFSET_EXT)
   , m_name(name)
-  , m_preload(preload)
 {
 }
 
 void OSMElementCacheWriter::SaveOffsets() { m_offsets.WriteAll(); }
 
 // IntermediateDataReader
-IntermediateDataReader::IntermediateDataReader(PointStorageReaderInterface const & nodes,
-                                               feature::GenerateInfo const & info, bool forceReload)
-  : m_nodes(nodes)
-  , m_ways(info.GetIntermediateFileName(WAYS_FILE), info.m_preloadCache, forceReload)
-  , m_relations(info.GetIntermediateFileName(RELATIONS_FILE), info.m_preloadCache, forceReload)
-  , m_nodeToRelations(GetOrCreateIndexReader(info.GetIntermediateFileName(NODES_FILE, ID2REL_EXT), forceReload))
-  , m_wayToRelations(GetOrCreateIndexReader(info.GetIntermediateFileName(WAYS_FILE, ID2REL_EXT), forceReload))
+IntermediateDataReader::IntermediateDataReader(feature::GenerateInfo const & info)
+  : m_nodes{CreatePointStorageReader(info.m_nodeStorageType,
+                                     info.GetIntermediateFileName(NODES_FILE))}
+  , m_ways(info.GetIntermediateFileName(WAYS_FILE))
+  , m_relations(info.GetIntermediateFileName(RELATIONS_FILE))
+  , m_nodeToRelations(info.GetIntermediateFileName(NODES_FILE, ID2REL_EXT))
+  , m_wayToRelations(info.GetIntermediateFileName(WAYS_FILE, ID2REL_EXT))
 {}
 
 // IntermediateDataWriter
 IntermediateDataWriter::IntermediateDataWriter(PointStorageWriterInterface & nodes,
                                                feature::GenerateInfo const & info)
   : m_nodes(nodes)
-  , m_ways(info.GetIntermediateFileName(WAYS_FILE), info.m_preloadCache)
-  , m_relations(info.GetIntermediateFileName(RELATIONS_FILE), info.m_preloadCache)
+  , m_ways(info.GetIntermediateFileName(WAYS_FILE))
+  , m_relations(info.GetIntermediateFileName(RELATIONS_FILE))
   , m_nodeToRelations(info.GetIntermediateFileName(NODES_FILE, ID2REL_EXT))
   , m_wayToRelations(info.GetIntermediateFileName(WAYS_FILE, ID2REL_EXT))
 {}
@@ -533,14 +505,10 @@ CreatePointStorageWriter(feature::GenerateInfo::NodeStorageType type, string con
   UNREACHABLE();
 }
 
-IntermediateData::IntermediateData(feature::GenerateInfo const & info, bool forceReload)
+IntermediateData::IntermediateData(feature::GenerateInfo const & info)
   : m_info(info)
-{
-  auto const & pointReader = GetOrCreatePointStorageReader(
-                               info.m_nodeStorageType, info.GetIntermediateFileName(NODES_FILE),
-                               forceReload);
-  m_reader = make_shared<IntermediateDataReader>(pointReader, info, forceReload);
-}
+  , m_reader{make_shared<IntermediateDataReader>(info)}
+{ }
 
 shared_ptr<IntermediateDataReader> const & IntermediateData::GetCache() const
 {

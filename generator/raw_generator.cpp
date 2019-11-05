@@ -29,11 +29,6 @@ RawGenerator::RawGenerator(feature::GenerateInfo & genInfo, size_t chunkSize)
 {
 }
 
-void RawGenerator::ForceReloadCache()
-{
-  m_cache = std::make_shared<cache::IntermediateData>(m_genInfo, true /* forceReload */);
-}
-
 std::shared_ptr<FeatureProcessorQueue> RawGenerator::GetQueue()
 {
   return m_queue;
