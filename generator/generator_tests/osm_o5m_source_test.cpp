@@ -12,6 +12,119 @@
 
 using namespace std;
 
+UNIT_TEST(OSM_O5M_Source_Entity_smoke_test)
+{
+  osm::O5MSource::Entity e{};
+  e.SkipRemainder();
+  std::stringstream ss;
+  ss << e;
+  EXPECT_STREQ("O5M_CMD_RESET ID: 0", ss.str().c_str());
+}
+
+
+UNIT_TEST(OSM_O5M_Source_Member_type_fail_test)
+{
+  string data(begin(for_fail_o5m_data), end(for_fail_o5m_data));
+  // Set unreal member type
+  data[17] = 0x35;
+  stringstream ss(data);
+
+  osm::O5MSource dataset([&ss](uint8_t * buffer, size_t size)
+  {
+    return ss.read(reinterpret_cast<char *>(buffer), size).gcount();
+  }, 10 /* buffer size */);
+
+  EXPECT_DEATH({
+    for (auto const & em : dataset)
+      for (auto const & member : em.Members())
+        (void)member;
+  }, "");
+}
+
+UNIT_TEST(OSM_O5M_Source_Member_type_relation_test)
+{
+  string data(begin(for_fail_o5m_data), end(for_fail_o5m_data));
+  // Set relation member type
+  data[17] = 0x32;
+  stringstream ss(data);
+
+  osm::O5MSource dataset([&ss](uint8_t * buffer, size_t size)
+  {
+    return ss.read(reinterpret_cast<char *>(buffer), size).gcount();
+  }, 10 /* buffer size */);
+
+    for (auto const & em : dataset)
+      for (auto const & member : em.Members())
+        TEST_EQUAL(member.type, osm::O5MSource::EntityType::Relation, ());
+}
+
+UNIT_TEST(OSM_O5M_Source_Member_empty_test)
+{
+  string data(begin(for_fail_o5m_data), end(for_fail_o5m_data));
+  // Set incorrect entity size
+  data[9] = 0x06;
+  data[12] = 0x03;
+  stringstream ss(data);
+
+  osm::O5MSource dataset([&ss](uint8_t * buffer, size_t size)
+  {
+    return ss.read(reinterpret_cast<char *>(buffer), size).gcount();
+  }, 10 /* buffer size */);
+
+  size_t counter = 0;
+  for (auto const & em : dataset)
+    for (auto const & member : em.Members())
+      (void)member, ++counter;
+  TEST_EQUAL(counter, 0, ());
+}
+
+UNIT_TEST(OSM_O5M_Source_Not_o5m_test)
+{
+  string data{"Not o5m"};
+  stringstream ss(data);
+
+  EXPECT_THROW({
+      try
+      {
+          osm::O5MSource dataset([&ss](uint8_t * buffer, size_t size)
+          {
+            return ss.read(reinterpret_cast<char *>(buffer), size).gcount();
+          }, 10 /* buffer size */);
+      }
+      catch( const std::runtime_error& e )
+      {
+          // and this tests that it has the correct message
+          EXPECT_STREQ("Incorrect o5m start", e.what() );
+          throw;
+      }
+  }, std::runtime_error );
+}
+
+UNIT_TEST(OSM_O5M_Source_Incorrect_header_test)
+{
+  string data(begin(for_fail_o5m_data), end(for_fail_o5m_data));
+  // Corrupt header
+  data[6] = '8';
+  stringstream ss(data);
+
+  EXPECT_THROW({
+      try
+      {
+          osm::O5MSource dataset([&ss](uint8_t * buffer, size_t size)
+          {
+            return ss.read(reinterpret_cast<char *>(buffer), size).gcount();
+          }, 10 /* buffer size */);
+      }
+      catch( const std::runtime_error& e )
+      {
+          // and this tests that it has the correct message
+          EXPECT_STREQ("Incorrect o5m header", e.what() );
+          throw;
+      }
+  }, std::runtime_error );
+}
+
+
 UNIT_TEST(OSM_O5M_Source_Node_read_test)
 {
   string data(begin(node2_o5m_data), end(node2_o5m_data));
