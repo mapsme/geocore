@@ -41,7 +41,6 @@ struct GenerateInfo
 
   unsigned int m_threadsCount{1};
 
-  bool m_preloadCache = false;
   bool m_verbose = false;
 
   GenerateInfo() = default;

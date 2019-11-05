@@ -185,7 +185,7 @@ void TestIntermediateDataGeneration(
 
         auto osmElements =
             ReadOsmElements(genInfo.m_osmFileName, osmFormatParsers.at(osmFileTypeExtension));
-        auto const & intermediateData = cache::IntermediateData{genInfo, true /* forceReload */};
+        auto const & intermediateData = cache::IntermediateData{genInfo};
         auto const & cache = intermediateData.GetCache();
         dataTester(osmElements, *cache);
       }

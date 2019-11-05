@@ -134,8 +134,7 @@ private:
 class OSMElementCacheReader
 {
 public:
-  explicit OSMElementCacheReader(std::string const & name, bool preload = false,
-                                 bool forceReload = false);
+  explicit OSMElementCacheReader(std::string const & name);
 
   template <class Value>
   bool Read(Key id, Value & value) const
@@ -156,14 +155,14 @@ public:
 
 protected:
   boost::iostreams::mapped_file_source m_fileMap;
-  IndexFileReader const & m_offsetsReader;
+  IndexFileReader m_offsetsReader;
   std::string m_name;
 };
 
 class OSMElementCacheWriter
 {
 public:
-  explicit OSMElementCacheWriter(std::string const & name, bool preload = false);
+  explicit OSMElementCacheWriter(std::string const & name);
 
   template <typename Value>
   void Write(Key id, Value const & value)
@@ -224,7 +223,6 @@ protected:
   std::mutex m_offsetsMutex;
   std::string m_name;
   std::vector<uint8_t> m_data;
-  bool m_preload = false;
 
 private:
   template <typename Value, typename Writer>
@@ -249,11 +247,10 @@ private:
 class IntermediateDataReader
 {
 public:
-  IntermediateDataReader(PointStorageReaderInterface const & nodes,
-                         feature::GenerateInfo const & info, bool forceReload = false);
+  IntermediateDataReader(feature::GenerateInfo const & info);
 
   // TODO |GetNode()|, |lat|, |lon| are used as y, x in real.
-  bool GetNode(Key id, double & lat, double & lon) const { return m_nodes.GetPoint(id, lat, lon); }
+  bool GetNode(Key id, double & lat, double & lon) const { return m_nodes->GetPoint(id, lat, lon); }
   bool GetWay(Key id, WayElement & e) const { return m_ways.Read(id, e); }
 
   template <typename ToDo>
@@ -315,11 +312,11 @@ private:
     base::ControlFlow operator()(uint64_t id) { return this->m_toDo(id, this->m_reader); }
   };
 
-  PointStorageReaderInterface const & m_nodes;
-  cache::OSMElementCacheReader const m_ways;
-  cache::OSMElementCacheReader const m_relations;
-  cache::IndexFileReader const & m_nodeToRelations;
-  cache::IndexFileReader const & m_wayToRelations;
+  std::unique_ptr<PointStorageReaderInterface> m_nodes;
+  cache::OSMElementCacheReader m_ways;
+  cache::OSMElementCacheReader m_relations;
+  cache::IndexFileReader m_nodeToRelations;
+  cache::IndexFileReader m_wayToRelations;
 };
 
 class IntermediateDataWriter
@@ -372,7 +369,7 @@ CreatePointStorageWriter(feature::GenerateInfo::NodeStorageType type, std::strin
 class IntermediateData : public std::enable_shared_from_this<IntermediateData>
 {
 public:
-  explicit IntermediateData(feature::GenerateInfo const & info, bool forceReload = false);
+  explicit IntermediateData(feature::GenerateInfo const & info);
   std::shared_ptr<IntermediateDataReader> const & GetCache() const;
   std::shared_ptr<IntermediateData const> Clone() const;
 
