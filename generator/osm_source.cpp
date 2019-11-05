@@ -285,7 +285,7 @@ bool ProcessorOsmElementsFromXml::TryRead(OsmElement & element)
 // Generate functions implementations.
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-bool GenerateIntermediateData(feature::GenerateInfo & info)
+bool GenerateIntermediateData(feature::GenerateInfo const & info)
 {
   auto nodes = cache::CreatePointStorageWriter(info.m_nodeStorageType,
                                                info.GetIntermediateFileName(NODES_FILE));

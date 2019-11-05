@@ -43,7 +43,7 @@ public:
   uint64_t Read(char * buffer, uint64_t bufferSize);
 };
 
-bool GenerateIntermediateData(feature::GenerateInfo & info);
+bool GenerateIntermediateData(feature::GenerateInfo const & info);
 
 void ProcessOsmElementsFromO5M(SourceReader & stream, std::function<void(OsmElement &&)> processor);
 void ProcessOsmElementsFromXML(SourceReader & stream, std::function<void(OsmElement &&)> processor);
