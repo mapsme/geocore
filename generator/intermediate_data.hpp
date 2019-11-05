@@ -25,6 +25,8 @@
 #include <utility>
 #include <vector>
 
+#include <boost/iostreams/device/mapped_file.hpp>
+
 #include "defines.hpp"
 
 // Classes for reading and writing any data in file with map of offsets for
@@ -145,29 +147,17 @@ public:
       return false;
     }
 
-    uint32_t valueSize = m_preload ? *(reinterpret_cast<uint32_t *>(m_data.data() + pos)) : 0;
-    size_t offset = pos + sizeof(uint32_t);
-
-    if (!m_preload)
-    {
-      // in case not-in-memory work we read buffer
-      m_fileReader.Read(pos, &valueSize, sizeof(valueSize));
-      m_data.resize(valueSize);
-      m_fileReader.Read(pos + sizeof(valueSize), m_data.data(), valueSize);
-      offset = 0;
-    }
-
-    MemReader reader(m_data.data() + offset, valueSize);
+    uint32_t const valueSize = *(reinterpret_cast<uint32_t const *>(m_fileMap.data() + pos));
+    size_t const valueOffset = pos + sizeof(uint32_t);
+    MemReader reader(m_fileMap.data() + valueOffset, valueSize);
     value.Read(reader);
     return true;
   }
 
 protected:
-  FileReader m_fileReader;
+  boost::iostreams::mapped_file_source m_fileMap;
   IndexFileReader const & m_offsetsReader;
   std::string m_name;
-  std::vector<uint8_t> m_data;
-  bool m_preload = false;
 };
 
 class OSMElementCacheWriter
