@@ -8,3 +8,5 @@ extern char const way_xml_data[];
 extern unsigned char const way_o5m_data[175];
 extern char const relation_xml_data[];
 extern unsigned char const relation_o5m_data[224];
+extern char const for_fail_xml_data[];
+extern unsigned char const for_fail_o5m_data[25];

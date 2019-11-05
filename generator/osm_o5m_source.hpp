@@ -175,9 +175,14 @@ protected:
     char const * role = nullptr;
   };
 
-  std::vector<StringTableRecord> m_stringTable;
-  std::vector<char> m_stringBuffer;
-  size_t m_stringCurrentIndex;
+  // When reading an .o5m coded file, we use a reference table which has 15,000 lines,
+  // 250+2 characters each (for performance reasons: 256 characters).
+  // Every string pair we encounter is copied into the table, with one exception: strings pairs
+  // which are longer than 250 characters are interpreted but not copied into the table.
+  std::array<StringTableRecord, 15000> m_stringTable;
+  std::array<char, 1024> m_stringBuffer;
+  size_t m_stringCurrentIndex = 0;
+
   StreamBuffer m_buffer;
   size_t m_remainder;
   int64_t m_currentNodeRef = 0;
@@ -528,18 +533,6 @@ public:
     return this;
   }
 
-  void InitStringTable()
-  {
-    // When reading an .o5m coded file, we use a reference table which has 15,000 lines,
-    // 250+2 characters each (for performance reasons: 256 characters).
-    // Every string pair we encounter is copied into the table, with one exception: strings pairs
-    // which are longer than 250 characters are interpreted but not copied into the table.
-
-    m_stringCurrentIndex = 0;
-    m_stringBuffer.resize(1024);
-    m_stringTable.resize(15000);
-  }
-
   void Reset()
   {
     m_currentNodeRef = 0;
@@ -583,11 +576,10 @@ public:
   O5MSource(TReadFunc reader, size_t readBufferSizeInBytes = 60000) : m_buffer(reader, readBufferSizeInBytes)
   {
     if (EntityType::Reset != EntityType(m_buffer.Get()))
-    {
       throw std::runtime_error("Incorrect o5m start");
-    }
-    CheckHeader();
-    InitStringTable();
+
+    if (!CheckHeader())
+        throw std::runtime_error("Incorrect o5m header");
   }
 
   bool CheckHeader()
