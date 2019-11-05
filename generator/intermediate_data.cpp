@@ -1,6 +1,9 @@
 #include "generator/intermediate_data.hpp"
 
+#include "platform/platform.hpp"
+
 #include <atomic>
+#include <future>
 #include <new>
 #include <set>
 #include <string>
@@ -391,18 +394,21 @@ void IndexFileWriter::Add(Key k, Value const & v)
 }
 
 // OSMElementCacheReader ---------------------------------------------------------------------------
-OSMElementCacheReader::OSMElementCacheReader(string const & name, bool preload, bool forceReload)
-  : m_fileReader(name)
-  , m_offsetsReader(GetOrCreateIndexReader(name + OFFSET_EXT, forceReload))
+OSMElementCacheReader::OSMElementCacheReader(string const & name, bool /* preload */, bool forceReload)
+  : m_offsetsReader(GetOrCreateIndexReader(name + OFFSET_EXT, forceReload))
   , m_name(name)
-  , m_preload(preload)
 {
-  if (!m_preload)
+  if (!Platform::IsFileExistsByFullPath(name) || !boost::filesystem::file_size(name))
     return;
 
-  size_t sz = m_fileReader.Size();
-  m_data.resize(sz);
-  m_fileReader.Read(0, m_data.data(), sz);
+  m_fileMap.open(name);
+  if (!m_fileMap.is_open())
+    MYTHROW(Writer::OpenException, ("Failed to open", name));
+
+  auto readaheadTask = std::thread([data = m_fileMap.data(), size = m_fileMap.size()] {
+    ::madvise(const_cast<char*>(data), size, MADV_WILLNEED);
+  });
+  readaheadTask.detach();
 }
 
 // OSMElementCacheWriter ---------------------------------------------------------------------------
