@@ -10,10 +10,10 @@ using namespace feature;
 
 namespace generator
 {
-FeatureMakerBase::FeatureMakerBase(std::shared_ptr<cache::IntermediateData> const & cache)
+FeatureMakerBase::FeatureMakerBase(std::shared_ptr<cache::IntermediateData const> const & cache)
   : m_cache(cache) {}
 
-void FeatureMakerBase::SetCache(std::shared_ptr<cache::IntermediateData> const & cache)
+void FeatureMakerBase::SetCache(std::shared_ptr<cache::IntermediateData const> const & cache)
 {
   m_cache = cache;
 }

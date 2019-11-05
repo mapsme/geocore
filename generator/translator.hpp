@@ -27,12 +27,12 @@ class Translator : public TranslatorInterface
 {
 public:
   explicit Translator(std::shared_ptr<FeatureProcessorInterface> const & processor,
-                      std::shared_ptr<cache::IntermediateData> const & cache,
+                      std::shared_ptr<cache::IntermediateData const> const & cache,
                       std::shared_ptr<FeatureMakerBase> const & maker,
                       std::shared_ptr<FilterInterface> const & filter,
                       std::shared_ptr<CollectorInterface> const & collector);
   explicit Translator(std::shared_ptr<FeatureProcessorInterface> const & processor,
-                      std::shared_ptr<cache::IntermediateData> const & cache,
+                      std::shared_ptr<cache::IntermediateData const> const & cache,
                       std::shared_ptr<FeatureMakerBase> const & maker);
 
   void SetCollector(std::shared_ptr<CollectorInterface> const & collector);
@@ -66,6 +66,6 @@ protected:
   RelationTagsEnricher m_tagsEnricher;
   std::shared_ptr<FeatureMakerBase> m_featureMaker;
   std::shared_ptr<FeatureProcessorInterface> m_processor;
-  std::shared_ptr<cache::IntermediateData> m_cache;
+  std::shared_ptr<cache::IntermediateData const> m_cache;
 };
 }  // namespace generator

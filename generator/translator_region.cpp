@@ -52,7 +52,7 @@ public:
 }  // namespace
 
 TranslatorRegion::TranslatorRegion(std::shared_ptr<FeatureProcessorInterface> const & processor,
-                                   std::shared_ptr<cache::IntermediateData> const & cache,
+                                   std::shared_ptr<cache::IntermediateData const> const & cache,
                                    std::string const & regionsInfoPath)
   : Translator(processor, cache, std::make_shared<FeatureMakerSimple>(cache))
 
