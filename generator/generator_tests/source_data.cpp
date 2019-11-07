@@ -43,6 +43,27 @@ unsigned char const node2_o5m_data[] = /* 93 */
 static_assert(sizeof(node2_o5m_data) == 93, "Size check failed");
 
 
+char const node3_xml_data[] = R"#(<?xml version='1.0' encoding='UTF-8'?>
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version='0.6'>
+<node id='273105' visible='true' lat='0' lon='0'>
+<tag k='name' v='Name Value' />
+</node>
+<node id='273106' visible='true' lat='1' lon='1'>
+<tag k='name' v='Name Value' />
+</node>
+</osm>
+)#";
+
+unsigned char const node3_o5m_data[47] = {
+    0xFF, 0xE0, 0x04, 0x6F, 0x35, 0x6D, 0x32, 0xFF,
+    0x10, 0x17, 0xA2, 0xAB, 0x21, 0x00, 0x00, 0x00,
+    0x00, 0x6E, 0x61, 0x6D, 0x65, 0x00, 0x4E, 0x61,
+    0x6D, 0x65, 0x20, 0x56, 0x61, 0x6C, 0x75, 0x65,
+    0x00, 0x10, 0x0B, 0x02, 0x00, 0x80, 0xDA, 0xC4,
+    0x09, 0x80, 0xDA, 0xC4, 0x09, 0x01, 0xFE};
+
+
 char const way_xml_data[] = R"#(<?xml version='1.0' encoding='UTF-8'?>
 <osm version='0.6'>
 <node id='273125' visible='true' lat='60.70931726156' lon='135.05094269106' />
