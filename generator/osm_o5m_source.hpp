@@ -147,6 +147,9 @@ public:
   }
 
 protected:
+  // When reading an .o5m coded file, we use a reference table which has 15,000 lines,
+  // 250+2 characters each (for performance reasons: 256 characters).
+  static constexpr size_t kTableSize = 15000;
 
   struct StringTableRecord
   {
@@ -175,13 +178,11 @@ protected:
     char const * role = nullptr;
   };
 
-  // When reading an .o5m coded file, we use a reference table which has 15,000 lines,
-  // 250+2 characters each (for performance reasons: 256 characters).
   // Every string pair we encounter is copied into the table, with one exception: strings pairs
   // which are longer than 250 characters are interpreted but not copied into the table.
-  std::array<StringTableRecord, 15000> m_stringTable;
-  std::array<char, 1024> m_stringBuffer;
-  size_t m_stringCurrentIndex = 0;
+  std::vector<StringTableRecord> m_stringTable{std::vector<StringTableRecord>(kTableSize)};
+  size_t m_stringCurrentIndex{0};
+  std::array<char, 1024> m_keyValueBuffer;
 
   StreamBuffer m_buffer;
   size_t m_remainder;
@@ -391,14 +392,14 @@ public:
       // lookup table
       if (kv)
       {
-        size_t const idx = (m_stringCurrentIndex + m_stringTable.size() - key) % m_stringTable.size();
+        size_t const idx = (m_stringCurrentIndex + kTableSize - key) % kTableSize;
         kv->key = m_stringTable[idx].key;
         kv->value = m_stringTable[idx].value;
       }
       return this;
     }
 
-    char * pBuf = m_stringBuffer.data();
+    char * pBuf = m_keyValueBuffer.data();
     size_t sizes[2] = {0, 0};
     for (size_t i = 0; i < (single ? 1 : 2); i++)
     {
@@ -414,17 +415,18 @@ public:
 
     if (sizes[0] + (single ? 0 : sizes[1]) <= StringTableRecord::MaxEntrySize)
     {
-      memmove(m_stringTable[m_stringCurrentIndex].key, m_stringBuffer.data(), sizes[0]);
-      memmove(m_stringTable[m_stringCurrentIndex].value, m_stringBuffer.data() + sizes[0], sizes[1]);
+      memmove(m_stringTable[m_stringCurrentIndex].key, m_keyValueBuffer.data(), sizes[0]);
+      memmove(m_stringTable[m_stringCurrentIndex].value, m_keyValueBuffer.data() + sizes[0],
+              sizes[1]);
       if (kv)
         *kv = KeyValue(m_stringTable[m_stringCurrentIndex].key, m_stringTable[m_stringCurrentIndex].value);
-      if (++m_stringCurrentIndex == m_stringTable.size())
+      if (++m_stringCurrentIndex == kTableSize)
         m_stringCurrentIndex = 0;
       return this;
     }
 
     if (kv)
-      *kv = KeyValue(m_stringBuffer.data(), m_stringBuffer.data() + sizes[0]);
+      *kv = KeyValue(m_keyValueBuffer.data(), m_keyValueBuffer.data() + sizes[0]);
     return this;
   }
 

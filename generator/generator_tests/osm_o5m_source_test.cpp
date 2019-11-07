@@ -12,6 +12,29 @@
 
 using namespace std;
 
+UNIT_TEST(OSM_O5M_Source_StringTableReferenceTest)
+{
+  string data(begin(node3_o5m_data), end(node3_o5m_data));
+  stringstream ss{data};
+
+  TEST_NOT_EQUAL(data.find("Name Value"), string::npos, ());
+  TEST_EQUAL(data.find("Name Value"), data.rfind("Name Value"), ());
+
+  osm::O5MSource dataset([&ss](uint8_t * buffer, size_t size)
+  {
+    return ss.read(reinterpret_cast<char *>(buffer), size).gcount();
+  }, 10 /* buffer size */);
+
+  for (auto const & em : dataset)
+  {
+    for (auto const & tag : em.Tags())
+    {
+      EXPECT_STREQ(tag.key, "name");
+      EXPECT_STREQ(tag.value, "Name Value");
+    }
+  }
+}
+
 UNIT_TEST(OSM_O5M_Source_Entity_smoke_test)
 {
   osm::O5MSource::Entity e{};
