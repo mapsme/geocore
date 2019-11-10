@@ -55,18 +55,5 @@ private:
   uint32_t m_featureID = 0;
 };
 
-class FeaturesAndRawGeometryCollector : public FeaturesCollector
-{
-  FileWriter m_rawGeometryFileStream;
-  size_t m_rawGeometryCounter = 0;
-
-public:
-  FeaturesAndRawGeometryCollector(std::string const & featuresFileName,
-                                  std::string const & rawGeometryFileName);
-  ~FeaturesAndRawGeometryCollector() override;
-
-  uint32_t Collect(FeatureBuilder const & f) override;
-};
-
 uint32_t CheckedFilePosCast(FileWriter const & f);
 }  // namespace feature
