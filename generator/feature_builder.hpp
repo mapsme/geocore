@@ -17,6 +17,8 @@
 #include <thread>
 #include <vector>
 
+#include <boost/iostreams/device/mapped_file.hpp>
+
 namespace serial
 {
 class GeometryCodingParams;
@@ -289,6 +291,7 @@ struct MaxAccuracy
 };
 }  // namespace serialization_policy
 
+// Features file processing ------------------------------------------------------------------------
 // Read feature from feature source.
 template <class SerializationPolicy = serialization_policy::MinSize, class Source>
 void ReadFromSourceRawFormat(Source & src, FeatureBuilder & fb)
@@ -299,65 +302,83 @@ void ReadFromSourceRawFormat(Source & src, FeatureBuilder & fb)
   SerializationPolicy::Deserialize(fb, buffer);
 }
 
+class FeaturesFileMmap
+{
+public:
+  class const_iterator;
+
+  FeaturesFileMmap(std::string const & filename);
+
+  template <typename SerializationPolicy, typename Handler>
+  void ForEachTaskChunk(unsigned int taskIndex, unsigned int tasksCount, size_t chunkSize,
+                        Handler && handler) const
+  {
+    auto && reader =
+        MemReaderTemplate<true /* WithExceptions */>{m_fileMmap.data(), m_fileMmap.size()};
+    auto && src = ReaderSource<MemReaderTemplate<true>>{reader};
+
+    auto && buffer = FeatureBuilder::Buffer{};
+    auto && fileSize = reader.Size();
+
+    for (size_t featuresCounter = 0; src.Pos() < fileSize; ++featuresCounter)
+    {
+      auto const featurePos = src.Pos();
+
+      uint32_t const featureSize = ReadVarUint<uint32_t>(src);
+
+      auto const featureChunkIndex = featuresCounter / chunkSize;
+      auto const featureTaskIndex = featureChunkIndex % tasksCount;
+      if (featureTaskIndex != taskIndex)
+      {
+        src.Skip(featureSize);
+        continue;
+      }
+
+      buffer.resize(featureSize);
+      src.Read(buffer.data(), featureSize);
+
+      auto && fb = FeatureBuilder{};
+      SerializationPolicy::Deserialize(fb, buffer);
+
+      handler(fb, featurePos);
+    }
+  }
+
+private:
+  boost::iostreams::mapped_file_source m_fileMmap;
+};
+
 // Process features in .dat file.
 template <class SerializationPolicy = serialization_policy::MinSize, class ToDo>
 void ForEachFromDatRawFormat(std::string const & filename, ToDo && toDo)
 {
-  FileReader reader(filename);
-  ReaderSource<FileReader> src(reader);
-  auto const fileSize = reader.Size();
-  auto currPos = src.Pos();
-  // read features one by one
-  while (currPos < fileSize)
-  {
-    FeatureBuilder fb;
-    ReadFromSourceRawFormat<SerializationPolicy>(src, fb);
-    toDo(fb, currPos);
-    currPos = src.Pos();
-  }
+  auto && featuresMmap = FeaturesFileMmap{filename};
+  featuresMmap.ForEachTaskChunk<SerializationPolicy>(
+      0 /* taskIndex */, 1 /* taskCount*/, 1 /* chunkSize */, std::forward<ToDo>(toDo));
 }
 
 /// Parallel process features in .dat file.
 template <class SerializationPolicy = serialization_policy::MinSize, class ToDo>
 void ForEachParallelFromDatRawFormat(unsigned int threadsCount, std::string const & filename,
-                                     ToDo && toDo)
+                                     ToDo && toDo, uint64_t chunkSize = 1'000)
 {
   CHECK_GREATER_OR_EQUAL(threadsCount, 1, ());
-  if (threadsCount == 1)
+  if (threadsCount == 0 || threadsCount == 1)
     return ForEachFromDatRawFormat(filename, std::forward<ToDo>(toDo));
 
-  FileReader reader(filename);
-  ReaderSource<FileReader> src(reader);
-  auto const fileSize = reader.Size();
-  auto currPos = src.Pos();
-  std::mutex readMutex;
-  auto concurrentProcessor = [&] {
-    for (;;)
-    {
-      FeatureBuilder fb;
-      uint64_t featurePos;
+  auto && featuresMmap = FeaturesFileMmap{filename};
+  auto && threads = std::vector<std::thread>{};
+  for (unsigned int i = 0; i < threadsCount; ++i)
+  {
+    threads.emplace_back([i, threadsCount, chunkSize, &featuresMmap, toDo] {
+      featuresMmap.ForEachTaskChunk<SerializationPolicy>(i, threadsCount, chunkSize, toDo);
+    });
+  }
 
-      {
-        std::lock_guard<std::mutex> lock(readMutex);
-
-        if (fileSize <= currPos)
-          break;
-
-        ReadFromSourceRawFormat<SerializationPolicy>(src, fb);
-        featurePos = currPos;
-        currPos = src.Pos();
-      }
-
-      toDo(fb, featurePos);
-    }
-  };
-
-  std::vector<std::thread> workers;
-  for (size_t i = 0; i < threadsCount; ++i)
-    workers.emplace_back(concurrentProcessor);
-  for (auto & thread : workers)
+  for (auto & thread : threads)
     thread.join();
 }
+
 template <class SerializationPolicy = serialization_policy::MinSize>
 std::vector<FeatureBuilder> ReadAllDatRawFormat(std::string const & fileName)
 {

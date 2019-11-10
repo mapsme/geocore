@@ -18,6 +18,8 @@
 #include <cstring>
 #include <vector>
 
+#include <sys/mman.h>
+
 using namespace std;
 
 namespace
@@ -785,4 +787,18 @@ TypeSerializationVersion const MinSize::kSerializationVersion;
 // static
 TypeSerializationVersion const MaxAccuracy::kSerializationVersion;
 }  // namespace serialization_policy
+
+// FeaturesFileMmap --------------------------------------------------------------------------------
+FeaturesFileMmap::FeaturesFileMmap(std::string const & filename)
+  : m_fileMmap{filename}
+{
+  if (!m_fileMmap.is_open())
+    MYTHROW(Writer::OpenException, ("Failed to open", filename));
+
+  // Try aggressively (MADV_WILLNEED) and asynchronously read ahead the feature-file.
+  auto readaheadTask = std::thread([data = m_fileMmap.data(), size = m_fileMmap.size()] {
+    ::madvise(const_cast<char*>(data), size, MADV_WILLNEED);
+  });
+  readaheadTask.detach();
+}
 }  // namespace feature

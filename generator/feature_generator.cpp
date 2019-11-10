@@ -95,38 +95,6 @@ uint32_t FeaturesCollector::Collect(FeatureBuilder const & fb)
   return featureId;
 }
 
-FeaturesAndRawGeometryCollector::FeaturesAndRawGeometryCollector(std::string const & featuresFileName,
-                                                                 std::string const & rawGeometryFileName)
-  : FeaturesCollector(featuresFileName), m_rawGeometryFileStream(rawGeometryFileName) {}
-
-FeaturesAndRawGeometryCollector::~FeaturesAndRawGeometryCollector()
-{
-  uint64_t terminator = 0;
-  m_rawGeometryFileStream.Write(&terminator, sizeof(terminator));
-  LOG(LINFO, ("Write", m_rawGeometryCounter, "geometries into", m_rawGeometryFileStream.GetName()));
-}
-
-uint32_t FeaturesAndRawGeometryCollector::Collect(FeatureBuilder const & fb)
-{
-  uint32_t const featureId = FeaturesCollector::Collect(fb);
-  FeatureBuilder::Geometry const & geom = fb.GetGeometry();
-  if (geom.empty())
-    return featureId;
-
-  ++m_rawGeometryCounter;
-
-  uint64_t numGeometries = geom.size();
-  m_rawGeometryFileStream.Write(&numGeometries, sizeof(numGeometries));
-  for (FeatureBuilder::PointSeq const & points : geom)
-  {
-    uint64_t numPoints = points.size();
-    m_rawGeometryFileStream.Write(&numPoints, sizeof(numPoints));
-    m_rawGeometryFileStream.Write(points.data(),
-                                  sizeof(FeatureBuilder::PointSeq::value_type) * points.size());
-  }
-  return featureId;
-}
-
 uint32_t CheckedFilePosCast(FileWriter const & f)
 {
   uint64_t pos = f.Pos();
