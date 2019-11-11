@@ -23,6 +23,8 @@
 #include <boost/iostreams/device/mapped_file.hpp>
 #include <boost/iostreams/stream.hpp>
 
+#include <sys/mman.h>
+
 #include "defines.hpp"
 
 using namespace std;
@@ -251,6 +253,7 @@ void BuildIntermediateDataFromO5M(
   auto sourceMap = boost::iostreams::mapped_file_source{filename};
   if (!sourceMap.is_open())
     MYTHROW(Writer::OpenException, ("Failed to open", filename));
+  ::madvise(const_cast<char*>(sourceMap.data()), sourceMap.size(), MADV_SEQUENTIAL);
 
   constexpr size_t chunkSize = 10'000;
   std::vector<std::thread> threads;
