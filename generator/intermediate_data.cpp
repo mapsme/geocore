@@ -4,6 +4,7 @@
 #include <new>
 #include <set>
 #include <string>
+#include <thread>
 
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
@@ -131,18 +132,22 @@ class RawMemPointStorageReader : public PointStorageReaderInterface
 public:
   explicit RawMemPointStorageReader(string const & name)
   {
-    auto fileStream = std::ifstream{};
-    fileStream.exceptions(std::ifstream::failbit);
-    fileStream.open(name, std::ios::binary);
+    m_fileMap.open(name);
+    if (!m_fileMap.is_open())
+      MYTHROW(Writer::OpenException, ("Failed to open", name));
 
-    static_assert(sizeof(size_t) == 8, "This code is only for 64-bit architectures");
-    fileStream.read(reinterpret_cast<char*>(m_data.data()), m_data.size() * sizeof(LatLon));
+    // Try aggressively (MADV_WILLNEED) and asynchronously read ahead the node file.
+    auto readaheadTask = std::thread([data = m_fileMap.data(), size = m_fileMap.size()] {
+      ::madvise(const_cast<char*>(data), size, MADV_WILLNEED);
+    });
+    readaheadTask.detach();
   }
 
   // PointStorageReaderInterface overrides:
   bool GetPoint(uint64_t id, double & lat, double & lon) const override
   {
-    LatLon const & ll = m_data[id];
+    auto const * data = reinterpret_cast<LatLon const *>(m_fileMap.data());
+    LatLon const & ll = data[id];
     bool ret = FromLatLon(ll, lat, lon);
     if (!ret)
       LOG(LERROR, ("Node with id =", id, "not found!"));
@@ -150,7 +155,7 @@ public:
   }
 
 private:
-  vector<LatLon> m_data{kMaxNodesInOSM};
+  boost::iostreams::mapped_file_source m_fileMap;
 };
 
 // RawMemPointStorageWriter ------------------------------------------------------------------------
