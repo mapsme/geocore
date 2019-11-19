@@ -366,12 +366,11 @@ CreatePointStorageReader(feature::GenerateInfo::NodeStorageType type, std::strin
 std::unique_ptr<PointStorageWriterInterface>
 CreatePointStorageWriter(feature::GenerateInfo::NodeStorageType type, std::string const & name);
 
-class IntermediateData : public std::enable_shared_from_this<IntermediateData>
+class IntermediateData
 {
 public:
   explicit IntermediateData(feature::GenerateInfo const & info);
   std::shared_ptr<IntermediateDataReader> const & GetCache() const;
-  std::shared_ptr<IntermediateData const> Clone() const;
 
 private:
   feature::GenerateInfo const & m_info;
