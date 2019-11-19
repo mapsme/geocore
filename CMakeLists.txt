@@ -16,6 +16,17 @@ if (NOT SKIP_TESTS)
   configure_gtest()
 endif()
 
+
+# TCMalloc Linking
+add_library(tcmalloc_config INTERFACE)
+
+option(USE_TCMALLOC "Link TCMalloc memory allocator" ON)
+if (USE_TCMALLOC)
+  find_package(tcmalloc)
+  target_link_libraries(tcmalloc_config INTERFACE tcmalloc)
+endif()
+
+
 # Code Coverage Configuration
 add_library(coverage_config INTERFACE)
 
