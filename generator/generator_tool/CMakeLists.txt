@@ -9,4 +9,5 @@ geocore_link_libraries(
   geocoder
   ${Boost_PROGRAM_OPTIONS_LIBRARY}
   ${CMAKE_DL_LIBS}
+  tcmalloc_config
 )
