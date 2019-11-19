@@ -31,7 +31,7 @@ void ProcessorSimple::Process(feature::FeatureBuilder & fb)
 
 void ProcessorSimple::Finish()
 {
-  m_affiliationsLayer->AddBufferToQueue();
+  m_affiliationsLayer->Flush();
 }
 
 void ProcessorSimple::Merge(FeatureProcessorInterface const & other)

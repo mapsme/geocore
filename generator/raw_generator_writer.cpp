@@ -30,7 +30,7 @@ void RawGeneratorWriter::Run()
       if (chunk.IsEmpty())
         return;
 
-      Write(chunk.Get());
+      Write(*chunk.Get());
     }
   });
 }
@@ -51,7 +51,7 @@ void RawGeneratorWriter::Write(std::vector<ProcessedData> const & vecChunks)
 {
   for (auto const & chunk : vecChunks)
   {
-    for (auto const & affiliation : chunk.m_affiliations)
+    for (auto const & affiliation : *chunk.m_affiliations)
     {
       if (affiliation.empty())
         continue;
