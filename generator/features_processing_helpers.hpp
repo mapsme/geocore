@@ -5,24 +5,22 @@
 #include "base/thread_safe_queue.hpp"
 
 #include <cstddef>
-#include <utility>
+#include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace generator
 {
-size_t static const kAffiliationsBufferSize = 512;
+size_t static const kAffiliationsBufferSize = 2'000;
 
 struct ProcessedData
 {
-  explicit ProcessedData(feature::FeatureBuilder::Buffer && buffer,
-                         std::vector<std::string> && affiliations)
-    : m_buffer(std::move(buffer)), m_affiliations(std::move(affiliations)) {}
-
   feature::FeatureBuilder::Buffer m_buffer;
-  std::vector<std::string> m_affiliations;
+  std::shared_ptr<std::vector<std::string>> m_affiliations;
 };
 
-using FeatureProcessorChunk = base::threads::DataWrapper<std::vector<ProcessedData>>;
+using FeatureProcessorChunk =
+    base::threads::DataWrapper<std::shared_ptr<std::vector<ProcessedData>>>;
 using FeatureProcessorQueue = base::threads::ThreadSafeQueue<FeatureProcessorChunk>;
 }  // namespace generator

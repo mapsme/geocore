@@ -170,7 +170,7 @@ void TestIntermediateDataGeneration(
     auto const & osmFileData = sample.second;
 
     // Skip test for node storage type "mem": 64Gb required.
-    for (auto const & nodeStorageType : {"raw"s, "map"s, "mem"s})
+    for (auto const & nodeStorageType : {"raw"s, "map"s})
     {
       for (auto threadsCount : {1, 2, 4})
       {

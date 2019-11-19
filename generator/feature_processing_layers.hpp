@@ -156,39 +156,74 @@ template <class SerializePolicy = feature::serialization_policy::MaxAccuracy>
 class AffiliationsFeatureLayer : public LayerBase
 {
 public:
-  AffiliationsFeatureLayer(size_t bufferSize, std::shared_ptr<feature::AffiliationInterface> const & affiliation,
-                          std::shared_ptr<FeatureProcessorQueue> const & queue)
-    : m_bufferSize(bufferSize)
+  AffiliationsFeatureLayer(
+      size_t bufferedItemsCountMax, std::shared_ptr<feature::AffiliationInterface> const & affiliation,
+      std::shared_ptr<FeatureProcessorQueue> const & queue)
+    : m_bufferedItemsCountMax{bufferedItemsCountMax}
     , m_affiliation(affiliation)
     , m_queue(queue)
   {
-    m_buffer.reserve(m_bufferSize);
+    SetupItemsBuffer();
   }
 
   // LayerBase overrides:
   void Handle(feature::FeatureBuilder & fb) override
   {
-    feature::FeatureBuilder::Buffer buffer;
-    SerializePolicy::Serialize(fb, buffer);
-    m_buffer.emplace_back(std::move(buffer), m_affiliation->GetAffiliations(fb));
-    if (m_buffer.size() >= m_bufferSize)
-      AddBufferToQueue();
+    auto & newItem = PlaceNewItemInBuffer();
+    SerializePolicy::Serialize(fb, newItem.m_buffer);
+    newItem.m_affiliations = m_affiliation->GetAffiliations(fb);
   }
 
-  bool AddBufferToQueue()
+  void Flush()
   {
-    if (m_buffer.empty())
-      return false;
+    if (m_bufferedItemsCount == 0)
+      return;
 
-    m_queue->Push(std::move(m_buffer));
-    m_buffer.clear();
-    m_buffer.reserve(m_bufferSize);
-    return true;
+    m_itemsBufferPlace.resize(m_bufferedItemsCount);
+    auto itemsChunk =
+        std::make_shared<std::vector<ProcessedData>>(std::move(m_itemsBufferPlace));
+
+    m_queue->Push(itemsChunk);
+    m_queuedChunks.push_back(itemsChunk);
+
+    SetupItemsBuffer();
   }
 
 private:
-  size_t const m_bufferSize;
-  std::vector<ProcessedData> m_buffer;
+  ProcessedData & PlaceNewItemInBuffer()
+  {
+    if (m_bufferedItemsCount >= m_bufferedItemsCountMax)
+      Flush();
+
+    auto & newItem = m_itemsBufferPlace[m_bufferedItemsCount++];
+    // Clear |newItem| from previous values.
+    newItem.m_buffer.clear();
+    newItem.m_affiliations = nullptr;
+    return newItem;
+  }
+
+  void SetupItemsBuffer()
+  {
+    if (!m_queuedChunks.empty() && m_queuedChunks.front().use_count() == 1)
+    {
+      // Reuse items chunk.
+      m_itemsBufferPlace = std::move(*m_queuedChunks.front());
+      m_queuedChunks.pop_front();
+    }
+    else
+    {
+      m_itemsBufferPlace = std::vector<ProcessedData>(m_bufferedItemsCountMax);
+    }
+
+    m_bufferedItemsCount = 0;
+  }
+
+  std::vector<ProcessedData> m_itemsBufferPlace;
+  // |m_bufferedItemsCount| are used for efficient memory reuse: minimize recreate items
+  // of |m_itemsBufferPlace|.
+  size_t m_bufferedItemsCount{0};
+  size_t const m_bufferedItemsCountMax{100};
+  std::list<std::shared_ptr<std::vector<ProcessedData>>> m_queuedChunks;
   std::shared_ptr<feature::AffiliationInterface> m_affiliation;
   std::shared_ptr<FeatureProcessorQueue> m_queue;
 };
