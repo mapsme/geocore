@@ -223,11 +223,11 @@ boost::iostreams::mapped_file_source RawGenerator::MakeFileMap(std::string const
   if (!fileMap.is_open())
     MYTHROW(Writer::OpenException, ("Failed to open", filename));
 
-  // Try aggressively (MADV_WILLNEED) and asynchronously (std::launch::async) read ahead
-  // the o5m-file.
-  std::async(std::launch::async, [data = fileMap.data(), size = fileMap.size()] {
+  // Try aggressively (MADV_WILLNEED) and asynchronously read ahead the o5m-file.
+  auto readaheadTask = std::thread([data = fileMap.data(), size = fileMap.size()] {
     ::madvise(const_cast<char*>(data), size, MADV_WILLNEED);
   });
+  readaheadTask.detach();
 
   return fileMap;
 }

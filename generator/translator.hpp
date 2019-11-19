@@ -47,7 +47,7 @@ protected:
   template <typename T>
   decltype(auto) CloneBase() const
   {
-    auto cache = m_cache->Clone();
+    auto cache = m_cache;
     auto processor = m_processor->Clone();
     auto featureMaker = m_featureMaker->Clone();
     auto filter = m_filter->Clone();

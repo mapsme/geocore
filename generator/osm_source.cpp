@@ -15,7 +15,6 @@
 #include "base/file_name_utils.hpp"
 
 #include <fstream>
-#include <future>
 #include <memory>
 #include <set>
 #include <thread>
@@ -254,11 +253,11 @@ void BuildIntermediateDataFromO5M(
   auto sourceMap = boost::iostreams::mapped_file_source{filename};
   if (!sourceMap.is_open())
     MYTHROW(Writer::OpenException, ("Failed to open", filename));
-  // Try aggressively (MADV_WILLNEED) and asynchronously (std::launch::async) read ahead
-  // the o5m-file.
-  std::async(std::launch::async, [data = sourceMap.data(), size = sourceMap.size()] {
+  // Try aggressively (MADV_WILLNEED) and asynchronously read ahead the o5m-file.
+  auto readaheadTask = std::thread([data = sourceMap.data(), size = sourceMap.size()] {
     ::madvise(const_cast<char*>(data), size, MADV_WILLNEED);
   });
+  readaheadTask.detach();
 
   constexpr size_t chunkSize = 10'000;
   std::vector<std::thread> threads;

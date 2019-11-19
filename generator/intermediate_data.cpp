@@ -3,10 +3,10 @@
 #include "platform/platform.hpp"
 
 #include <atomic>
-#include <future>
 #include <new>
 #include <set>
 #include <string>
+#include <thread>
 
 #include <boost/filesystem.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
@@ -378,6 +378,7 @@ OSMElementCacheReader::OSMElementCacheReader(string const & name)
   if (!m_fileMap.is_open())
     MYTHROW(Writer::OpenException, ("Failed to open", name));
 
+  // Try aggressively (MADV_WILLNEED) and asynchronously read ahead.
   auto readaheadTask = std::thread([data = m_fileMap.data(), size = m_fileMap.size()] {
     ::madvise(const_cast<char*>(data), size, MADV_WILLNEED);
   });
@@ -513,11 +514,6 @@ IntermediateData::IntermediateData(feature::GenerateInfo const & info)
 shared_ptr<IntermediateDataReader> const & IntermediateData::GetCache() const
 {
   return m_reader;
-}
-
-shared_ptr<IntermediateData const> IntermediateData::Clone() const
-{
-  return shared_from_this();
 }
 }  // namespace cache
 }  // namespace generator
