@@ -114,6 +114,7 @@ private:
     }
 
     localizator.SetLocale("name", main);
+    ToJSONObject(*properties, "kind", GetPlaceKind(main));
     ToJSONObject(*properties, "rank", main.GetRank());
 
     if (path.size() > 1)
@@ -306,6 +307,33 @@ private:
     std::transform(std::begin(polygon), std::end(polygon), std::back_inserter(seq),
                    [](BoostPoint const & p) { return m2::PointD(p.get<0>(), p.get<1>()); });
     return seq;
+  }
+
+  char const * GetPlaceKind(LevelRegion const & region) const
+  {
+    auto const placeType = region.GetPlaceType();
+    if (placeType != PlaceType::Unknown)
+      return StringifyPlaceType(placeType);
+
+    switch (region.GetLevel())
+    {
+    case PlaceLevel::Country:
+      return "country";
+    case PlaceLevel::Region:
+      return "state";
+    case PlaceLevel::Subregion:
+      return "district";
+    case PlaceLevel::Locality:
+      return "city";
+    case PlaceLevel::Suburb:
+      return "suburb";
+    case PlaceLevel::Sublocality:
+      return "neighbourhood";
+    case PlaceLevel::Unknown:
+    case PlaceLevel::Count:
+      UNREACHABLE();
+    }
+    UNREACHABLE();
   }
 
   std::string m_pathRegionsTmpMwm;

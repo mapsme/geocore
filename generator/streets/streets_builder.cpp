@@ -291,6 +291,7 @@ base::JSONPtr StreetsBuilder::MakeStreetValue(uint64_t regionId, JsonValue const
 
   localizator.SetLocale("street", localizee, "address");
 
+  ToJSONObject(*properties, "kind", "street");
   ToJSONObject(*properties, "dref", KeyValueStorage::SerializeDref(regionId));
   ToJSONObject(*streetObject, "properties", std::move(properties));
 

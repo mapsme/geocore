@@ -90,7 +90,7 @@ char const * GetLabel(PlaceLevel level)
     return "country";
   case PlaceLevel::Region:
     return "region";
-  case PlaceLevel:: Subregion:
+  case PlaceLevel::Subregion:
     return "subregion";
   case PlaceLevel::Locality:
     return "locality";
