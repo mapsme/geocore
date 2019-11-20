@@ -64,6 +64,7 @@ base::JSONPtr AddAddress(std::string const & street, std::string const & house, 
   localizator.SetLocale("name", Localizator::EasyObjectWithTranslation(name));
 
   int const kHouseOrPoiRank = 30;
+  ToJSONObject(*properties, "kind", "building");
   ToJSONObject(*properties, "rank", kHouseOrPoiRank);
 
   ToJSONObject(*properties, "dref", KeyValueStorage::SerializeDref(regionKeyValue.first));
