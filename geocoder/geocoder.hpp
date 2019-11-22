@@ -131,7 +131,8 @@ public:
     std::vector<Layer> m_layers;
   };
 
-  void LoadFromJsonl(std::string const & pathToJsonHierarchy, unsigned int loadThreadsCount = 1);
+  void LoadFromJsonl(std::string const & pathToJsonHierarchy, bool dataVersionHeadline = false,
+                     unsigned int loadThreadsCount = 1);
 
   void LoadFromBinaryIndex(std::string const & pathToTokenIndex);
   void SaveToBinaryIndex(std::string const & pathToTokenIndex) const;
