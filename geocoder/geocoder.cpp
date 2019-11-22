@@ -25,9 +25,6 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/exception/exception.hpp>
 #include <boost/exception/diagnostic_information.hpp>
-#include <boost/iostreams/device/file.hpp>
-#include <boost/iostreams/filter/gzip.hpp>
-#include <boost/iostreams/filtering_streambuf.hpp>
 #include <boost/optional.hpp>
 #include <boost/range/adaptor/reversed.hpp>
 
@@ -282,22 +279,11 @@ bool Geocoder::Context::ContainsTokenIds(BeamKey const & beamKey, set<size_t> co
 }
 
 // Geocoder ----------------------------------------------------------------------------------------
-void Geocoder::LoadFromJsonl(std::string const & pathToJsonHierarchy, unsigned int loadThreadsCount)
+void Geocoder::LoadFromJsonl(std::string const & pathToJsonHierarchy, bool dataVersionHeadline,
+                             unsigned int loadThreadsCount)
 try
 {
-  using namespace boost::iostreams;
-  filtering_istreambuf fileStreamBuf;
-
-  if (strings::EndsWith(pathToJsonHierarchy, ".gz"))
-    fileStreamBuf.push(gzip_decompressor());
-
-  file_source file(pathToJsonHierarchy);
-  if (!file.is_open())
-    MYTHROW(OpenException, ("Failed to open file", pathToJsonHierarchy));
-  fileStreamBuf.push(file);
-
-  std::istream fileStream(&fileStreamBuf);
-  m_hierarchy = HierarchyReader{fileStream}.Read(loadThreadsCount);
+  m_hierarchy = HierarchyReader{pathToJsonHierarchy, dataVersionHeadline}.Read(loadThreadsCount);
   m_index.BuildIndex(loadThreadsCount);
 }
 catch (boost::exception const & err)

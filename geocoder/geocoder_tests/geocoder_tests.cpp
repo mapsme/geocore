@@ -446,7 +446,7 @@ UNIT_TEST(Geocoder_EmptyFileConcurrentRead)
 {
   Geocoder geocoder;
   ScopedFile const regionsJsonFile("regions.jsonl", "");
-  geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath(), 8 /* reader threads */);
+  geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath(), false, 8 /* reader threads */);
 
   TEST_EQUAL(geocoder.GetHierarchy().GetEntries().size(), 0, ());
 }
@@ -469,7 +469,7 @@ UNIT_TEST(Geocoder_BigFileConcurrentRead)
 
   Geocoder geocoder;
   ScopedFile const regionsJsonFile("regions.jsonl", s.str());
-  geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath(), 8 /* reader threads */);
+  geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath(), false, 8 /* reader threads */);
 
   TEST_EQUAL(geocoder.GetHierarchy().GetEntries().size(), kEntryCount, ());
 }

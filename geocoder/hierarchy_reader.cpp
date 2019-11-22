@@ -9,6 +9,10 @@
 #include <sstream>
 #include <vector>
 
+#include <boost/iostreams/device/file.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+
 using namespace std;
 
 namespace geocoder
@@ -41,28 +45,70 @@ void operator+=(Hierarchy::ParsingStats & accumulator, Hierarchy::ParsingStats &
 }
 } // namespace
 
-HierarchyReader::HierarchyReader(string const & pathToJsonHierarchy)
-  : m_fileStream{pathToJsonHierarchy}, m_in{m_fileStream}
+HierarchyReader::HierarchyReader(string const & pathToJsonHierarchy, bool dataVersionHeadline)
+  : m_fileStream{CreateDataStream(pathToJsonHierarchy)}, m_in{*m_fileStream}
 {
-  if (!m_fileStream)
-    MYTHROW(OpenException, ("Failed to open file", pathToJsonHierarchy));
+  if (dataVersionHeadline)
+    m_dataVersion = ReadDataVersion(m_in);
 }
 
-HierarchyReader::HierarchyReader(istream & in)
+HierarchyReader::HierarchyReader(istream & in, bool dataVersionHeadline)
   : m_in{in}
 {
+  if (dataVersionHeadline)
+    m_dataVersion = ReadDataVersion(m_in);
+}
+
+// static
+string HierarchyReader::ReadDataVersion(string const & pathToJsonHierarchy)
+{
+  auto stream = CreateDataStream(pathToJsonHierarchy);
+  return ReadDataVersion(*stream);
+}
+
+// static
+unique_ptr<istream> HierarchyReader::CreateDataStream(string const & pathToJsonHierarchy)
+{
+  using namespace boost::iostreams;
+  auto fileStream = make_unique<filtering_istream>();
+
+  if (strings::EndsWith(pathToJsonHierarchy, ".gz"))
+    fileStream->push(gzip_decompressor());
+
+  file_source file(pathToJsonHierarchy);
+  if (!file.is_open())
+    MYTHROW(OpenException, ("Failed to open file", pathToJsonHierarchy));
+  fileStream->push(move(file));
+
+  return fileStream;
+}
+
+// static
+string HierarchyReader::ReadDataVersion(istream & stream)
+{
+  auto line = string{};
+  if (!getline(stream, line))
+    MYTHROW(NoVersion, ("No version info in data"));
+
+  auto const p = line.find(' ');
+
+  string const & key = line.substr(0, p);
+  if (key != kVersionKey)
+    MYTHROW(NoVersion, ("No version info in data"));
+
+  return line.substr(p + 1);
 }
 
 Hierarchy HierarchyReader::Read(unsigned int readersCount)
 {
   CHECK_GREATER_OR_EQUAL(readersCount, 1, ());
 
+  LOG(LINFO, ("Loading data version", m_dataVersion));
   LOG(LINFO, ("Reading entries..."));
 
   vector<Entry> entries;
   NameDictionaryBuilder nameDictionaryBuilder;
   ParsingStats stats{};
-  std::string dataVersion;
 
   base::thread_pool::computational::ThreadPool threadPool{readersCount};
   list<future<ParsingResult>> tasks{};
@@ -75,15 +121,6 @@ Hierarchy HierarchyReader::Read(unsigned int readersCount)
     CHECK(!tasks.empty(), ());
     auto & task = tasks.front();
     auto taskResult = task.get();
-    if (!taskResult.m_dataVersion.empty())
-    {
-      if (!dataVersion.empty())
-        LOG(LERROR, ("Duplicate version key"));
-
-      dataVersion = taskResult.m_dataVersion;
-      LOG(LINFO, ("Loaded data version", dataVersion));
-    }
-
     tasks.pop_front();
 
     auto & taskEntries = taskResult.m_entries;
@@ -127,7 +164,7 @@ Hierarchy HierarchyReader::Read(unsigned int readersCount)
       ("Entries whose names do not match their most specific addresses:", stats.m_mismatchedNames));
   LOG(LINFO, ("(End of stats.)"));
 
-  return Hierarchy{move(entries), nameDictionaryBuilder.Release(), move(dataVersion)};
+  return Hierarchy{move(entries), nameDictionaryBuilder.Release(), move(m_dataVersion)};
 }
 
 void HierarchyReader::CheckDuplicateOsmIds(vector<geocoder::Hierarchy::Entry> const & entries,
@@ -179,7 +216,6 @@ HierarchyReader::ParsingResult HierarchyReader::DeserializeEntries(
   entries.reserve(bufferSize);
   NameDictionaryBuilder nameDictionaryBuilder;
   ParsingStats stats;
-  std::string dataVersion;
 
   for (size_t i = 0; i < bufferSize; ++i)
   {
@@ -190,12 +226,7 @@ HierarchyReader::ParsingResult HierarchyReader::DeserializeEntries(
 
     auto const p = line.find(' ');
 
-    std::string const & key = line.substr(0, p);
-    if (key == kVersionKey)
-    {
-      dataVersion = line.substr(p + 1);
-      continue;
-    }
+    string const & key = line.substr(0, p);
 
     uint64_t encodedId = 0;
     if (p == string::npos || !DeserializeId(key, encodedId))
@@ -225,7 +256,7 @@ HierarchyReader::ParsingResult HierarchyReader::DeserializeEntries(
     entries.push_back(move(entry));
   }
 
-  return {move(entries), nameDictionaryBuilder.Release(), move(stats), move(dataVersion)};
+  return {move(entries), nameDictionaryBuilder.Release(), move(stats)};
 }
 
 // static
