@@ -31,6 +31,7 @@ UNIT_TEST(DebugPrintVisitor_Smoke)
   {
     Foo foo;
     TEST_EQUAL(DebugPrint(foo), "Foo []", ());
+    TEST_EQUAL(1, 2, ());
   }
 
   {
