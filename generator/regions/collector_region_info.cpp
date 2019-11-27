@@ -77,6 +77,8 @@ char const * StringifyPlaceType(PlaceType placeType)
     return "neighbourhood";
   case PlaceType::Unknown:
     return "unknown";
+  case PlaceType::Count:
+    UNREACHABLE();
   };
 
   UNREACHABLE();

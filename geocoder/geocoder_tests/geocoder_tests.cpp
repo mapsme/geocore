@@ -24,9 +24,9 @@ using Id = base::GeoObjectId;
 
 double const kCertaintyEps = 1e-4;
 string const kRegionsData = R"#(
-C00000000004B279 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-80.1142033187951, 21.55511095]}, "properties": {"locales": {"default": {"name": "Cuba", "address": {"country": "Cuba"}}}, "rank": 2}}
-C0000000001C4CA7 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-78.7260117405499, 21.74300205]}, "properties": {"locales": {"default": {"name": "Ciego de Ávila", "address": {"region": "Ciego de Ávila", "country": "Cuba"}}}, "rank": 4}}
-C00000000059D6B5 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-78.9263054493181, 22.08185765]}, "properties": {"locales": {"default": {"name": "Florencia", "address": {"subregion": "Florencia", "region": "Ciego de Ávila", "country": "Cuba"}}}, "rank": 6}}
+C00000000004B279 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-80.1142033187951, 21.55511095]}, "properties": {"kind": "country", "locales": {"default": {"name": "Cuba", "address": {"country": "Cuba"}}}, "rank": 2}}
+C0000000001C4CA7 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-78.7260117405499, 21.74300205]}, "properties": {"kind": "province", "locales": {"default": {"name": "Ciego de Ávila", "address": {"region": "Ciego de Ávila", "country": "Cuba"}}}, "rank": 4}}
+C00000000059D6B5 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-78.9263054493181, 22.08185765]}, "properties": {"kind": "district", "locales": {"default": {"name": "Florencia", "address": {"subregion": "Florencia", "region": "Ciego de Ávila", "country": "Cuba"}}}, "rank": 6}}
 )#";
 }  // namespace
 
@@ -44,7 +44,7 @@ void TestGeocoder(Geocoder & geocoder, string const & query, vector<Result> && e
     TEST(actual[i].m_certainty >= 0.0 && actual[i].m_certainty <= 1.0,
          (query, actual[i].m_certainty));
     TEST_EQUAL(actual[i].m_osmId, expected[i].m_osmId, (query));
-    TEST(base::AlmostEqualAbs(actual[i].m_certainty, expected[i].m_certainty, kCertaintyEps),
+    TEST_NEAR(actual[i].m_certainty, expected[i].m_certainty, kCertaintyEps,
          (query, actual[i].m_certainty, expected[i].m_certainty));
   }
 }
@@ -59,8 +59,8 @@ UNIT_TEST(Geocoder_Smoke)
   base::GeoObjectId const cubaId(0xc00000000004b279);
 
   TestGeocoder(geocoder, "florencia", {{florenciaId, 1.0}});
-  TestGeocoder(geocoder, "cuba florencia", {{florenciaId, 1.0}, {cubaId, 0.714286}});
-  TestGeocoder(geocoder, "florencia somewhere in cuba", {{cubaId, 0.714286}, {florenciaId, 1.0}});
+  TestGeocoder(geocoder, "cuba florencia", {{florenciaId, 1.0}, {cubaId, 0.713776}});
+  TestGeocoder(geocoder, "florencia somewhere in cuba", {{cubaId, 0.713776}, {florenciaId, 1.0}});
 }
 
 UNIT_TEST(Geocoder_Hierarchy)
@@ -88,31 +88,31 @@ UNIT_TEST(Geocoder_Hierarchy)
 UNIT_TEST(Geocoder_EnglishNames)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"locality": "Москва"}}, "en": {"address": {"locality": "Moscow"}}}}}
-11 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "street": "улица Новый Арбат"}}, "en": {"address": {"locality": "Moscow", "street": "New Arbat Avenue"}}}}}
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва"}}, "en": {"address": {"locality": "Moscow"}}}}}
+11 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Москва", "street": "улица Новый Арбат"}}, "en": {"address": {"locality": "Moscow", "street": "New Arbat Avenue"}}}}}
 )#";
 
   Geocoder geocoder;
   ScopedFile const regionsJsonFile("regions.jsonl", kData);
   geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath());
 
-  TestGeocoder(geocoder, "Moscow, New Arbat", {{Id{0x11}, 1.0}, {Id{0x10}, 0.5555}});
+  TestGeocoder(geocoder, "Moscow, New Arbat", {{Id{0x11}, 1.0}, {Id{0x10}, 0.558011}});
 }
 
 UNIT_TEST(Geocoder_OnlyBuildings)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"locality": "Some Locality"}}}}}
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Some Locality"}}}}}
 
-21 {"properties": {"locales": {"default": {"address": {"street": "Good", "locality": "Some Locality"}}}}}
-22 {"properties": {"locales": {"default": {"address": {"building": "5", "street": "Good", "locality": "Some Locality"}}}}}
+21 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "Good", "locality": "Some Locality"}}}}}
+22 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "5", "street": "Good", "locality": "Some Locality"}}}}}
 
-31 {"properties": {"locales": {"default": {"address": {"street": "Bad", "locality": "Some Locality"}}}}}
-32 {"properties": {"locales": {"default": {"address": {"building": "10", "street": "Bad", "locality": "Some Locality"}}}}}
+31 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "Bad", "locality": "Some Locality"}}}}}
+32 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "10", "street": "Bad", "locality": "Some Locality"}}}}}
 
-40 {"properties": {"locales": {"default": {"address": {"street": "MaybeNumbered", "locality": "Some Locality"}}}}}
-41 {"properties": {"locales": {"default": {"address": {"street": "MaybeNumbered-3", "locality": "Some Locality"}}}}}
-42 {"properties": {"locales": {"default": {"address": {"building": "3", "street": "MaybeNumbered", "locality": "Some Locality"}}}}}
+40 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "MaybeNumbered", "locality": "Some Locality"}}}}}
+41 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "MaybeNumbered-3", "locality": "Some Locality"}}}}}
+42 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "3", "street": "MaybeNumbered", "locality": "Some Locality"}}}}}
 )#";
 
   Geocoder geocoder;
@@ -126,8 +126,8 @@ UNIT_TEST(Geocoder_OnlyBuildings)
   base::GeoObjectId const building10(0x32);
 
   TestGeocoder(geocoder, "some locality", {{localityId, 1.0}});
-  TestGeocoder(geocoder, "some locality good", {{goodStreetId, 1.0}, {localityId, 0.833333}});
-  TestGeocoder(geocoder, "some locality bad", {{badStreetId, 1.0}, {localityId, 0.833333}});
+  TestGeocoder(geocoder, "some locality good", {{goodStreetId, 1.0}, {localityId, 0.834711}});
+  TestGeocoder(geocoder, "some locality bad", {{badStreetId, 1.0}, {localityId, 0.834711}});
 
   TestGeocoder(geocoder, "some locality good 5", {{building5, 1.0}});
   TestGeocoder(geocoder, "some locality bad 10", {{building10, 1.0}});
@@ -142,20 +142,20 @@ UNIT_TEST(Geocoder_OnlyBuildings)
   base::GeoObjectId const numberedStreet(0x41);
   base::GeoObjectId const houseOnANonNumberedStreet(0x42);
   TestGeocoder(geocoder, "some locality maybenumbered 3",
-               {{numberedStreet, 1.0}, {houseOnANonNumberedStreet, 0.864286}});
+               {{numberedStreet, 1.0}, {houseOnANonNumberedStreet, 0.865248}});
 }
 
 UNIT_TEST(Geocoder_MismatchedLocality)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"locality": "Moscow"}}}}}
-11 {"properties": {"locales": {"default": {"address": {"locality": "Paris"}}}}}
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Moscow"}}}}}
+11 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Paris"}}}}}
 
-21 {"properties": {"locales": {"default": {"address": {"street": "Krymskaya", "locality": "Moscow"}}}}}
-22 {"properties": {"locales": {"default": {"address": {"building": "2", "street": "Krymskaya", "locality": "Moscow"}}}}}
+21 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "Krymskaya", "locality": "Moscow"}}}}}
+22 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "2", "street": "Krymskaya", "locality": "Moscow"}}}}}
 
-31 {"properties": {"locales": {"default": {"address": {"street": "Krymskaya", "locality": "Paris"}}}}}
-32 {"properties": {"locales": {"default": {"address": {"building": "3", "street": "Krymskaya", "locality": "Paris"}}}}}
+31 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "Krymskaya", "locality": "Paris"}}}}}
+32 {"properties": {"kind": "builidng", "locales": {"default": {"address": {"building": "3", "street": "Krymskaya", "locality": "Paris"}}}}}
 )#";
 
   Geocoder geocoder;
@@ -174,34 +174,34 @@ UNIT_TEST(Geocoder_MismatchedLocality)
 UNIT_TEST(Geocoder_MoscowLocalityRank)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"region": "Москва"}}}, "rank": 2}}
-11 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "region": "Москва"}}, "en": {"address": {"locality": "Moscow"}}}, "rank": 4}}
-12 {"properties": {"locales": {"default": {"address": {"street": "Ленинский проспект", "locality": "Москва", "region": "Москва"}}, "en": {"address": {"locality": "Moscow"}}}}}
+10 {"properties": {"kind": "state", "locales": {"default": {"address": {"region": "Москва"}}}, "rank": 2}}
+11 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва", "region": "Москва"}}, "en": {"address": {"locality": "Moscow"}}}, "rank": 4}}
+12 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "Ленинский проспект", "locality": "Москва", "region": "Москва"}}, "en": {"address": {"locality": "Moscow"}}}}}
 
-20 {"properties": {"locales": {"default": {"address": {"region": "Тверская Область"}}}, "rank": 2}}
-21 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "region": "Тверская Область"}}}, "rank": 4}}
-22 {"properties": {"locales": {"default": {"address": {"street": "Ленинский проспект", "locality": "Москва", "region": "Тверская Область"}}}}}
+20 {"properties": {"kind": "state", "locales": {"default": {"address": {"region": "Тверская Область"}}}, "rank": 2}}
+21 {"properties": {"kind": "hamlet", "locales": {"default": {"address": {"locality": "Москва", "region": "Тверская Область"}}}, "rank": 4}}
+22 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "Ленинский проспект", "locality": "Москва", "region": "Тверская Область"}}}}}
 )#";
 
   Geocoder geocoder;
   ScopedFile const regionsJsonFile("regions.jsonl", kData);
   geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath());
 
-  TestGeocoder(geocoder, "Москва", {{Id{0x11}, 1.0}, {Id{0x21}, 0.990099}, {Id{0x10}, 0.792079}});
-  TestGeocoder(geocoder, "Москва, Ленинский проспект", {{Id{0x12}, 1.0}, {Id{0x22}, 0.994475},
-                                                        {Id{0x11}, 0.558011}, {Id{0x21}, 0.552486},
-                                                        {Id{0x10}, 0.441989}});
+  TestGeocoder(geocoder, "Москва", {{Id{0x11}, 1.0}, {Id{0x21}, 0.207843}, {Id{0x10}, 0.794118}});
+  TestGeocoder(geocoder, "Москва, Ленинский проспект",
+               {{Id{0x12}, 1.0}, {Id{0x22}, 0.556044}, {Id{0x11}, 0.56044}, {Id{0x10}, 0.445055},
+                {Id{0x21}, 0.116484}});
 }
 
 // Geocoder_StreetWithNumber* ----------------------------------------------------------------------
 UNIT_TEST(Geocoder_StreetWithNumberInCity)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"locality": "Москва"}}}}}
-11 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "street": "улица 1905 года"}}}}}
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва"}}}}}
+11 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Москва", "street": "улица 1905 года"}}}}}
 
-20 {"properties": {"locales": {"default": {"address": {"locality": "Краснокамск"}}}}}
-28 {"properties": {"locales": {"default": {"address": {"locality": "Краснокамск", "street": "улица 1905 года"}}}}}
+20 {"properties": {"kind": "town", "locales": {"default": {"address": {"locality": "Краснокамск"}}}}}
+28 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Краснокамск", "street": "улица 1905 года"}}}}}
 )#";
 
   Geocoder geocoder;
@@ -214,8 +214,8 @@ UNIT_TEST(Geocoder_StreetWithNumberInCity)
 UNIT_TEST(Geocoder_StreetWithNumberInClassifiedCity)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"locality": "Москва"}}}}}
-11 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "street": "улица 1905 года"}}}}}
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва"}}}}}
+11 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Москва", "street": "улица 1905 года"}}}}}
 )#";
 
   Geocoder geocoder;
@@ -228,11 +228,11 @@ UNIT_TEST(Geocoder_StreetWithNumberInClassifiedCity)
 UNIT_TEST(Geocoder_StreetWithNumberInAnyCity)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"locality": "Москва"}}}}}
-11 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "street": "улица 1905 года"}}}}}
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва"}}}}}
+11 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Москва", "street": "улица 1905 года"}}}}}
 
-20 {"properties": {"locales": {"default": {"address": {"locality": "Краснокамск"}}}}}
-28 {"properties": {"locales": {"default": {"address": {"locality": "Краснокамск", "street": "улица 1905 года"}}}}}
+20 {"properties": {"kind": "town", "locales": {"default": {"address": {"locality": "Краснокамск"}}}}}
+28 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Краснокамск", "street": "улица 1905 года"}}}}}
 )#";
 
   Geocoder geocoder;
@@ -245,8 +245,8 @@ UNIT_TEST(Geocoder_StreetWithNumberInAnyCity)
 UNIT_TEST(Geocoder_StreetWithNumberAndWithoutStreetSynonym)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"locality": "Москва"}}}}}
-11 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "street": "улица 1905 года"}}}}}
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва"}}}}}
+11 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Москва", "street": "улица 1905 года"}}}}}
 )#";
 
   Geocoder geocoder;
@@ -259,8 +259,8 @@ UNIT_TEST(Geocoder_StreetWithNumberAndWithoutStreetSynonym)
 UNIT_TEST(Geocoder_UntypedStreetWithNumberAndStreetSynonym)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"locality": "Москва"}}}}}
-13 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "street": "8 Марта"}}}}}
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва"}}}}}
+13 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Москва", "street": "8 Марта"}}}}}
 )#";
 
   Geocoder geocoder;
@@ -273,10 +273,10 @@ UNIT_TEST(Geocoder_UntypedStreetWithNumberAndStreetSynonym)
 UNIT_TEST(Geocoder_StreetWithTwoNumbers)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"locality": "Москва"}}}}}
-12 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "street": "4-я улица 8 Марта"}}}}}
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва"}}}}}
+12 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Москва", "street": "4-я улица 8 Марта"}}}}}
 
-13 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "street": "улица 8 Марта"}}}}}
+13 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Москва", "street": "улица 8 Марта"}}}}}
 )#";
 
   Geocoder geocoder;
@@ -289,9 +289,9 @@ UNIT_TEST(Geocoder_StreetWithTwoNumbers)
 UNIT_TEST(Geocoder_BuildingOnStreetWithNumber)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"locality": "Москва"}}}}}
-13 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "street": "улица 8 Марта"}}}}}
-15 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "street": "улица 8 Марта", "building": "4"}}}}}
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва"}}}}}
+13 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Москва", "street": "улица 8 Марта"}}}}}
+15 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Москва", "street": "улица 8 Марта", "building": "4"}}}}}
 )#";
 
   Geocoder geocoder;
@@ -305,10 +305,10 @@ UNIT_TEST(Geocoder_BuildingOnStreetWithNumber)
 UNIT_TEST(Geocoder_LocalityBuilding)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"locality": "Zelenograd"}}}}}
-22 {"properties": {"locales": {"default": {"address": {"building": "2", "locality": "Zelenograd"}}}}}
-31 {"properties": {"locales": {"default": {"address": {"street": "Krymskaya", "locality": "Zelenograd"}}}}}
-32 {"properties": {"locales": {"default": {"address": {"building": "2", "street": "Krymskaya", "locality": "Zelenograd"}}}}}
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Zelenograd"}}}}}
+22 {"properties": {"kind": "builiding", "locales": {"default": {"address": {"building": "2", "locality": "Zelenograd"}}}}}
+31 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "Krymskaya", "locality": "Zelenograd"}}}}}
+32 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "2", "street": "Krymskaya", "locality": "Zelenograd"}}}}}
 )#";
 
   Geocoder geocoder;
@@ -323,44 +323,44 @@ UNIT_TEST(Geocoder_LocalityBuilding)
 UNIT_TEST(Geocoder_LocalityBuildingRankWithSuburb)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"locality": "Москва"}}}}}
-11 {"properties": {"locales": {"default": {"address": {"suburb": "Арбат", "locality": "Москва"}}}}}
-12 {"properties": {"locales": {"default": {"address": {"building": "1", "suburb": "Арбат", "locality": "Москва"}}}}}
-13 {"properties": {"locales": {"default": {"address": {"suburb": "район Северный", "locality": "Москва"}}}}}
-14 {"properties": {"locales": {"default": {"address": {"building": "1", "suburb": "район Северный", "locality": "Москва"}}}}}
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва"}}}}}
+11 {"properties": {"kind": "suburb", "locales": {"default": {"address": {"suburb": "Арбат", "locality": "Москва"}}}}}
+12 {"properties": {"kind": "builidng", "locales": {"default": {"address": {"building": "1", "suburb": "Арбат", "locality": "Москва"}}}}}
+13 {"properties": {"kind": "suburb", "locales": {"default": {"address": {"suburb": "район Северный", "locality": "Москва"}}}}}
+14 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "1", "suburb": "район Северный", "locality": "Москва"}}}}}
 )#";
 
   Geocoder geocoder;
   ScopedFile const regionsJsonFile("regions.jsonl", kData);
   geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath());
 
-  TestGeocoder(geocoder, "Москва, Арбат 1", {{Id{0x12}, 1.0}, {Id{0x14}, 0.836066}});
+  TestGeocoder(geocoder, "Москва, Арбат 1", {{Id{0x12}, 1.0}, {Id{0x14}, 0.830645}});
 }
 
 //--------------------------------------------------------------------------------------------------
 UNIT_TEST(Geocoder_LocalityAndStreetBuildingsRank)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"locality": "Zelenograd"}}}}}
-22 {"properties": {"locales": {"default": {"address": {"building": "2", "locality": "Zelenograd"}}}}}
-31 {"properties": {"locales": {"default": {"address": {"street": "Krymskaya", "locality": "Zelenograd"}}}}}
-32 {"properties": {"locales": {"default": {"address": {"building": "2", "street": "Krymskaya", "locality": "Zelenograd"}}}}}
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Zelenograd"}}}}}
+22 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "2", "locality": "Zelenograd"}}}}}
+31 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "Krymskaya", "locality": "Zelenograd"}}}}}
+32 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "2", "street": "Krymskaya", "locality": "Zelenograd"}}}}}
 )#";
 
   Geocoder geocoder;
   ScopedFile const regionsJsonFile("regions.jsonl", kData);
   geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath());
 
-  TestGeocoder(geocoder, "Zelenograd, Krymskaya 2", {{Id{0x32}, 1.0}, {Id{0x22}, 0.71831}});
+  TestGeocoder(geocoder, "Zelenograd, Krymskaya 2", {{Id{0x32}, 1.0}, {Id{0x22}, 0.72028}});
 }
 
 // Geocoder_Subregion* -----------------------------------------------------------------------------
 UNIT_TEST(Geocoder_SubregionInLocality)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"region": "Москва"}}}, "rank": 2}}
-11 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "region": "Москва"}}}, "rank": 4}}
-12 {"properties": {"locales": {"default": {"address": {"subregion": "Северный административный округ", "locality": "Москва", "region": "Москва"}}}, "rank": 3}}
+10 {"properties": {"kind": "state", "locales": {"default": {"address": {"region": "Москва"}}}, "rank": 2}}
+11 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва", "region": "Москва"}}}, "rank": 4}}
+12 {"properties": {"kind": "district", "locales": {"default": {"address": {"subregion": "Северный административный округ", "locality": "Москва", "region": "Москва"}}}, "rank": 3}}
 )#";
 
   Geocoder geocoder;
@@ -369,20 +369,20 @@ UNIT_TEST(Geocoder_SubregionInLocality)
 
   TestGeocoder(geocoder, "Северный административный округ", {{Id{0x12}, 1.0}});
   TestGeocoder(geocoder, "Москва, Северный административный округ",
-               {{Id{0x12}, 1.0}, {Id{0x11}, 0.314642}, {Id{0x10}, 0.249221}});
-  TestGeocoder(geocoder, "Москва", {{Id{0x11}, 1.0}, {Id{0x10}, 0.792079}});
+               {{Id{0x12}, 1.0}, {Id{0x11}, 0.316181}, {Id{0x10}, 0.251085}});
+  TestGeocoder(geocoder, "Москва", {{Id{0x11}, 1.0}, {Id{0x10}, 0.794118}});
 }
 
 // Geocoder_NumericalSuburb* ----------------------------------------------------------------------
 UNIT_TEST(Geocoder_NumericalSuburbRelevance)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"region": "Metro Manila"}}}}}
-11 {"properties": {"locales": {"default": {"address": {"locality": "Caloocan", "region": "Metro Manila"}}}}}
-12 {"properties": {"locales": {"default": {"address": {"suburb": "60", "locality": "Caloocan", "region": "Metro Manila"}}}}}
-20 {"properties": {"locales": {"default": {"address": {"locality": "Белгород"}}}}}
-21 {"properties": {"locales": {"default": {"address": {"street": "Щорса", "locality": "Белгород"}}}}}
-22 {"properties": {"locales": {"default": {"address": {"building": "60", "street": "Щорса", "locality": "Белгород"}}}}}
+10 {"properties": {"kind": "state", "locales": {"default": {"address": {"region": "Metro Manila"}}}}}
+11 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Caloocan", "region": "Metro Manila"}}}}}
+12 {"properties": {"kind": "suburb", "locales": {"default": {"address": {"suburb": "60", "locality": "Caloocan", "region": "Metro Manila"}}}}}
+20 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Белгород"}}}}}
+21 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "Щорса", "locality": "Белгород"}}}}}
+22 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "60", "street": "Щорса", "locality": "Белгород"}}}}}
 )#";
 
   Geocoder geocoder;
@@ -399,11 +399,11 @@ UNIT_TEST(Geocoder_NumericalSuburbRelevance)
 UNIT_TEST(Geocoder_Serialization)
 {
   string const kData = R"#(
-10 {"properties": {"locales": {"default": {"address": {"country": "Россия"}}, "en": {"address": {"country": "Russia"}}}, "rank": 1}}
-11 {"properties": {"locales": {"default": {"address": {"region": "Москва", "country": "Россия"}}}, "rank": 2}}
-12 {"properties": {"locales": {"default": {"address": {"locality": "Москва", "region": "Москва", "country": "Россия"}}}, "rank": 4}}
-13 {"properties": {"locales": {"default": {"address": {"street": "Арбат", "locality": "Москва", "region": "Москва", "country": "Россия"}}}, "rank": 7}}
-15 {"properties": {"locales": {"default": {"address": {"building": "4", "street": "Арбат", "locality": "Москва", "region": "Москва", "country": "Россия"}}}, "rank": 8}}
+10 {"properties": {"kind": "country", "locales": {"default": {"address": {"country": "Россия"}}, "en": {"address": {"country": "Russia"}}}, "rank": 1}}
+11 {"properties": {"kind": "state", "locales": {"default": {"address": {"region": "Москва", "country": "Россия"}}}, "rank": 2}}
+12 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва", "region": "Москва", "country": "Россия"}}}, "rank": 4}}
+13 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "Арбат", "locality": "Москва", "region": "Москва", "country": "Россия"}}}, "rank": 7}}
+15 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "4", "street": "Арбат", "locality": "Москва", "region": "Москва", "country": "Россия"}}}, "rank": 8}}
 )#";
 
   Geocoder geocoderFromJsonl;
@@ -462,7 +462,7 @@ UNIT_TEST(Geocoder_BigFileConcurrentRead)
       << "{"
       << R"("type": "Feature",)"
       << R"("geometry": {"type": "Point", "coordinates": [0, 0]},)"
-      << R"("properties": {"locales": {"default": {)"
+      << R"("properties": {"kind": "country", "locales": {"default": {)"
       << R"("name": ")" << i << R"(", "address": {"country": ")" << i << R"("}}}, "rank": 2})"
       << "}\n";
   }
@@ -472,5 +472,33 @@ UNIT_TEST(Geocoder_BigFileConcurrentRead)
   geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath(), false, 8 /* reader threads */);
 
   TEST_EQUAL(geocoder.GetHierarchy().GetEntries().size(), kEntryCount, ());
+}
+
+//--------------------------------------------------------------------------------------------------
+UNIT_TEST(Geocoder_CityVsHamletRankTest)
+{
+  string const kData = R"#(
+10 {"properties": {"kind": "state", "locales": {"default": {"address": {"region": "Оренбургская область"}}}}}
+11 {"properties": {"kind": "hamlet", "locales": {"default": {"address": {"locality": "Красноярск", "region": "Оренбургская область"}}}}}
+20 {"properties": {"kind": "state", "locales": {"default": {"address": {"region": "Красноярский край"}}}}}
+21 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Красноярск", "region": "Красноярский край"}}}}}
+)#";
+
+  Geocoder geocoder;
+  ScopedFile const regionsJsonFile("regions.jsonl", kData);
+  geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath());
+
+  TestGeocoder(geocoder, "Красноярск", {{Id{0x21}, 1.0}, {Id{0x11}, 0.2099}});
+}
+
+// Kind tests --------------------------------------------------------------------------------------
+UNIT_TEST(Geocoder_KindStringConversion)
+{
+  TEST_EQUAL(static_cast<int>(Kind::Unknown), 0, ());
+  for (auto i = 1; i < static_cast<int>(Kind::Count); ++i)
+  {
+    auto const kind = static_cast<Kind>(i);
+    TEST_EQUAL(kind, KindFromString(ToString(kind)), ());
+  }
 }
 }  // namespace geocoder

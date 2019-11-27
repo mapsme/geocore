@@ -59,14 +59,40 @@ double GetWeight(Type t)
   switch (t)
   {
   case Type::Country: return 10.0;
+  case Type::Locality: return 5.0;
   case Type::Region: return 4.0;
   case Type::Subregion: return 4.0;
-  case Type::Locality: return 5.0;
+  case Type::Street: return 2.0;
   case Type::Suburb: return 1.0;
   case Type::Sublocality: return 1.0;
-  case Type::Street: return 2.0;
   case Type::Building: return 0.1;
   case Type::Count: return 0.0;
+  }
+  UNREACHABLE();
+}
+
+double GetWeight(Kind kind)
+{
+  switch (kind)
+  {
+  case Kind::Country: return 10.0;
+  case Kind::City: return 5.05;
+  case Kind::Town: return 5.04;
+  case Kind::State: return 4.05;
+  case Kind::Province: return 4.01;
+  case Kind::District: return 4.01;
+  case Kind::County: return 4.01;
+  case Kind::Municipality: return 4.0;
+  case Kind::Village: return 3.0;
+  case Kind::Street: return 2.0;
+  case Kind::Hamlet: return 1.06;
+  case Kind::Suburb: return 1.05;
+  case Kind::Quarter: return 1.01;
+  case Kind::Neighbourhood: return 1.0;
+  case Kind::IsolatedDwelling: return 0.5;
+  case Kind::Building: return 0.1;
+  case Kind::Unknown: return 0.0;
+  case Kind::Count: return 0.0;
   }
   UNREACHABLE();
 }
@@ -125,6 +151,20 @@ strings::UniString MakeHouseNumber(Tokens const & tokens)
   return strings::MakeUniString(strings::JoinStrings(tokens, " "));
 }
 }  // namespace
+
+// Geocoder::Layer ---------------------------------------------------------------------------------
+Geocoder::Layer::Layer(Type type)
+  : m_type{type}
+{
+}
+
+void Geocoder::Layer::SetCandidates(std::vector<Candidate> && candidates)
+{
+  std::sort(candidates.begin(), candidates.end(), [](auto const & a, auto const & b) {
+    return a.m_totalCertainty < b.m_totalCertainty;
+  });
+  m_candidatesByCertainty = std::move(candidates);
+}
 
 // Geocoder::Context -------------------------------------------------------------------------------
 Geocoder::Context::Context(string const & query) : m_beam(kMaxResults)
@@ -378,8 +418,7 @@ void Geocoder::Go(Context & ctx, Type type) const
       subquery.push_back(ctx.GetToken(j));
       subqueryTokenIds.push_back(j);
 
-      Layer curLayer;
-      curLayer.m_type = type;
+      Layer curLayer{type};
 
       // Buildings are indexed separately.
       if (type == Type::Building)
@@ -391,7 +430,7 @@ void Geocoder::Go(Context & ctx, Type type) const
         FillRegularLayer(ctx, type, subquery, curLayer);
       }
 
-      if (curLayer.m_entries.empty())
+      if (curLayer.GetCandidatesByCertainty().empty())
         continue;
 
       ScopedMarkTokens mark(ctx, type, i, j + 1);
@@ -400,7 +439,7 @@ void Geocoder::Go(Context & ctx, Type type) const
       if (type == Type::Street)
         MarkStreetSynonym(ctx, streetSynonymMark);
 
-      AddResults(ctx, curLayer.m_entries);
+      AddResults(ctx, curLayer.GetCandidatesByCertainty());
 
       ctx.GetLayers().emplace_back(move(curLayer));
       SCOPE_GUARD(pop, [&] { ctx.GetLayers().pop_back(); });
@@ -425,7 +464,7 @@ void Geocoder::FillBuildingsLayer(Context & ctx, Tokens const & subquery, vector
 
   for (auto const & layer : boost::adaptors::reverse(ctx.GetLayers()))
   {
-    if (layer.m_type != Type::Street && layer.m_type != Type::Locality)
+    if (layer.GetType() != Type::Street && layer.GetType() != Type::Locality)
       continue;
 
     // We've already filled a street/location layer and now see something that resembles
@@ -433,11 +472,14 @@ void Geocoder::FillBuildingsLayer(Context & ctx, Tokens const & subquery, vector
     // let's stay on the safer side and mark the tokens as potential house number.
     ctx.MarkHouseNumberPositionsInQuery(subqueryTokenIds);
 
+    auto candidates = std::vector<Candidate>{};
+
     auto const & lastLayer = ctx.GetLayers().back();
     auto const forSublocalityLayer =
-        lastLayer.m_type == Type::Suburb || lastLayer.m_type == Type::Sublocality;
-    for (auto const & docId : layer.m_entries)
+        lastLayer.GetType() == Type::Suburb || lastLayer.GetType() == Type::Sublocality;
+    for (auto const & buildingOwnerCandidate : layer.GetCandidatesByCertainty())
     {
+      auto const & docId = buildingOwnerCandidate.m_entry;
       m_index.ForEachRelatedBuilding(docId, [&](Index::DocId const & buildingDocId) {
         auto const & building = m_index.GetDoc(buildingDocId);
         auto const & multipleHN = building.GetNormalizedMultipleNames(
@@ -447,14 +489,23 @@ void Geocoder::FillBuildingsLayer(Context & ctx, Tokens const & subquery, vector
         if (search::house_numbers::HouseNumbersMatch(realHNUniStr, subqueryHN,
                                                      false /* queryIsPrefix */))
         {
-          if (forSublocalityLayer && !HasParent(ctx.GetLayers(), building))
+          auto && parentCandidateCertainty =
+              forSublocalityLayer ? FindMaxCertaintyInParentCandidates(ctx.GetLayers(), building)
+                                  : boost::optional<double>{buildingOwnerCandidate.m_totalCertainty};
+          if (!parentCandidateCertainty)
             return;
 
-          curLayer.m_entries.emplace_back(buildingDocId);
+          static auto const buildingTokenWeight = GetWeight(Kind::Building);
+          auto totalCertainty =
+              *parentCandidateCertainty + buildingTokenWeight * subqueryTokenIds.size();
+
+          candidates.push_back({buildingDocId, totalCertainty});
         }
       });
     }
 
+    if (!candidates.empty())
+      curLayer.SetCandidates(std::move(candidates));
     break;
   }
 }
@@ -462,30 +513,38 @@ void Geocoder::FillBuildingsLayer(Context & ctx, Tokens const & subquery, vector
 void Geocoder::FillRegularLayer(Context const & ctx, Type type, Tokens const & subquery,
                                 Layer & curLayer) const
 {
+  auto candidates = std::vector<Candidate>{};
+
   m_index.ForEachDocId(subquery, [&](Index::DocId const & docId) {
     auto const & d = m_index.GetDoc(docId);
     if (d.m_type != type)
       return;
 
-    if (ctx.GetLayers().empty() || HasParent(ctx.GetLayers(), d))
-    {
-      if (type > Type::Locality && !IsRelevantLocalityMember(ctx, d, subquery))
-        return;
+    auto && parentCandidateCertainty = FindMaxCertaintyInParentCandidates(ctx.GetLayers(), d);
+    if (!parentCandidateCertainty)
+      return;
 
-      curLayer.m_entries.emplace_back(docId);
-    }
+    if (type > Type::Locality && !IsRelevantLocalityMember(ctx, d, subquery))
+      return;
+
+    auto subqueryWeight =
+        (d.m_kind != Kind::Unknown ? GetWeight(d.m_kind) : GetWeight(d.m_type)) * subquery.size();
+    auto totalCertainty = *parentCandidateCertainty + subqueryWeight;
+
+    candidates.push_back({docId, totalCertainty});
   });
+
+  if (!candidates.empty())
+    curLayer.SetCandidates(std::move(candidates));
 }
 
-void Geocoder::AddResults(Context & ctx, std::vector<Index::DocId> const & entries) const
+void Geocoder::AddResults(Context & ctx, std::vector<Candidate> const & candidates) const
 {
-  double certainty = 0;
   vector<size_t> tokenIds;
   vector<Type> allTypes;
   for (size_t tokId = 0; tokId < ctx.GetNumTokens(); ++tokId)
   {
     auto const t = ctx.GetTokenType(tokId);
-    certainty += GetWeight(t);
     if (t != Type::Count)
     {
       tokenIds.push_back(tokId);
@@ -493,11 +552,11 @@ void Geocoder::AddResults(Context & ctx, std::vector<Index::DocId> const & entri
     }
   }
 
-  for (auto const & docId : entries)
+  for (auto const & candidate : candidates)
   {
+    auto const & docId = candidate.m_entry;
     auto const & entry = m_index.GetDoc(docId);
-
-    auto entryCertainty = certainty;
+    auto entryCertainty = candidate.m_totalCertainty;
 
     if (InCityState(entry))
     {
@@ -536,19 +595,23 @@ bool Geocoder::InCityState(Hierarchy::Entry const & entry) const
   return false;
 }
 
-bool Geocoder::HasParent(vector<Geocoder::Layer> const & layers, Hierarchy::Entry const & e) const
+boost::optional<double> Geocoder::FindMaxCertaintyInParentCandidates(
+    vector<Geocoder::Layer> const & layers, Hierarchy::Entry const & e) const
 {
-  CHECK(!layers.empty(), ());
+  if (layers.empty())
+    return 0;
+
   auto const & layer = layers.back();
-  for (auto const & docId : layer.m_entries)
+  for (auto const & candidate : layer.GetCandidatesByCertainty())
   {
+    auto const & docId = candidate.m_entry;
     // Note that the relationship is somewhat inverted: every ancestor
     // is stored in the address but the nodes have no information
     // about their children.
     if (m_hierarchy.IsParentTo(m_index.GetDoc(docId), e))
-      return true;
+      return candidate.m_totalCertainty;
   }
-  return false;
+  return {};
 }
 
 bool Geocoder::IsRelevantLocalityMember(Context const & ctx, Hierarchy::Entry const & member,
@@ -562,14 +625,15 @@ bool Geocoder::HasMemberLocalityInMatching(Context const & ctx, Hierarchy::Entry
 {
   for (auto const & layer : ctx.GetLayers())
   {
-    auto const layerType = layer.m_type;
+    auto const layerType = layer.GetType();
     if (layerType > Type::Locality)
       break;
     if (layerType != Type::Locality)
       continue;
 
-    for (auto const docId : layer.m_entries)
+    for (auto const & candidate : layer.GetCandidatesByCertainty())
     {
+      auto const & docId = candidate.m_entry;
       auto const & matchedEntry = m_index.GetDoc(docId);
       if (m_hierarchy.IsParentTo(matchedEntry, member))
         return true;

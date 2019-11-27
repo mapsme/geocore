@@ -6,6 +6,8 @@
 #include "generator/regions/collector_region_info.hpp"
 #include "generator/regions/region_info.hpp"
 
+#include "geocoder/types.hpp"
+
 #include "platform/platform.hpp"
 
 #include "base/geo_object_id.hpp"
@@ -164,4 +166,16 @@ UNIT_TEST(RegionInfoCollector_MergeAndSave)
    TEST(!rg.GetIsoCodeAlpha3(), ());
    TEST(!rg.GetIsoCodeAlphaNumeric(), ());
  }
+}
+
+// PlaceType tests  --------------------------------------------------------------------------------
+UNIT_TEST(CollectorRegionInfo_PlaceType2KindTest)
+{
+  TEST_EQUAL(static_cast<int>(PlaceType::Unknown), 0, ());
+  for (auto i = 1; i < static_cast<int>(PlaceType::Count); ++i)
+  {
+    auto const placeType = static_cast<PlaceType>(i);
+    TEST_NOT_EQUAL(
+        geocoder::KindFromString(StringifyPlaceType(placeType)), geocoder::Kind::Unknown, ());
+  }
 }

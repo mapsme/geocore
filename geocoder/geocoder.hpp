@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include <boost/optional.hpp>
 #include <boost/serialization/version.hpp>
 
 namespace geocoder
@@ -45,11 +46,30 @@ public:
   DECLARE_EXCEPTION(Exception, RootException);
   DECLARE_EXCEPTION(OpenException, Exception);
 
-  // A Layer contains all entries matched by a subquery of consecutive tokens.
-  struct Layer
+  // Candidate contain matched entry with certainty of all matched tokens.
+  struct Candidate
   {
-    Type m_type = Type::Count;
-    std::vector<Index::DocId> m_entries;
+    Index::DocId m_entry;
+    double m_totalCertainty;
+  };
+
+  // A Layer contains all entries matched by a subquery of consecutive tokens.
+  class Layer
+  {
+  public:
+    Layer() = default;
+    Layer(Type type);
+
+    Type GetType() const noexcept { return m_type; }
+    std::vector<Candidate> const & GetCandidatesByCertainty() const noexcept
+    {
+      return m_candidatesByCertainty;
+    }
+    void SetCandidates(std::vector<Candidate> && candidates);
+
+  private:
+    Type m_type{Type::Count};
+    std::vector<Candidate> m_candidatesByCertainty;
   };
 
   // This class is very similar to the one we use in search/.
@@ -158,13 +178,16 @@ private:
                           Layer & curLayer) const;
   void FillRegularLayer(Context const & ctx, Type type, Tokens const & subquery,
                         Layer & curLayer) const;
-  void AddResults(Context & ctx, std::vector<Index::DocId> const & entries) const;
+  void AddResults(Context & ctx, std::vector<Candidate> const & candidates) const;
 
   bool InCityState(Hierarchy::Entry const & entry) const;
 
-  // Returns whether any of the paths through |layers| can be extended
-  // by appending |e|.
-  bool HasParent(std::vector<Geocoder::Layer> const & layers, Hierarchy::Entry const & e) const;
+  // Find max certainty in parent candidates.
+  // 0 - first candidate.
+  // none - there is no parent from candidates.
+  boost::optional<double> FindMaxCertaintyInParentCandidates(
+      std::vector<Geocoder::Layer> const & layers, Hierarchy::Entry const & e) const;
+
   bool IsRelevantLocalityMember(Context const & ctx, Hierarchy::Entry const & member,
                                 Tokens const & subquery) const;
   bool HasMemberLocalityInMatching(Context const & ctx, Hierarchy::Entry const & member) const;
