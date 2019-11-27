@@ -73,6 +73,7 @@ public:
       ar & m_osmId;
       ar & m_name;
       ar & m_type;
+      ar & m_kind;
       ar & m_normalizedAddress;
     }
 
@@ -101,6 +102,7 @@ public:
     std::string m_name;
 
     Type m_type = Type::Count;
+    Kind m_kind{Kind::Unknown};
 
     // The positions of entry address fields in normalized name dictionary, one per Type.
     std::array<NameDictionary::Position, static_cast<size_t>(Type::Count)> m_normalizedAddress{};

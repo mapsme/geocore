@@ -48,12 +48,16 @@ bool Hierarchy::Entry::DeserializeFromJSONImpl(
   if (!DeserializeAddressFromJSON(root, normalizedNameDictionaryBuilder, stats))
     return false;
 
+  coding::JsonValue const & properties = coding::GetJsonObligatoryField(root, "properties");
   coding::JsonValue const & defaultLocale =
-      coding::GetJsonObligatoryFieldByPath(root, "properties", "locales", "default");
-  coding::FromJsonObjectOptionalField(defaultLocale, "name", m_name);
+      coding::GetJsonObligatoryFieldByPath(properties, "locales", "default");
 
+  coding::FromJsonObjectOptionalField(defaultLocale, "name", m_name);
   if (m_name.empty())
     ++stats.m_emptyNames;
+
+  if (auto const * kind = coding::GetJsonOptionalField(properties, "kind"))
+    m_kind = KindFromString(kind->GetString());
 
   if (m_type == Type::Count)
   {

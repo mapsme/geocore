@@ -61,6 +61,8 @@ PlaceLevel CountrySpecifier::GetLevel(PlaceType placeType)
     return PlaceLevel::Sublocality;
   case PlaceType::Unknown:
     break;
+  case PlaceType::Count:
+    UNREACHABLE();
   }
 
   return PlaceLevel::Unknown;

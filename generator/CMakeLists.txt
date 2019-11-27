@@ -158,6 +158,7 @@ geocore_add_library(${PROJECT_NAME} ${SRC})
 geocore_link_libraries(${PROJECT_NAME}
   base
   coding
+  geocoder
   indexer
   platform
   geometry
