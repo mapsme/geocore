@@ -153,15 +153,19 @@ strings::UniString MakeHouseNumber(Tokens const & tokens)
 }  // namespace
 
 // Geocoder::Layer ---------------------------------------------------------------------------------
-Geocoder::Layer::Layer(Type type)
-  : m_type{type}
+Geocoder::Layer::Layer(Index const & index, Type type)
+  : m_index{index}, m_type{type}
 {
 }
 
 void Geocoder::Layer::SetCandidates(std::vector<Candidate> && candidates)
 {
-  std::sort(candidates.begin(), candidates.end(), [](auto const & a, auto const & b) {
-    return a.m_totalCertainty < b.m_totalCertainty;
+  std::sort(candidates.begin(), candidates.end(), [this](auto const & a, auto const & b) {
+    if (a.m_totalCertainty < b.m_totalCertainty)
+      return true;
+    if (a.m_totalCertainty > b.m_totalCertainty)
+      return false;
+    return m_index.GetDoc(a.m_entry).m_osmId < m_index.GetDoc(b.m_entry).m_osmId;
   });
   m_candidatesByCertainty = std::move(candidates);
 }
@@ -418,7 +422,7 @@ void Geocoder::Go(Context & ctx, Type type) const
       subquery.push_back(ctx.GetToken(j));
       subqueryTokenIds.push_back(j);
 
-      Layer curLayer{type};
+      Layer curLayer{m_index, type};
 
       // Buildings are indexed separately.
       if (type == Type::Building)
