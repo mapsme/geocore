@@ -57,8 +57,7 @@ public:
   class Layer
   {
   public:
-    Layer() = default;
-    Layer(Type type);
+    Layer(Index const & index, Type type);
 
     Type GetType() const noexcept { return m_type; }
     std::vector<Candidate> const & GetCandidatesByCertainty() const noexcept
@@ -68,6 +67,7 @@ public:
     void SetCandidates(std::vector<Candidate> && candidates);
 
   private:
+    Index const & m_index;
     Type m_type{Type::Count};
     std::vector<Candidate> m_candidatesByCertainty;
   };
