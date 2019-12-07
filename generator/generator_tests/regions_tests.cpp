@@ -7,6 +7,7 @@
 #include "generator/regions/collector_region_info.hpp"
 #include "generator/regions/place_point.hpp"
 #include "generator/regions/regions_builder.hpp"
+#include "generator/translator_region.hpp"
 
 #include "indexer/classificator.hpp"
 #include "indexer/classificator_loader.hpp"
@@ -635,4 +636,34 @@ UNIT_TEST(RegionsBuilderTest_GenerateRusSPetersburgSuburb)
                u8"Россия, region: Санкт-Петербург, locality: Санкт-Петербург, "
                u8"suburb: Центральный район, sublocality: Дворцовый округ"),
        ());
+}
+
+// Enclave way ignoring tests ----------------------------------------------------------------------
+UNIT_TEST(RegionsFilterTest_EnclaveWayIgnoring)
+{
+  auto usa = OsmElement{};
+  usa.m_type = OsmElement::EntityType::Relation;
+  usa.m_id = 1;
+  usa.m_nodes = {1, 2, 3, 1};
+  usa.m_tags = {
+    {"name", u8"United States of America"},
+    {"type", "boundary"},
+    {"boundary", "administrative"},
+    {"admin_level", "2"}
+  };
+
+  auto hawai = OsmElement{};
+  hawai.m_type = OsmElement::EntityType::Way;
+  hawai.m_id = 2;
+  hawai.m_nodes = {1, 2, 3, 1};
+  hawai.m_tags = {
+    {"name", u8"United States of America (Island of Hawai'i territorial waters)"},
+    {"boundary", "administrative"},
+    {"admin_level", "2"}
+  };
+
+  auto && regionsFilter = FilterRegions{};
+
+  TEST(regionsFilter.IsAccepted(usa), ());
+  TEST(!regionsFilter.IsAccepted(hawai), ());
 }
