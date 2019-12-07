@@ -82,5 +82,5 @@ UNIT_TEST(StreetsIndexTest_SquareIndex)
 
   auto inside = GetObjectsAtPoint(streetsIndex, {1.000 + 0.001, 2.000 + 0.001});
   TEST_EQUAL(inside.size(), 1, ());
-  TEST_EQUAL(inside, Objects({MakeOsmRelation(1)}), ());
+  TEST_EQUAL(inside, Objects({MakeOsmWay(1)}), ());
 }

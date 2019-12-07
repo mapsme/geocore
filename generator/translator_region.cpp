@@ -17,40 +17,7 @@ using namespace feature;
 
 namespace generator
 {
-namespace
-{
-class FilterRegions : public FilterInterface
-{
-public:
-  // FilterInterface overrides:
-  std::shared_ptr<FilterInterface> Clone() const override
-  {
-    return std::make_shared<FilterRegions>();
-  }
-
-  bool IsAccepted(OsmElement const & element) override
-  {
-    for (auto const & t : element.Tags())
-    {
-      if (t.m_key == "place" && regions::EncodePlaceType(t.m_value) != regions::PlaceType::Unknown)
-        return true;
-      if (t.m_key == "place:PH" && (t.m_value == "district" || t.m_value == "barangay"))
-        return true;
-
-      if (t.m_key == "boundary" && t.m_value == "administrative")
-        return true;
-    }
-
-    return false;
-  }
-
-  bool IsAccepted(FeatureBuilder const & feature) override
-  {
-    return feature.GetParams().IsValid() && !feature.IsLine();
-  }
-};
-}  // namespace
-
+// TranslatorRegion --------------------------------------------------------------------------------
 TranslatorRegion::TranslatorRegion(std::shared_ptr<FeatureProcessorInterface> const & processor,
                                    std::shared_ptr<cache::IntermediateData const> const & cache,
                                    std::string const & regionsInfoPath)
@@ -75,5 +42,54 @@ void TranslatorRegion::Merge(TranslatorInterface const & other)
 void TranslatorRegion::MergeInto(TranslatorRegion & other) const
 {
   MergeIntoBase(other);
+}
+
+// FilterRegions ----------------------------------------------------------------------------------
+std::shared_ptr<FilterInterface> FilterRegions::Clone() const
+{
+  return std::make_shared<FilterRegions>();
+}
+
+bool FilterRegions::IsAccepted(OsmElement const & element)
+{
+  for (auto const & t : element.Tags())
+  {
+    if (t.m_key == "place" && regions::EncodePlaceType(t.m_value) != regions::PlaceType::Unknown)
+      return true;
+    if (t.m_key == "place:PH" && (t.m_value == "district" || t.m_value == "barangay"))
+      return true;
+
+    if (t.m_key == "boundary" && t.m_value == "administrative")
+    {
+      if (IsEnclaveBoundaryWay(element))
+        return false;
+
+      return true;
+    }
+  }
+
+  return false;
+}
+
+bool FilterRegions::IsAccepted(FeatureBuilder const & feature)
+{
+  return feature.GetParams().IsValid() && !feature.IsLine();
+}
+
+bool FilterRegions::IsEnclaveBoundaryWay(OsmElement const & element) const
+{
+  if (!element.IsWay() || !IsGeometryClosed(element))
+    return false;
+
+  if (!element.HasTag("admin_level", "2") || !element.HasTag("boundary", "administrative"))
+    return false;
+
+  return !element.HasTag("type", "boundary") && !element.HasTag("type", "multipolygon");
+}
+
+bool FilterRegions::IsGeometryClosed(OsmElement const & element) const
+{
+  auto const & nodes = element.Nodes();
+  return nodes.size() >= 3 && nodes.front() == nodes.back();
 }
 }  // namespace generator

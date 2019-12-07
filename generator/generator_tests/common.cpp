@@ -39,10 +39,10 @@ OsmElement MakeOsmElement(OsmElementData const & elementData)
   OsmElement el;
   el.m_id = elementData.m_id;
 
+  if (!el.m_members.empty())
+    el.m_type = OsmElement::EntityType::Relation;
   if (elementData.m_points.size() == 1)
     el.m_type = OsmElement::EntityType::Node;
-  else if (elementData.m_points.front() == elementData.m_points.back())
-    el.m_type = OsmElement::EntityType::Relation;
   else
     el.m_type = OsmElement::EntityType::Way;
 
