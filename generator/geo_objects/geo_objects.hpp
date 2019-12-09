@@ -15,12 +15,15 @@
 
 #include <string>
 
+#include <boost/optional.hpp>
+
 namespace generator
 {
 namespace geo_objects
 {
 
 using IndexReader = ReaderPtr<Reader>;
+using RegionInfoLocater = std::function<boost::optional<KeyValue>(m2::PointD const & pathPoint)>;
 
 boost::optional<indexer::GeoObjectsIndex<IndexReader>> MakeTempGeoObjectsIndex(
     std::string const & pathToGeoObjectsTmpMwm);
@@ -28,7 +31,8 @@ boost::optional<indexer::GeoObjectsIndex<IndexReader>> MakeTempGeoObjectsIndex(
 bool JsonHasBuilding(JsonValue const & json);
 
 void AddBuildingsAndThingsWithHousesThenEnrichAllWithRegionAddresses(
-    GeoObjectMaintainer & geoObjectMaintainer, std::string const & pathInGeoObjectsTmpMwm,
+    std::string const & geoObjectKeyValuePath, GeoObjectMaintainer & geoObjectMaintainer,
+    std::string const & pathInGeoObjectsTmpMwm, RegionInfoLocater const & regionInfoLocater,
     bool verbose, unsigned int threadsCount);
 
 struct NullBuildingsInfo
@@ -46,6 +50,7 @@ NullBuildingsInfo EnrichPointsWithOuterBuildingGeometry(
 
 void AddPoisEnrichedWithHouseAddresses(GeoObjectMaintainer & geoObjectMaintainer,
                                        NullBuildingsInfo const & buildingsInfo,
+                                       std::string const & geoObjectKeyValuePath,
                                        std::string const & pathInGeoObjectsTmpMwm,
                                        std::ostream & streamPoiIdsToAddToLocalityIndex,
                                        bool verbose, unsigned int threadsCount);

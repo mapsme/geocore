@@ -1,6 +1,7 @@
 #include "generator/data_version.hpp"
 #include "generator/feature_builder.hpp"
 #include "generator/feature_generator.hpp"
+#include "generator/key_value_concurrent_writer.hpp"
 #include "generator/key_value_storage.hpp"
 #include "generator/locality_sorter.hpp"
 
@@ -22,14 +23,16 @@
 
 #include "base/geo_object_id.hpp"
 
-#include <boost/optional.hpp>
-
 #include "3party/jansson/myjansson.hpp"
 
 #include <cstdint>
 #include <fstream>
 #include <functional>
 #include <mutex>
+#include <vector>
+
+#include <boost/filesystem.hpp>
+#include <boost/optional.hpp>
 
 using namespace feature;
 
@@ -37,6 +40,165 @@ namespace generator
 {
 namespace geo_objects
 {
+// BufferedCuncurrentUnorderedMapUpdater -----------------------------------------------------------
+template <typename Key, typename Value>
+class BufferedCuncurrentUnorderedMapUpdater
+{
+public:
+  static constexpr size_t kValuesBufferSize{10'000};
+  // Max size for try-lock flushing into target.
+  static constexpr size_t kValuesBufferSizeMax{100'000};
+
+  BufferedCuncurrentUnorderedMapUpdater(std::unordered_map<Key, Value> & map,
+                                        std::mutex & mapMutex)
+    : m_map{map}
+    , m_mapMutex{mapMutex}
+  { }
+  BufferedCuncurrentUnorderedMapUpdater(BufferedCuncurrentUnorderedMapUpdater &&) = default;
+  BufferedCuncurrentUnorderedMapUpdater & operator=(
+      BufferedCuncurrentUnorderedMapUpdater &&) = default;
+  ~BufferedCuncurrentUnorderedMapUpdater()
+  {
+    if (!m_valuesBuffer.empty())
+      FlushBuffer(true);
+  }
+
+  template <typename... Args>
+  void Emplace(Args &&... args)
+  {
+    m_valuesBuffer.emplace_back(std::forward<Args>(args)...);
+
+    if (m_valuesBuffer.size() >= kValuesBufferSize)
+      FlushBuffer(m_valuesBuffer.size() >= kValuesBufferSizeMax);
+  }
+
+private:
+  using MapValue = typename std::unordered_map<Key, Value>::value_type;
+
+  void FlushBuffer(bool force)
+  {
+    auto && lock =
+        std::unique_lock<std::mutex>{m_mapMutex, std::defer_lock};
+    if (force)
+      lock.lock();
+    else
+      lock.try_lock();
+
+    if (!lock)
+      return;
+
+    for (auto & value : m_valuesBuffer)
+      m_map.insert(std::move(value));
+    lock.unlock();
+
+    m_valuesBuffer.clear();
+  }
+
+  std::unordered_map<Key, Value> & m_map;
+  std::mutex & m_mapMutex;
+  std::vector<MapValue> m_valuesBuffer;
+};
+
+// BuildingsAndHousesGenerator ---------------------------------------------------------------------
+class BuildingsAndHousesGenerator
+{
+public:
+  BuildingsAndHousesGenerator(BuildingsAndHousesGenerator const &) = delete;
+  BuildingsAndHousesGenerator & operator=(BuildingsAndHousesGenerator const &) = delete;
+
+  BuildingsAndHousesGenerator(
+      std::string const & geoObjectKeyValuePath, GeoObjectMaintainer & geoObjectMaintainer,
+      RegionInfoLocater const & regionInfoLocater)
+    : m_geoObjectKeyValuePath{geoObjectKeyValuePath}
+    , m_geoObjectMaintainer{geoObjectMaintainer}
+    , m_regionInfoLocater{regionInfoLocater}
+  {
+  }
+
+  void GenerateBuildingsAndHouses(
+      std::string const & geoObjectsTmpMwmPath, unsigned int threadsCount)
+  {
+    GeoId2GeoData geoId2GeoData;
+    uint64_t const fileSize = boost::filesystem::file_size(geoObjectsTmpMwmPath);
+    geoId2GeoData.reserve(std::min(uint64_t{500'000'000}, fileSize / 10));
+
+    std::mutex geoId2GeoDataMutex;
+
+    feature::ProcessParallelFromDatRawFormat(threadsCount, geoObjectsTmpMwmPath, [&] {
+      return Processor{*this, m_geoObjectKeyValuePath, geoId2GeoData, geoId2GeoDataMutex};
+    });
+
+    m_geoObjectMaintainer.SetGeoData(std::move(geoId2GeoData));
+  }
+
+private:
+  using GeoObjectData = GeoObjectMaintainer::GeoObjectData;
+  using GeoId2GeoData = GeoObjectMaintainer::GeoId2GeoData;
+
+  class Processor
+  {
+  public:
+    Processor(BuildingsAndHousesGenerator & generator,
+              std::string const & geoObjectKeyValuePath,
+              GeoId2GeoData & geoId2GeoData, std::mutex & geoId2GeoDataMutex)
+      : m_generator{generator}
+      , m_kvWriter{geoObjectKeyValuePath}
+      , m_geoDataCache{geoId2GeoData, geoId2GeoDataMutex}
+    {
+    }
+
+    void operator()(FeatureBuilder & fb, uint64_t /* currPos */)
+    {
+      if (!GeoObjectsFilter::IsBuilding(fb) && !GeoObjectsFilter::HasHouse(fb))
+        return;
+
+      auto regionKeyValue = m_generator.m_regionInfoLocater(fb.GetKeyPoint());
+      if (!regionKeyValue)
+        return;
+
+      WriteIntoKv(fb, *regionKeyValue);
+      CacheGeoData(fb, *regionKeyValue);
+    }
+
+  private:
+    void WriteIntoKv(FeatureBuilder & fb, KeyValue const & regionKeyValue)
+    {
+      auto const id = fb.GetMostGenericOsmId();
+      auto jsonValue = AddAddress(fb.GetParams().GetStreet(), fb.GetParams().house.Get(),
+                                  fb.GetKeyPoint(), fb.GetMultilangName(), regionKeyValue);
+
+      m_kvWriter.Write(id, JsonValue{std::move(jsonValue)});
+    }
+
+    void CacheGeoData(FeatureBuilder & fb, KeyValue const & regionKeyValue)
+    {
+      auto const id = fb.GetMostGenericOsmId();
+      auto geoData = GeoObjectData{fb.GetParams().GetStreet(), fb.GetParams().house.Get(),
+                                   base::GeoObjectId(regionKeyValue.first)};
+      m_geoDataCache.Emplace(id, std::move(geoData));
+    }
+
+    BuildingsAndHousesGenerator & m_generator;
+    KeyValueConcurrentWriter m_kvWriter;
+    BufferedCuncurrentUnorderedMapUpdater<base::GeoObjectId, GeoObjectData> m_geoDataCache;
+  };
+
+  std::string m_geoObjectKeyValuePath;
+  GeoObjectMaintainer & m_geoObjectMaintainer;
+  RegionInfoLocater const & m_regionInfoLocater;
+};
+
+void AddBuildingsAndThingsWithHousesThenEnrichAllWithRegionAddresses(
+    std::string const & geoObjectKeyValuePath,  GeoObjectMaintainer & geoObjectMaintainer,
+    std::string const & pathInGeoObjectsTmpMwm, RegionInfoLocater const & regionInfoLocater,
+    bool /*verbose*/, unsigned int threadsCount)
+{
+  auto && generator =
+      BuildingsAndHousesGenerator{geoObjectKeyValuePath, geoObjectMaintainer, regionInfoLocater};
+  generator.GenerateBuildingsAndHouses(pathInGeoObjectsTmpMwm, threadsCount);
+  LOG(LINFO, ("Added", geoObjectMaintainer.Size(), "geo objects with addresses."));
+}
+
 namespace
 {
 NullBuildingsInfo GetHelpfulNullBuildings(GeoObjectMaintainer & geoObjectMaintainer,
@@ -229,18 +391,6 @@ boost::optional<indexer::GeoObjectsIndex<IndexReader>> MakeTempGeoObjectsIndex(
   return indexer::ReadIndex<indexer::GeoObjectsIndexBox<IndexReader>, MmapReader>(indexFile);
 }
 
-void AddBuildingsAndThingsWithHousesThenEnrichAllWithRegionAddresses(
-    GeoObjectMaintainer & geoObjectMaintainer, std::string const & pathInGeoObjectsTmpMwm,
-    bool /*verbose*/, unsigned int threadsCount)
-{
-  auto const concurrentTransformer = [&](FeatureBuilder & fb, uint64_t /* currPos */) {
-    geoObjectMaintainer.StoreAndEnrich(fb);
-  };
-
-  ForEachParallelFromDatRawFormat(threadsCount, pathInGeoObjectsTmpMwm, concurrentTransformer);
-  LOG(LINFO, ("Added", geoObjectMaintainer.Size(), "geo objects with addresses."));
-}
-
 NullBuildingsInfo EnrichPointsWithOuterBuildingGeometry(GeoObjectMaintainer & geoObjectMaintainer,
                                                         std::string const & pathInGeoObjectsTmpMwm,
                                                         unsigned int threadsCount)
@@ -265,11 +415,13 @@ NullBuildingsInfo EnrichPointsWithOuterBuildingGeometry(GeoObjectMaintainer & ge
 
 void AddPoisEnrichedWithHouseAddresses(GeoObjectMaintainer & geoObjectMaintainer,
                                        NullBuildingsInfo const & buildingsInfo,
+                                       std::string const & geoObjectKeyValuePath,
                                        std::string const & pathInGeoObjectsTmpMwm,
                                        std::ostream & streamPoiIdsToAddToLocalityIndex,
                                        bool /*verbose*/, unsigned int threadsCount)
 {
   std::atomic_size_t counter{0};
+  auto && kvWriter = KeyValueConcurrentWriter{geoObjectKeyValuePath};
   std::mutex streamMutex;
   auto const & view = geoObjectMaintainer.CreateView();
 
@@ -287,11 +439,11 @@ void AddPoisEnrichedWithHouseAddresses(GeoObjectMaintainer & geoObjectMaintainer
     auto const id = fb.GetMostGenericOsmId();
     auto jsonValue = MakeJsonValueWithNameFromFeature(fb, JsonValue{std::move(house)});
 
+    kvWriter.Write(id, JsonValue{std::move(jsonValue)});
+
     counter++;
     if (counter % 100000 == 0)
       LOG(LINFO, (counter, "pois added"));
-
-    geoObjectMaintainer.WriteToStorage(id, JsonValue{std::move(jsonValue)});
 
     std::lock_guard<std::mutex> lock(streamMutex);
     streamPoiIdsToAddToLocalityIndex << id << "\n";

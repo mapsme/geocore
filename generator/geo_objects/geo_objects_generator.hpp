@@ -18,7 +18,7 @@ namespace geo_objects
 class GeoObjectsGenerator
 {
 public:
-  GeoObjectsGenerator(GeoObjectMaintainer::RegionInfoGetter && regionInfoGetter,
+  GeoObjectsGenerator(RegionInfoLocater && regionInfoLocater,
                       GeoObjectMaintainer::RegionIdGetter && regionIdGetter,
                       std::string pathInGeoObjectsTmpMwm, std::string pathOutIdsWithoutAddress,
                       std::string pathOutGeoObjectsKv,
@@ -45,6 +45,7 @@ private:
   bool m_verbose = false;
   unsigned int m_threadsCount = 1;
   GeoObjectMaintainer m_geoObjectMaintainer;
+  RegionInfoLocater m_regionInfoLocater;
 };
 
 bool GenerateGeoObjects(std::string const & regionsIndex, std::string const & regionsKeyValue,
