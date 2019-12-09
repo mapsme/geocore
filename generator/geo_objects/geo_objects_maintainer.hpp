@@ -28,11 +28,12 @@ namespace generator
 namespace geo_objects
 {
 void UpdateCoordinates(m2::PointD const & point, base::JSONPtr & json);
+base::JSONPtr AddAddress(std::string const & street, std::string const & house, m2::PointD point,
+                         StringUtf8Multilang const & name, KeyValue const & regionKeyValue);
 
 class GeoObjectMaintainer
 {
 public:
-  using RegionInfoGetter = std::function<boost::optional<KeyValue>(m2::PointD const & pathPoint)>;
   using RegionIdGetter = std::function<std::shared_ptr<JsonValue>(base::GeoObjectId id)>;
 
   struct GeoObjectData
@@ -49,13 +50,11 @@ public:
   {
   public:
     GeoObjectsView(GeoIndex const & geoIndex, GeoId2GeoData const & geoId2GeoData,
-                   RegionIdGetter const & regionIdGetter, std::mutex & updateMutex)
+                   RegionIdGetter const & regionIdGetter)
       : m_geoIndex(geoIndex)
       , m_geoId2GeoData(geoId2GeoData)
       , m_regionIdGetter(regionIdGetter)
-      , m_lock(updateMutex, std::defer_lock)
     {
-      CHECK(m_lock.try_lock(), ("Cannot create GeoObjectView on locked mutex"));
     }
     boost::optional<base::GeoObjectId> SearchIdOfFirstMatchedObject(
         m2::PointD const & point, std::function<bool(base::GeoObjectId)> && pred) const;
@@ -80,34 +79,23 @@ public:
     GeoIndex const & m_geoIndex;
     GeoId2GeoData const & m_geoId2GeoData;
     RegionIdGetter const & m_regionIdGetter;
-    std::unique_lock<std::mutex> m_lock;
   };
 
-  GeoObjectMaintainer(std::string const & pathOutGeoObjectsKv, RegionInfoGetter && regionInfoGetter,
-                      RegionIdGetter && regionIdGetter);
+  GeoObjectMaintainer(RegionIdGetter && regionIdGetter);
 
   void SetIndex(GeoIndex && index) { m_index = std::move(index); }
 
-  void StoreAndEnrich(feature::FeatureBuilder & fb);
-  void WriteToStorage(base::GeoObjectId id, JsonValue && value);
-  void Flush() { m_geoObjectsKvStorage.flush(); }
+  void SetGeoData(GeoId2GeoData && geoId2GeoData) { m_geoId2GeoData = std::move(geoId2GeoData); }
 
   size_t Size() const { return m_geoId2GeoData.size(); }
 
   GeoObjectsView CreateView()
   {
-    return GeoObjectsView(m_index, m_geoId2GeoData, m_regionIdGetter, m_updateMutex);
+    return GeoObjectsView(m_index, m_geoId2GeoData, m_regionIdGetter);
   }
 
 private:
-  static std::fstream InitGeoObjectsKv(std::string const & pathOutGeoObjectsKv);
-
-  std::fstream m_geoObjectsKvStorage;
-  std::mutex m_updateMutex;
-  std::mutex m_storageMutex;
-
   GeoIndex m_index;
-  RegionInfoGetter m_regionInfoGetter;
   RegionIdGetter m_regionIdGetter;
   GeoId2GeoData m_geoId2GeoData;
 };

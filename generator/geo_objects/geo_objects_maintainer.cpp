@@ -10,24 +10,9 @@ namespace generator
 {
 namespace geo_objects
 {
-GeoObjectMaintainer::GeoObjectMaintainer(std::string const & pathOutGeoObjectsKv,
-                                         RegionInfoGetter && regionInfoGetter,
-                                         RegionIdGetter && regionIdGetter)
-  : m_geoObjectsKvStorage{InitGeoObjectsKv(pathOutGeoObjectsKv)}
-  , m_regionInfoGetter{std::move(regionInfoGetter)}
-  , m_regionIdGetter(std::move(regionIdGetter))
+GeoObjectMaintainer::GeoObjectMaintainer(RegionIdGetter && regionIdGetter)
+  : m_regionIdGetter(std::move(regionIdGetter))
 {
-}
-
-// static
-std::fstream GeoObjectMaintainer::InitGeoObjectsKv(std::string const & pathOutGeoObjectsKv)
-{
-  std::fstream result{pathOutGeoObjectsKv,
-                      std::ios_base::in | std::ios_base::out | std::ios_base::app};
-  if (!result)
-    MYTHROW(Reader::OpenException, ("Failed to open file", pathOutGeoObjectsKv));
-
-  return result;
 }
 
 void UpdateCoordinates(m2::PointD const & point, base::JSONPtr & json)
@@ -69,38 +54,6 @@ base::JSONPtr AddAddress(std::string const & street, std::string const & house, 
 
   ToJSONObject(*properties, "dref", KeyValueStorage::SerializeDref(regionKeyValue.first));
   return result;
-}
-
-void GeoObjectMaintainer::StoreAndEnrich(feature::FeatureBuilder & fb)
-{
-  if (!GeoObjectsFilter::IsBuilding(fb) && !GeoObjectsFilter::HasHouse(fb))
-    return;
-
-  auto regionKeyValue = m_regionInfoGetter(fb.GetKeyPoint());
-  if (!regionKeyValue)
-    return;
-
-  auto const id = fb.GetMostGenericOsmId();
-  auto jsonValue = AddAddress(fb.GetParams().GetStreet(), fb.GetParams().house.Get(),
-                              fb.GetKeyPoint(), fb.GetMultilangName(), *regionKeyValue);
-  {
-    std::lock_guard<std::mutex> lock(m_updateMutex);
-
-    auto const it = m_geoId2GeoData.emplace(
-        std::make_pair(id, GeoObjectData{fb.GetParams().GetStreet(), fb.GetParams().house.Get(),
-                                         base::GeoObjectId(regionKeyValue->first)}));
-
-    // Duplicate ID's are possible
-    if (!it.second)
-      return;
-  }
-  WriteToStorage(id, JsonValue{std::move(jsonValue)});
-}
-
-void GeoObjectMaintainer::WriteToStorage(base::GeoObjectId id, JsonValue && value)
-{
-  std::lock_guard<std::mutex> lock(m_storageMutex);
-  m_geoObjectsKvStorage << KeyValueStorage::SerializeFullLine(id.GetEncodedId(), std::move(value));
 }
 
 // GeoObjectMaintainer::GeoObjectsView

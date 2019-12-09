@@ -349,34 +349,55 @@ private:
 };
 
 // Process features in .dat file.
-template <class SerializationPolicy = serialization_policy::MinSize, class ToDo>
-void ForEachFromDatRawFormat(std::string const & filename, ToDo && toDo)
+template <class SerializationPolicy = serialization_policy::MinSize, class Handler>
+void ForEachFromDatRawFormat(std::string const & filename, Handler && handler)
 {
   auto && featuresMmap = FeaturesFileMmap{filename};
   featuresMmap.ForEachTaskChunk<SerializationPolicy>(
-      0 /* taskIndex */, 1 /* taskCount*/, 1 /* chunkSize */, std::forward<ToDo>(toDo));
+      0 /* taskIndex */, 1 /* taskCount*/, 1 /* chunkSize */, std::forward<Handler>(handler));
 }
 
-/// Parallel process features in .dat file.
-template <class SerializationPolicy = serialization_policy::MinSize, class ToDo>
-void ForEachParallelFromDatRawFormat(unsigned int threadsCount, std::string const & filename,
-                                     ToDo && toDo, uint64_t chunkSize = 1'000)
+// Parallel process features in .dat file.
+template <class SerializationPolicy = serialization_policy::MinSize, class ProcessorMaker>
+void ProcessParallelFromDatRawFormat(unsigned int threadsCount, uint64_t chunkSize,
+                                     std::string const & filename,
+                                     ProcessorMaker && processorMaker)
 {
   CHECK_GREATER_OR_EQUAL(threadsCount, 1, ());
   if (threadsCount == 0 || threadsCount == 1)
-    return ForEachFromDatRawFormat(filename, std::forward<ToDo>(toDo));
+    return ForEachFromDatRawFormat<SerializationPolicy>(filename, processorMaker());
 
   auto && featuresMmap = FeaturesFileMmap{filename};
   auto && threads = std::vector<std::thread>{};
   for (unsigned int i = 0; i < threadsCount; ++i)
   {
-    threads.emplace_back([i, threadsCount, chunkSize, &featuresMmap, toDo] {
-      featuresMmap.ForEachTaskChunk<SerializationPolicy>(i, threadsCount, chunkSize, toDo);
+    auto && processor = processorMaker();
+    threads.emplace_back([i, threadsCount, chunkSize, &featuresMmap,
+                          processor = std::move(processor)]() mutable {
+      featuresMmap.ForEachTaskChunk<SerializationPolicy>(i, threadsCount, chunkSize, processor);
     });
   }
 
   for (auto & thread : threads)
     thread.join();
+}
+
+// Parallel process features in .dat file by 1'000 items in chunk.
+template <class SerializationPolicy = serialization_policy::MinSize, class ProcessorMaker>
+void ProcessParallelFromDatRawFormat(unsigned int threadsCount, std::string const & filename,
+                                     ProcessorMaker && processorMaker)
+{
+  ProcessParallelFromDatRawFormat<SerializationPolicy>(
+      threadsCount, 1'000 /* chunkSize */, filename, std::forward<ProcessorMaker>(processorMaker));
+}
+
+// Parallel process features in .dat file.
+template <class SerializationPolicy = serialization_policy::MinSize, class Handler>
+void ForEachParallelFromDatRawFormat(unsigned int threadsCount, std::string const & filename,
+                                     Handler && handler)
+{
+  ProcessParallelFromDatRawFormat<SerializationPolicy>(
+      threadsCount, filename, [&handler] { return std::forward<Handler>(handler); });
 }
 
 template <class SerializationPolicy = serialization_policy::MinSize>

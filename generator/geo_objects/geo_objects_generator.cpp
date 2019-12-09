@@ -25,7 +25,7 @@ namespace geo_objects
 {
 
 GeoObjectsGenerator::GeoObjectsGenerator(
-    GeoObjectMaintainer::RegionInfoGetter && regionInfoGetter,
+    RegionInfoLocater && regionInfoLocater,
     GeoObjectMaintainer::RegionIdGetter && regionIdGetter, std::string pathInGeoObjectsTmpMwm,
     std::string pathOutIdsWithoutAddress, std::string pathOutGeoObjectsKv, bool verbose,
     unsigned int threadsCount)
@@ -34,7 +34,8 @@ GeoObjectsGenerator::GeoObjectsGenerator(
   , m_pathOutGeoObjectsKv(std::move(pathOutGeoObjectsKv))
   , m_verbose(verbose)
   , m_threadsCount(threadsCount)
-  , m_geoObjectMaintainer{m_pathOutGeoObjectsKv, std::move(regionInfoGetter), std::move(regionIdGetter)}
+  , m_geoObjectMaintainer{std::move(regionIdGetter)}
+  , m_regionInfoLocater{std::move(regionInfoLocater)}
 {
 }
 
@@ -49,7 +50,8 @@ bool GeoObjectsGenerator::GenerateGeoObjectsPrivate()
       std::async(std::launch::async, MakeTempGeoObjectsIndex, m_pathInGeoObjectsTmpMwm);
 
   AddBuildingsAndThingsWithHousesThenEnrichAllWithRegionAddresses(
-      m_geoObjectMaintainer, m_pathInGeoObjectsTmpMwm, m_verbose, m_threadsCount);
+      m_pathOutGeoObjectsKv, m_geoObjectMaintainer, m_pathInGeoObjectsTmpMwm, m_regionInfoLocater,
+      m_verbose, m_threadsCount);
 
   LOG(LINFO, ("Geo objects with addresses were built."));
 
@@ -69,8 +71,9 @@ bool GeoObjectsGenerator::GenerateGeoObjectsPrivate()
 
   std::ofstream streamPoiIdsToAddToLocalityIndex(m_pathOutPoiIdsToAddToLocalityIndex);
 
-  AddPoisEnrichedWithHouseAddresses(m_geoObjectMaintainer, buildingInfo, m_pathInGeoObjectsTmpMwm,
-                                    streamPoiIdsToAddToLocalityIndex, m_verbose, m_threadsCount);
+  AddPoisEnrichedWithHouseAddresses(
+      m_geoObjectMaintainer, buildingInfo, m_pathOutGeoObjectsKv, m_pathInGeoObjectsTmpMwm,
+      streamPoiIdsToAddToLocalityIndex, m_verbose, m_threadsCount);
 
   FilterAddresslessThanGaveTheirGeometryToInnerPoints(m_pathInGeoObjectsTmpMwm, buildingInfo,
                                                       m_threadsCount);

@@ -4,6 +4,7 @@
 #include <fstream>
 #include <functional>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <unordered_map>
 #include <utility>
@@ -20,11 +21,11 @@ public:
   explicit JsonValue(json_t * value = nullptr) : m_handle{value} {}
   explicit JsonValue(base::JSONPtr && value) : m_handle{std::move(value)} {}
 
-  JsonValue(JsonValue const &) = delete;
-  JsonValue & operator=(JsonValue const &) = delete;
+  JsonValue(JsonValue &&) = default;
+  JsonValue & operator=(JsonValue &&) = default;
 
   operator json_t const *() const noexcept { return m_handle.get(); }
-  operator base::JSONPtr const &() noexcept { return m_handle; };
+  operator base::JSONPtr const &() const noexcept { return m_handle; };
   base::JSONPtr MakeDeepCopyJson() const { return base::JSONPtr{json_deep_copy(m_handle.get())}; }
 
 private:
@@ -52,9 +53,8 @@ public:
   KeyValueStorage(KeyValueStorage const &) = delete;
   KeyValueStorage & operator=(KeyValueStorage const &) = delete;
 
-  void Insert(uint64_t key, JsonValue && valueJson);
-
-  static std::string SerializeFullLine(uint64_t key, JsonValue && valueJson);
+  static std::string SerializeFullLine(uint64_t key, JsonValue const & valueJson);
+  static void SerializeFullLine(std::ostream & out, uint64_t key, JsonValue const & jsonValue);
 
   std::shared_ptr<JsonValue> Find(uint64_t key) const;
   size_t Size() const;
@@ -72,7 +72,6 @@ private:
   static bool DefaultPred(KeyValue const &) { return true; }
   static bool ParseKeyValueLine(std::string const & line, std::streamoff lineNumber, uint64_t & key,
                                 std::string & value);
-  std::fstream m_storage;
   std::unordered_map<uint64_t, Value> m_values;
   size_t m_cacheValuesCountLimit;
 };

@@ -55,6 +55,8 @@ set(
   intermediate_data.cpp
   intermediate_data.hpp
   intermediate_elements.hpp
+  key_value_concurrent_writer.cpp
+  key_value_concurrent_writer.hpp
   key_value_storage.cpp
   key_value_storage.hpp
   locality_sorter.cpp

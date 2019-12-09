@@ -14,12 +14,8 @@ namespace generator
 {
 KeyValueStorage::KeyValueStorage(std::string const & path, size_t cacheValuesCountLimit,
                                  std::function<bool(KeyValue const &)> const & pred)
-  : m_storage{path, std::ios_base::in | std::ios_base::out | std::ios_base::app}
-  , m_cacheValuesCountLimit{cacheValuesCountLimit}
+  : m_cacheValuesCountLimit{cacheValuesCountLimit}
 {
-  if (!m_storage)
-    MYTHROW(Reader::OpenException, ("Failed to open file", path));
-
   auto storage = std::ifstream{path};
   std::string line;
   std::streamoff lineNumber = 0;
@@ -77,31 +73,21 @@ bool KeyValueStorage::ParseKeyValueLine(std::string const & line, std::streamoff
 }
 
 // static
-std::string KeyValueStorage::SerializeFullLine(uint64_t key, JsonValue && value)
+void KeyValueStorage::SerializeFullLine(
+    std::ostream & out, uint64_t key, JsonValue const & value)
 {
-  auto json = Serialize(value);
+  auto const & json = Serialize(value);
   CHECK(!json.empty(), ());
 
-  std::stringstream result;
-  result << SerializeDref(key) << " " << json << "\n";
-  return result.str();
+  out << SerializeDref(key) << " " << json << "\n";
 }
 
-void KeyValueStorage::Insert(uint64_t key, JsonValue && value)
+// static
+std::string KeyValueStorage::SerializeFullLine(uint64_t key, JsonValue const & jsonValue)
 {
-  auto json = Serialize(value);
-
-  CHECK(!json.empty(), ());
-
-  auto emplaceResult = m_values.emplace(key, std::move(json));
-
-  if (!emplaceResult.second)  // it is ok for OSM relation with several outer borders
-    return;
-
-  auto const & emplaceIterator = emplaceResult.first;
-  auto const & result = boost::get<std::string>(emplaceIterator->second);
-
-  m_storage << SerializeDref(key) << " " << result << "\n";
+  std::stringstream result;
+  SerializeFullLine(result, key, jsonValue);
+  return result.str();
 }
 
 std::shared_ptr<JsonValue> KeyValueStorage::Find(uint64_t key) const
