@@ -73,7 +73,7 @@ base::JSONPtr GeoObjectMaintainer::GeoObjectsView::GetFullGeoObject(
       continue;
 
 
-    auto regionJsonValue = m_regionIdGetter(geoData.m_regionId);
+    auto const & regionJsonValue = m_regionIdGetter(geoData.m_regionId);
     if (!regionJsonValue)
       return {};
 
@@ -92,7 +92,7 @@ base::JSONPtr GeoObjectMaintainer::GeoObjectsView::GetFullGeoObjectWithoutNameAn
     return {};
 
   auto const geoData = it->second;
-  auto regionJsonValue = m_regionIdGetter(geoData.m_regionId);
+  auto const & regionJsonValue = m_regionIdGetter(geoData.m_regionId);
   if (!regionJsonValue)
     return {};
 
