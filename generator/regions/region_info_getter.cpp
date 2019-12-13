@@ -10,7 +10,7 @@ namespace regions
 {
 RegionInfoGetter::RegionInfoGetter(std::string const & indexPath, std::string const & kvPath)
     : m_index{indexer::ReadIndex<indexer::RegionsIndexBox<IndexReader>, MmapReader>(indexPath)}
-    , m_storage(kvPath, 1'000'000)
+    , m_storage(kvPath)
 {
   m_borders.Deserialize(indexPath);
 }
@@ -44,7 +44,7 @@ boost::optional<KeyValue> RegionInfoGetter::GetDeepest(m2::PointD const & point,
   std::multimap<int, KeyValue> regionsByRank;
   for (auto const & id : ids)
   {
-    auto const region = m_storage.Find(id.GetEncodedId());
+    auto const & region = m_storage.Find(id.GetEncodedId());
     if (!region)
     {
       LOG(LWARNING, ("Id not found in region key-value storage:", id));

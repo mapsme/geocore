@@ -12,9 +12,7 @@
 
 namespace generator
 {
-KeyValueStorage::KeyValueStorage(std::string const & path, size_t cacheValuesCountLimit,
-                                 std::function<bool(KeyValue const &)> const & pred)
-  : m_cacheValuesCountLimit{cacheValuesCountLimit}
+KeyValueStorage::KeyValueStorage(std::string const & path)
 {
   auto storage = std::ifstream{path};
   std::string line;
@@ -39,13 +37,7 @@ KeyValueStorage::KeyValueStorage(std::string const & path, size_t cacheValuesCou
       continue;
     }
 
-    if (!pred({key, json}))
-      continue;
-
-    if (m_cacheValuesCountLimit <= m_values.size())
-      m_values.emplace(key, std::move(value));
-    else
-      m_values.emplace(key, std::move(json));
+    m_values.emplace(key, std::move(json));
   }
 }
 
@@ -96,14 +88,7 @@ std::shared_ptr<JsonValue> KeyValueStorage::Find(uint64_t key) const
   if (it == std::end(m_values))
     return {};
 
-  if (auto json = boost::get<std::shared_ptr<JsonValue>>(&it->second))
-    return *json;
-
-  auto const & jsonString = boost::get<std::string>(it->second);
-
-  auto json = std::make_shared<JsonValue>(base::LoadFromString(jsonString));
-  CHECK(json, ());
-  return json;
+  return it->second;
 }
 
 std::string KeyValueStorage::SerializeDref(uint64_t number)

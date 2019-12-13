@@ -74,7 +74,7 @@ UNIT_TEST(StreetsBuilderTest_AggregatedStreetsInKv)
   streetsBuilder.SaveStreetsKv(RussiaGetter, streetsJsonlStream);
   streetsJsonlStream.flush();
 
-  KeyValueStorage streetsStorage{streetsJsonlFile.GetFullPath(), 0 /* cacheValuesCountLimit */};
+  KeyValueStorage streetsStorage{streetsJsonlFile.GetFullPath()};
   TEST_EQUAL(streetsStorage.Size(), 2, ());
   TEST(bool(streetsStorage.Find(MakeOsmWay(1).GetEncodedId())) !=
            bool(streetsStorage.Find(MakeOsmWay(2).GetEncodedId())),

@@ -133,7 +133,7 @@ void StreetsBuilder::SaveStreetsKv(RegionGetter const & regionGetter,
 {
   for (auto const & region : m_regions)
   {
-    auto const && regionObject = regionGetter(region.first);
+    auto const & regionObject = regionGetter(region.first);
     CHECK(regionObject, ());
     SaveRegionStreetsKv(region.second, region.first, *regionObject, streamStreetsKv);
   }

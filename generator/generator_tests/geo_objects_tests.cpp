@@ -154,7 +154,7 @@ void TestFindReverse(std::vector<OsmElementData> const & osmElements,
     TEST(JsonHasBuilding(JsonValue{std::move(json)}), ("No address for", id));
   }
 
-  KeyValueStorage kvStorage{geoObjectsKeyValue.GetFullPath(), 0 /*cacheValuesCountLimit*/};
+  KeyValueStorage kvStorage{geoObjectsKeyValue.GetFullPath()};
 
   for (GeoObjectId id : toCheck)
   {
@@ -241,7 +241,7 @@ void TestPoiHasAddress(std::vector<OsmElementData> const & osmElements)
   std::unique_ptr<GeoObjectsGenerator> geoObjectsGenerator = {
       TearUp(osmElements, geoObjectsFeatures, idsWithoutAddresses, geoObjectsKeyValue)};
 
-  KeyValueStorage kvStorage{geoObjectsKeyValue.GetFullPath(), 0 /*cacheValuesCountLimit*/};
+  KeyValueStorage kvStorage{geoObjectsKeyValue.GetFullPath()};
 
   for (GeoObjectId id : expectedIds)
   {

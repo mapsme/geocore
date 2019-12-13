@@ -44,8 +44,7 @@ public:
   // https://jira.mail.ru/browse/MAPSB2B-41
   static uint32_t constexpr kDefaultPrecision = 9;
 
-  explicit KeyValueStorage(std::string const & kvPath, size_t cacheValuesCountLimit,
-                           std::function<bool(KeyValue const &)> const & pred = DefaultPred);
+  explicit KeyValueStorage(std::string const & kvPath);
 
   KeyValueStorage(KeyValueStorage &&) = default;
   KeyValueStorage & operator=(KeyValueStorage &&) = default;
@@ -67,12 +66,8 @@ public:
   static std::string SerializeDref(uint64_t number);
 
 private:
-  using Value = boost::variant<std::shared_ptr<JsonValue>, std::string>;
-
-  static bool DefaultPred(KeyValue const &) { return true; }
   static bool ParseKeyValueLine(std::string const & line, std::streamoff lineNumber, uint64_t & key,
                                 std::string & value);
-  std::unordered_map<uint64_t, Value> m_values;
-  size_t m_cacheValuesCountLimit;
+  std::unordered_map<uint64_t, std::shared_ptr<JsonValue>> m_values;
 };
 }  // namespace generator
