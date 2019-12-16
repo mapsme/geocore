@@ -14,9 +14,9 @@
 #include "indexer/classificator.hpp"
 #include "indexer/covering_index.hpp"
 
-#include "coding/mmap_reader.hpp"
-
+#include "coding/files_merger.hpp"
 #include "coding/internal/file_data.hpp"
+#include "coding/mmap_reader.hpp"
 
 #include "geometry/mercator.hpp"
 
@@ -198,129 +198,224 @@ void AddBuildingsAndThingsWithHousesThenEnrichAllWithRegionAddresses(
   LOG(LINFO, ("Added", geoObjectMaintainer.Size(), "geo objects with addresses."));
 }
 
-namespace
+// NullBuildingsAddressing -------------------------------------------------------------------------
+class NullBuildingsAddressing
 {
-NullBuildingsInfo GetHelpfulNullBuildings(GeoObjectMaintainer & geoObjectMaintainer,
-                                          std::string const & pathInGeoObjectsTmpMwm,
-                                          unsigned int threadsCount)
-{
-  NullBuildingsInfo result;
-  static int64_t counter = 0;
-  std::mutex updateMutex;
-  auto const & view = geoObjectMaintainer.CreateView();
+public:
+  NullBuildingsAddressing(std::string const & geoObjectsTmpMwmPath,
+                          GeoObjectMaintainer & geoObjectMaintainer,
+                          unsigned int threadsCount)
+    : m_geoObjectsTmpMwmPath{geoObjectsTmpMwmPath}
+    , m_geoObjectMaintainer{geoObjectMaintainer}
+    , m_threadsCount{threadsCount}
+  {
+  }
 
-  auto const saveIdFold = [&](FeatureBuilder & fb, uint64_t /* currPos */) {
-    if (!GeoObjectsFilter::HasHouse(fb) || !fb.IsPoint())
-      return;
+  void AddAddresses()
+  {
+    FillBuildingsInfo();
+    FillBuildingsGeometries();
+    TransferGeometryToAddressPoints();
+  }
 
-    // search for ids of Buildinds not stored with geoObjectsMantainer
-    // they are nullBuildings
-    auto const buildingId =
-        view.SearchIdOfFirstMatchedObject(fb.GetKeyPoint(), [&view](base::GeoObjectId id) {
-          auto const & geoData = view.GetGeoData(id);
-          return geoData && geoData->m_house.empty();
-        });
+  NullBuildingsInfo & GetNullBuildingsInfo() { return m_buildingsInfo; }
 
-    if (!buildingId)
-      return;
+private:
+  using BuildingsGeometries =
+      std::unordered_map<base::GeoObjectId, FeatureBuilder::Geometry>;
 
-    auto const id = fb.GetMostGenericOsmId();
+  class BuildingsInfoFiller
+  {
+  public:
+    BuildingsInfoFiller(NullBuildingsAddressing & addressing)
+      : m_goObjectsView{addressing.m_geoObjectMaintainer.CreateView()}
+      , m_addressPoints2Buildings{addressing.m_buildingsInfo.m_addressPoints2Buildings,
+                                  addressing.m_addressPoints2buildingsMutex}
+      , m_buildings2AddressPoints{addressing.m_buildingsInfo.m_buildings2AddressPoints,
+                                  addressing.m_buildings2addressPointsMutex}
+    { }
 
-    std::lock_guard<std::mutex> lock(updateMutex);
-    result.m_addressPoints2Buildings[id] = *buildingId;
-    counter++;
-    if (counter % 100000 == 0)
-      LOG(LINFO, (counter, "Helpful building added"));
-    result.m_Buildings2AddressPoint[*buildingId] = id;
-  };
-
-  ForEachParallelFromDatRawFormat(threadsCount, pathInGeoObjectsTmpMwm, saveIdFold);
-  return result;
-}
-
-using BuildingsGeometries =
-    std::unordered_map<base::GeoObjectId, feature::FeatureBuilder::Geometry>;
-
-BuildingsGeometries GetBuildingsGeometry(std::string const & pathInGeoObjectsTmpMwm,
-                                         NullBuildingsInfo const & buildingsInfo,
-                                         unsigned int threadsCount)
-{
-  BuildingsGeometries result;
-  std::mutex updateMutex;
-  static int64_t counter = 0;
-
-  auto const saveIdFold = [&](FeatureBuilder & fb, uint64_t /* currPos */) {
-    auto const id = fb.GetMostGenericOsmId();
-    if (buildingsInfo.m_Buildings2AddressPoint.find(id) ==
-            buildingsInfo.m_Buildings2AddressPoint.end() ||
-        fb.GetParams().GetGeomType() != feature::GeomType::Area)
-      return;
-
-    std::lock_guard<std::mutex> lock(updateMutex);
-
-    if (result.find(id) != result.end())
-      LOG(LINFO, ("More than one geometry for", id));
-    else
-      result[id] = fb.GetGeometry();
-
-    counter++;
-    if (counter % 100000 == 0)
-      LOG(LINFO, (counter, "Building geometries added"));
-  };
-
-  ForEachParallelFromDatRawFormat(threadsCount, pathInGeoObjectsTmpMwm, saveIdFold);
-  return result;
-}
-
-size_t AddBuildingGeometriesToAddressPoints(std::string const & pathInGeoObjectsTmpMwm,
-                                            NullBuildingsInfo const & buildingsInfo,
-                                            BuildingsGeometries const & geometries,
-                                            unsigned int threadsCount)
-{
-  auto const path = GetPlatform().TmpPathForFile();
-  FeaturesCollector collector(path);
-  std::atomic_size_t pointsEnriched{0};
-  std::mutex collectorMutex;
-  auto concurrentCollector = [&](FeatureBuilder & fb, uint64_t /* currPos */) {
-    auto const id = fb.GetMostGenericOsmId();
-    auto point2BuildingIt = buildingsInfo.m_addressPoints2Buildings.find(id);
-    if (point2BuildingIt != buildingsInfo.m_addressPoints2Buildings.end())
+    void operator()(FeatureBuilder & fb, uint64_t /* currPos */)
     {
-      auto geometryIt = geometries.find(point2BuildingIt->second);
-      if (geometryIt != geometries.end())
-      {
-        auto const & geometry = geometryIt->second;
+      if (!GeoObjectsFilter::HasHouse(fb) || !fb.IsPoint())
+        return;
 
-        // ResetGeometry does not reset center but SetCenter changes geometry type to Point and
-        // adds center to bounding rect
-        fb.SetCenter({});
-        // ResetGeometry clears bounding rect
-        fb.ResetGeometry();
-        fb.GetParams().SetGeomType(feature::GeomType::Area);
+      // search for ids of Buildinds not stored with geoObjectsMantainer
+      // they are nullBuildings
+      auto const buildingId =
+          m_goObjectsView.SearchIdOfFirstMatchedObject(fb.GetKeyPoint(), [&](base::GeoObjectId id) {
+            auto const & geoData = m_goObjectsView.GetGeoData(id);
+            return geoData && geoData->m_house.empty();
+          });
 
-        for (std::vector<m2::PointD> poly : geometry)
-          fb.AddPolygon(poly);
+      if (!buildingId)
+        return;
 
-        fb.PreSerialize();
-        ++pointsEnriched;
-        if (pointsEnriched % 100000 == 0)
-          LOG(LINFO, (pointsEnriched, "Points enriched with geometry"));
-      }
-      else
-      {
-        LOG(LINFO, (point2BuildingIt->second, "is a null building with strange geometry"));
-      }
+      auto const id = fb.GetMostGenericOsmId();
+      m_addressPoints2Buildings.Emplace(id, *buildingId);
+      m_buildings2AddressPoints.Emplace(*buildingId, id);
     }
-    std::lock_guard<std::mutex> lock(collectorMutex);
-    collector.Collect(fb);
+
+  private:
+    using Updater =
+        BufferedCuncurrentUnorderedMapUpdater<base::GeoObjectId, base::GeoObjectId>;
+
+    GeoObjectMaintainer::GeoObjectsView m_goObjectsView;
+    Updater m_addressPoints2Buildings;
+    Updater m_buildings2AddressPoints;
   };
 
-  ForEachParallelFromDatRawFormat(threadsCount, pathInGeoObjectsTmpMwm, concurrentCollector);
+  class BuildingsGeometriesFiller
+  {
+  public:
+    BuildingsGeometriesFiller(NullBuildingsAddressing & addressing)
+      : m_buildingsInfo{addressing.m_buildingsInfo}
+      , m_buildingsGeometries{addressing.m_buildingsGeometries,
+                              addressing.m_buildingsGeometriesMutex}
+    { }
 
-  CHECK(base::RenameFileX(path, pathInGeoObjectsTmpMwm), ());
-  return pointsEnriched;
+    void operator()(FeatureBuilder & fb, uint64_t /* currPos */)
+    {
+      if (fb.GetParams().GetGeomType() != GeomType::Area)
+        return;
+
+      auto const id = fb.GetMostGenericOsmId();
+      auto & buildings2AddressPoints = m_buildingsInfo.m_buildings2AddressPoints;
+      if (buildings2AddressPoints.find(id) == buildings2AddressPoints.end())
+        return;
+
+      m_buildingsGeometries.Emplace(id, fb.GetGeometry());
+    }
+
+  private:
+    using Updater =
+        BufferedCuncurrentUnorderedMapUpdater<base::GeoObjectId, FeatureBuilder::Geometry>;
+
+    NullBuildingsInfo const & m_buildingsInfo;
+    Updater m_buildingsGeometries;
+  };
+
+  class GeometryTransfer
+  {
+  public:
+    GeometryTransfer(NullBuildingsAddressing & addressing, FilesMerger & tmpMwmMerger,
+                     std::atomic_size_t & pointsEnrichedStat)
+      : m_buildingsInfo{addressing.m_buildingsInfo}
+      , m_buildingsGeometries{addressing.m_buildingsGeometries}
+      , m_collector{std::make_unique<FeaturesCollector>(GetPlatform().TmpPathForFile())}
+      , m_pointsEnrichedStat{pointsEnrichedStat}
+    {
+      tmpMwmMerger.DeferMergeAndDelete(m_collector->GetFilePath());
+    }
+
+    void operator()(FeatureBuilder & fb, uint64_t /* currPos */)
+    {
+      auto const id = fb.GetMostGenericOsmId();
+      auto const & addressPoints2Buildings = m_buildingsInfo.m_addressPoints2Buildings;
+      auto point2BuildingIt = addressPoints2Buildings.find(id);
+      if (point2BuildingIt != addressPoints2Buildings.end())
+        AddGeometryToAddressPoint(fb, point2BuildingIt->second);
+
+      auto const & buildings2AddressPoints = m_buildingsInfo.m_buildings2AddressPoints;
+      if (buildings2AddressPoints.find(id) != buildings2AddressPoints.end())
+        return;
+
+      m_collector->Collect(fb);
+    }
+
+  private:
+    void AddGeometryToAddressPoint(FeatureBuilder & fb, base::GeoObjectId nullBuildingId)
+    {
+      auto geometryIt = m_buildingsGeometries.find(nullBuildingId);
+      if (geometryIt == m_buildingsGeometries.end())
+      {
+        LOG(LINFO, (nullBuildingId, "is a null building with strange geometry"));
+        return;
+      }
+
+      auto const & geometry = geometryIt->second;
+
+      // ResetGeometry does not reset center but SetCenter changes geometry type to Point and
+      // adds center to bounding rect
+      fb.SetCenter({});
+      // ResetGeometry clears bounding rect
+      fb.ResetGeometry();
+      fb.GetParams().SetGeomType(GeomType::Area);
+
+      for (std::vector<m2::PointD> poly : geometry)
+        fb.AddPolygon(poly);
+
+      fb.PreSerialize();
+
+      ++m_pointsEnrichedStat;
+    }
+
+    NullBuildingsInfo const & m_buildingsInfo;
+    BuildingsGeometries const & m_buildingsGeometries;
+    std::unique_ptr<FeaturesCollector> m_collector;
+    std::atomic_size_t & m_pointsEnrichedStat;
+  };
+
+  void FillBuildingsInfo()
+  {
+    feature::ProcessParallelFromDatRawFormat(m_threadsCount, m_geoObjectsTmpMwmPath, [&] {
+      return BuildingsInfoFiller{*this};
+    });
+
+    LOG(LINFO, ("Found", m_buildingsInfo.m_addressPoints2Buildings.size(),
+                "address points with outer building geometry"));
+    LOG(LINFO, ("Found", m_buildingsInfo.m_buildings2AddressPoints.size(),
+                "helpful addressless buildings"));
+  }
+
+  void FillBuildingsGeometries()
+  {
+    feature::ProcessParallelFromDatRawFormat(m_threadsCount, m_geoObjectsTmpMwmPath, [&] {
+      return BuildingsGeometriesFiller{*this};
+    });
+
+    LOG(LINFO, ("Cached ", m_buildingsGeometries.size(), "buildings geometries"));
+  }
+
+  void TransferGeometryToAddressPoints()
+  {
+    auto const repackedTmpMwm = GetPlatform().TmpPathForFile();
+    auto tmpMwmMerger = FilesMerger(repackedTmpMwm);
+
+    std::atomic_size_t pointsEnrichedStat{0};
+    feature::ProcessParallelFromDatRawFormat(m_threadsCount, m_geoObjectsTmpMwmPath, [&] {
+      return GeometryTransfer{*this, tmpMwmMerger, pointsEnrichedStat};
+    });
+
+    tmpMwmMerger.Merge();
+    CHECK(base::RenameFileX(repackedTmpMwm, m_geoObjectsTmpMwmPath), ());
+
+    LOG(LINFO, (pointsEnrichedStat, "address points were enriched with outer building geomery"));
+  }
+
+  std::string m_geoObjectsTmpMwmPath;
+  GeoObjectMaintainer & m_geoObjectMaintainer;
+  unsigned int m_threadsCount;
+
+  NullBuildingsInfo m_buildingsInfo;
+  std::mutex m_addressPoints2buildingsMutex;
+  std::mutex m_buildings2addressPointsMutex;
+
+  BuildingsGeometries m_buildingsGeometries;
+  std::mutex m_buildingsGeometriesMutex;
+};
+
+NullBuildingsInfo EnrichPointsWithOuterBuildingGeometry(GeoObjectMaintainer & geoObjectMaintainer,
+                                                        std::string const & pathInGeoObjectsTmpMwm,
+                                                        unsigned int threadsCount)
+{
+  auto && addressing =
+      NullBuildingsAddressing{pathInGeoObjectsTmpMwm, geoObjectMaintainer, threadsCount};
+  addressing.AddAddresses();
+  return addressing.GetNullBuildingsInfo();
 }
 
+//--------------------------------------------------------------------------------------------------
 base::JSONPtr FindHouse(FeatureBuilder const & fb,
                         GeoObjectMaintainer::GeoObjectsView const & geoView,
                         NullBuildingsInfo const & buildingsInfo)
@@ -338,8 +433,8 @@ base::JSONPtr FindHouse(FeatureBuilder const & fb,
 
   for (base::GeoObjectId id : potentialIds)
   {
-    auto const it = buildingsInfo.m_Buildings2AddressPoint.find(id);
-    if (it != buildingsInfo.m_Buildings2AddressPoint.end())
+    auto const it = buildingsInfo.m_buildings2AddressPoints.find(id);
+    if (it != buildingsInfo.m_buildings2AddressPoints.end())
       return geoView.GetFullGeoObjectWithoutNameAndCoordinates(it->second);
   }
 
@@ -357,7 +452,6 @@ base::JSONPtr MakeJsonValueWithNameFromFeature(FeatureBuilder const & fb, JsonVa
   UpdateCoordinates(fb.GetKeyPoint(), jsonWithAddress);
   return jsonWithAddress;
 }
-}  // namespace
 
 bool JsonHasBuilding(JsonValue const & json)
 {
@@ -380,28 +474,6 @@ boost::optional<indexer::GeoObjectsIndex<IndexReader>> MakeTempGeoObjectsIndex(
   }
 
   return indexer::ReadIndex<indexer::GeoObjectsIndexBox<IndexReader>, MmapReader>(indexFile);
-}
-
-NullBuildingsInfo EnrichPointsWithOuterBuildingGeometry(GeoObjectMaintainer & geoObjectMaintainer,
-                                                        std::string const & pathInGeoObjectsTmpMwm,
-                                                        unsigned int threadsCount)
-{
-  auto const buildingInfo =
-      GetHelpfulNullBuildings(geoObjectMaintainer, pathInGeoObjectsTmpMwm, threadsCount);
-
-  LOG(LINFO, ("Found", buildingInfo.m_addressPoints2Buildings.size(),
-              "address points with outer building geometry"));
-  LOG(LINFO,
-      ("Found", buildingInfo.m_Buildings2AddressPoint.size(), "helpful addressless buildings"));
-  auto const buildingGeometries =
-      GetBuildingsGeometry(pathInGeoObjectsTmpMwm, buildingInfo, threadsCount);
-  LOG(LINFO, ("Saved", buildingGeometries.size(), "buildings geometries"));
-
-  size_t const pointsCount = AddBuildingGeometriesToAddressPoints(
-      pathInGeoObjectsTmpMwm, buildingInfo, buildingGeometries, threadsCount);
-
-  LOG(LINFO, (pointsCount, "address points were enriched with outer building geomery"));
-  return buildingInfo;
 }
 
 void AddPoisEnrichedWithHouseAddresses(GeoObjectMaintainer & geoObjectMaintainer,
@@ -441,27 +513,6 @@ void AddPoisEnrichedWithHouseAddresses(GeoObjectMaintainer & geoObjectMaintainer
 
   ForEachParallelFromDatRawFormat(threadsCount, pathInGeoObjectsTmpMwm, concurrentTransformer);
   LOG(LINFO, ("Added", counter, "POIs enriched with address."));
-}
-
-void FilterAddresslessThanGaveTheirGeometryToInnerPoints(std::string const & pathInGeoObjectsTmpMwm,
-                                                         NullBuildingsInfo const & buildingsInfo,
-                                                         unsigned int threadsCount)
-{
-  auto const path = GetPlatform().TmpPathForFile();
-  FeaturesCollector collector(path);
-  std::mutex collectorMutex;
-  auto concurrentCollect = [&](FeatureBuilder const & fb, uint64_t /* currPos */) {
-    auto const id = fb.GetMostGenericOsmId();
-    if (buildingsInfo.m_Buildings2AddressPoint.find(id) !=
-        buildingsInfo.m_Buildings2AddressPoint.end())
-      return;
-
-    std::lock_guard<std::mutex> lock(collectorMutex);
-    collector.Collect(fb);
-  };
-
-  ForEachParallelFromDatRawFormat(threadsCount, pathInGeoObjectsTmpMwm, concurrentCollect);
-  CHECK(base::RenameFileX(path, pathInGeoObjectsTmpMwm), ());
 }
 }  // namespace geo_objects
 }  // namespace generator
