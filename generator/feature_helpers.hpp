@@ -22,35 +22,6 @@
 
 namespace feature
 {
-class FeatureBuilder;
-
-class CalculateMidPoints
-{
-public:
-  using CellAndOffset = std::pair<uint64_t, uint64_t>;
-  using MinDrawableScalePolicy = std::function<int(TypesHolder const & types, m2::RectD limitRect)>;
-
-  CalculateMidPoints();
-  CalculateMidPoints(MinDrawableScalePolicy const & minDrawableScalePolicy);
-
-  void operator()(FeatureBuilder const & ft, uint64_t pos);
-  bool operator()(m2::PointD const & p);
-
-  m2::PointD GetCenter() const;
-  std::vector<CellAndOffset> const & GetVector() const { return m_vec; }
-
-  void Sort();
-
-private:
-  m2::PointD m_midLoc;
-  m2::PointD m_midAll;
-  size_t m_locCount = 0;
-  size_t m_allCount = 0;
-  uint8_t m_coordBits = serial::GeometryCodingParams().GetCoordBits();
-  MinDrawableScalePolicy m_minDrawableScalePolicy;
-  std::vector<CellAndOffset> m_vec;
-};
-
 template <typename Point>
 inline bool ArePointsEqual(Point const & p1, Point const & p2)
 {
