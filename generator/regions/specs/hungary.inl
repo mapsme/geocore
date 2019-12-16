@@ -34,7 +34,6 @@ PlaceLevel HungarySpecifier::GetSpecificCountryLevel(Region const & region) cons
   case AdminLevel::Eight:
     return PlaceLevel::Locality;  // Aldeas (Admin level border which encompass several towns /
                                   // cities)
-  case AdminLevel::Nine: return PlaceLevel::Locality;  // Ciudades (Cities)
   default: break;
   }
 
