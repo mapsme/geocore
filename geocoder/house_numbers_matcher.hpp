@@ -52,6 +52,13 @@ struct Token
   bool m_prefix = false;
 };
 
+struct MatchResult
+{
+  size_t matchedTokensCount;
+  size_t houseNumberMismatchedTokensCount;
+  size_t queryMismatchedTokensCount;
+};
+
 // Tokenizes |s| that may be a house number.
 void Tokenize(strings::UniString s, bool isPrefix, std::vector<Token> & ts);
 
@@ -69,6 +76,11 @@ bool HouseNumbersMatch(strings::UniString const & houseNumber, strings::UniStrin
 // Returns true if house number matches to a given parsed query.
 bool HouseNumbersMatch(strings::UniString const & houseNumber,
                        std::vector<Token> const & queryParse);
+
+// Returns true if house number matches to a given parsed query.
+// If true is returned then |matchResult| has matching info.
+bool HouseNumbersMatch(strings::UniString const & houseNumber, std::vector<Token> const & queryParse,
+                       MatchResult & matchResult);
 
 // Returns true if |s| looks like a house number.
 bool LooksLikeHouseNumber(strings::UniString const & s, bool isPrefix);

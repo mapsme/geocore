@@ -1,6 +1,7 @@
 #pragma once
 
 #include "geocoder/hierarchy.hpp"
+#include "geocoder/house_numbers_matcher.hpp"
 #include "geocoder/index.hpp"
 #include "geocoder/result.hpp"
 #include "geocoder/types.hpp"
@@ -51,6 +52,7 @@ public:
   {
     Index::DocId m_entry;
     double m_totalCertainty;
+    bool m_isOtherSimilar;
   };
 
   // A Layer contains all entries matched by a subquery of consecutive tokens.
@@ -80,11 +82,12 @@ public:
     struct BeamKey
     {
       BeamKey(base::GeoObjectId osmId, Type type, std::vector<size_t> const & tokenIds,
-              std::vector<Type> const & allTypes)
+              std::vector<Type> const & allTypes, bool isOtherSimilar)
         : m_osmId(osmId)
         , m_type(type)
         , m_tokenIds{tokenIds}
         , m_allTypes(allTypes)
+        , m_isOtherSimilar(isOtherSimilar)
       {
         base::SortUnique(m_allTypes);
       }
@@ -93,6 +96,7 @@ public:
       Type m_type;
       std::vector<size_t> m_tokenIds;
       std::vector<Type> m_allTypes;
+      bool m_isOtherSimilar;
     };
 
     Context(std::string const & query);
@@ -116,7 +120,8 @@ public:
     bool AllTokensUsed() const;
 
     void AddResult(base::GeoObjectId const & osmId, double certainty, Type type,
-                   std::vector<size_t> const & tokenIds, std::vector<Type> const & allTypes);
+                   std::vector<size_t> const & tokenIds, std::vector<Type> const & allTypes,
+                   bool isOtherSimilar);
 
     void FillResults(std::vector<Result> & results) const;
 
@@ -179,6 +184,11 @@ private:
   void FillRegularLayer(Context const & ctx, Type type, Tokens const & subquery,
                         Layer & curLayer) const;
   void AddResults(Context & ctx, std::vector<Candidate> const & candidates) const;
+
+  bool IsValidHouseNumberWithNextUnusedToken(Context const & ctx, Tokens const & subquery,
+                                             std::vector<size_t> const & subqueryTokenIds) const;
+  double SumHouseNumberSubqueryCertainty(
+      search::house_numbers::MatchResult const & matchResult) const;
 
   bool InCityState(Hierarchy::Entry const & entry) const;
 

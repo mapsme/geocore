@@ -150,6 +150,13 @@ strings::UniString MakeHouseNumber(Tokens const & tokens)
 {
   return strings::MakeUniString(strings::JoinStrings(tokens, " "));
 }
+
+strings::UniString & AppendToHouseNumber(strings::UniString & houseNumber, std::string const & token)
+{
+  houseNumber += strings::MakeUniString(" ");
+  houseNumber += strings::MakeUniString(token);
+  return houseNumber;
+}
 }  // namespace
 
 // Geocoder::Layer ---------------------------------------------------------------------------------
@@ -222,15 +229,18 @@ bool Geocoder::Context::IsTokenUsed(size_t id) const
 bool Geocoder::Context::AllTokensUsed() const { return m_numUsedTokens == m_tokens.size(); }
 
 void Geocoder::Context::AddResult(base::GeoObjectId const & osmId, double certainty, Type type,
-                                  vector<size_t> const & tokenIds, vector<Type> const & allTypes)
+                                  vector<size_t> const & tokenIds, vector<Type> const & allTypes,
+                                  bool isOtherSimilar)
 {
-  m_beam.Add(BeamKey(osmId, type, tokenIds, allTypes), certainty);
+  m_beam.Add(BeamKey(osmId, type, tokenIds, allTypes, isOtherSimilar), certainty);
 }
 
 void Geocoder::Context::FillResults(vector<Result> & results) const
 {
   results.clear();
   results.reserve(m_beam.GetEntries().size());
+
+  auto normalizationCertainty = 0.0;
 
   set<base::GeoObjectId> seen;
   bool const hasPotentialHouseNumber = !m_houseNumberPositionsInQuery.empty();
@@ -242,18 +252,21 @@ void Geocoder::Context::FillResults(vector<Result> & results) const
     if (hasPotentialHouseNumber && !IsGoodForPotentialHouseNumberAt(e.m_key, m_houseNumberPositionsInQuery))
       continue;
 
-    results.emplace_back(e.m_key.m_osmId, e.m_value /* certainty */);
-  }
-
-  if (!results.empty())
-  {
-    auto const by = results.front().m_certainty;
-    for (auto & r : results)
+    if (!normalizationCertainty)
     {
-      r.m_certainty /= by;
-      ASSERT_GREATER_OR_EQUAL(r.m_certainty, 0.0, ());
-      ASSERT_LESS_OR_EQUAL(r.m_certainty, 1.0, ());
+      normalizationCertainty = e.m_value;
+      // Normalize other-similar candidate certaintly to 0.95 in the best results.
+      if (e.m_key.m_isOtherSimilar)
+        normalizationCertainty /= 0.95;
     }
+
+    ASSERT_GREATER_OR_EQUAL(normalizationCertainty, e.m_value, ());
+
+    auto resultCertainty = e.m_value / normalizationCertainty;
+    ASSERT_GREATER_OR_EQUAL(resultCertainty, 0.0, ());
+    ASSERT_LESS_OR_EQUAL(resultCertainty, 1.0, ());
+
+    results.emplace_back(e.m_key.m_osmId, resultCertainty);
   }
 
   ASSERT(is_sorted(results.rbegin(), results.rend(), base::LessBy(&Result::m_certainty)), ());
@@ -427,6 +440,11 @@ void Geocoder::Go(Context & ctx, Type type) const
       // Buildings are indexed separately.
       if (type == Type::Building)
       {
+        // House building parser has specific tokenizer.
+        // Pass biggest house number token sequence to house number matcher.
+        if (IsValidHouseNumberWithNextUnusedToken(ctx, subquery, subqueryTokenIds))
+          continue;
+
         FillBuildingsLayer(ctx, subquery, subqueryTokenIds, curLayer);
       }
       else
@@ -476,6 +494,9 @@ void Geocoder::FillBuildingsLayer(Context & ctx, Tokens const & subquery, vector
     // let's stay on the safer side and mark the tokens as potential house number.
     ctx.MarkHouseNumberPositionsInQuery(subqueryTokenIds);
 
+    auto subqueryNumberParse = std::vector<search::house_numbers::Token>{};
+    ParseQuery(subqueryHN, false /* queryIsPrefix */, subqueryNumberParse);
+
     auto candidates = std::vector<Candidate>{};
 
     auto const & lastLayer = ctx.GetLayers().back();
@@ -490,8 +511,8 @@ void Geocoder::FillBuildingsLayer(Context & ctx, Tokens const & subquery, vector
             Type::Building, m_hierarchy.GetNormalizedNameDictionary());
         auto const & realHN = multipleHN.GetMainName();
         auto const & realHNUniStr = strings::MakeUniString(realHN);
-        if (search::house_numbers::HouseNumbersMatch(realHNUniStr, subqueryHN,
-                                                     false /* queryIsPrefix */))
+        auto matchResult = search::house_numbers::MatchResult{};
+        if (search::house_numbers::HouseNumbersMatch(realHNUniStr, subqueryNumberParse, matchResult))
         {
           auto && parentCandidateCertainty =
               forSublocalityLayer ? FindMaxCertaintyInParentCandidates(ctx.GetLayers(), building)
@@ -499,11 +520,11 @@ void Geocoder::FillBuildingsLayer(Context & ctx, Tokens const & subquery, vector
           if (!parentCandidateCertainty)
             return;
 
-          static auto const buildingTokenWeight = GetWeight(Kind::Building);
           auto totalCertainty =
-              *parentCandidateCertainty + buildingTokenWeight * subqueryTokenIds.size();
-
-          candidates.push_back({buildingDocId, totalCertainty});
+              *parentCandidateCertainty + SumHouseNumberSubqueryCertainty(matchResult);
+          auto const isOtherSimilar =
+              matchResult.queryMismatchedTokensCount || matchResult.houseNumberMismatchedTokensCount;
+          candidates.push_back({buildingDocId, totalCertainty, isOtherSimilar});
         }
       });
     }
@@ -535,7 +556,7 @@ void Geocoder::FillRegularLayer(Context const & ctx, Type type, Tokens const & s
         (d.m_kind != Kind::Unknown ? GetWeight(d.m_kind) : GetWeight(d.m_type)) * subquery.size();
     auto totalCertainty = *parentCandidateCertainty + subqueryWeight;
 
-    candidates.push_back({docId, totalCertainty});
+    candidates.push_back({docId, totalCertainty, false /* m_isOtherSimilar */});
   });
 
   if (!candidates.empty())
@@ -571,8 +592,54 @@ void Geocoder::AddResults(Context & ctx, std::vector<Candidate> const & candidat
       entryCertainty += kCityStateExtraWeight;
     }
 
-    ctx.AddResult(entry.m_osmId, entryCertainty, entry.m_type, tokenIds, allTypes);
+    ctx.AddResult(entry.m_osmId, entryCertainty, entry.m_type, tokenIds, allTypes,
+                  candidate.m_isOtherSimilar);
   }
+}
+
+bool Geocoder::IsValidHouseNumberWithNextUnusedToken(
+    Context const & ctx, Tokens const & subquery, vector<size_t> const & subqueryTokenIds) const
+{
+  auto const nextTokenId = subqueryTokenIds.back() + 1;
+  if (nextTokenId >= ctx.GetNumTokens() || ctx.IsTokenUsed(nextTokenId))
+    return false;
+
+  auto subqueryHouseNumber = MakeHouseNumber(subquery);
+  AppendToHouseNumber(subqueryHouseNumber, ctx.GetToken(nextTokenId));
+
+  return search::house_numbers::LooksLikeHouseNumber(subqueryHouseNumber, false /* isPrefix */);
+}
+
+double Geocoder::SumHouseNumberSubqueryCertainty(
+    search::house_numbers::MatchResult const & matchResult) const
+{
+  static auto const buildingTokenWeight = GetWeight(Kind::Building);
+  auto const matchedTokensCount = matchResult.matchedTokensCount;
+  auto certainty = matchedTokensCount * buildingTokenWeight;
+
+  // Candidate don't have all query tokens.
+  if (matchResult.queryMismatchedTokensCount)
+  {
+    auto const missingTokensCount = matchResult.queryMismatchedTokensCount;
+    // Missing tokens in the candidate are more penalty than extra tokents
+    // in other candidates.
+    auto missingTokenRelativeWeight = 4.0; // <missing token weight> / <extra token weight>
+    auto const penaltyRatio =
+        missingTokenRelativeWeight * missingTokensCount /
+          (missingTokenRelativeWeight * missingTokensCount + matchedTokensCount);
+    certainty -= penaltyRatio * buildingTokenWeight;
+  }
+
+  // Candidate has extra tokens.
+  if (matchResult.houseNumberMismatchedTokensCount)
+  {
+    auto const extraTokensCount = matchResult.houseNumberMismatchedTokensCount;
+    auto const penaltyRatio =
+      double(extraTokensCount) / (matchedTokensCount + extraTokensCount);
+    certainty -= penaltyRatio * buildingTokenWeight;
+  }
+
+  return certainty;
 }
 
 bool Geocoder::InCityState(Hierarchy::Entry const & entry) const
