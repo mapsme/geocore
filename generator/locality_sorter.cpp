@@ -194,7 +194,6 @@ bool ParseNodes(string nodesFile, set<uint64_t> & nodeIds)
 
 using NeedSerialize = function<bool(FeatureBuilder & fb1)>;
 bool GenerateLocalityDataImpl(FeaturesCollector & collector,
-                              CalculateMidPoints::MinDrawableScalePolicy const & minDrawableScalePolicy,
                               NeedSerialize const & needSerialize,
                               string const & featuresFile)
 {
@@ -203,24 +202,10 @@ bool GenerateLocalityDataImpl(FeaturesCollector & collector,
   {
     LOG(LINFO, ("Processing", featuresFile));
 
-    CalculateMidPoints midPoints{minDrawableScalePolicy};
-    ForEachFromDatRawFormat(featuresFile, midPoints);
-
-    // Sort features by their middle point.
-    midPoints.Sort();
-
-    FileReader reader(featuresFile);
-    for (auto const & point : midPoints.GetVector())
-    {
-      ReaderSource<FileReader> src(reader);
-      src.Skip(point.second);
-
-      FeatureBuilder f;
-      ReadFromSourceRawFormat(src, f);
-      // Emit object.
-      if (needSerialize(f))
-        collector.Collect(f);
-    }
+    ForEachFromDatRawFormat(featuresFile, [&](FeatureBuilder & fb, uint64_t /* currPos */) {
+      if (needSerialize(fb))
+        collector.Collect(fb);
+    });
 
     collector.Finish();
   }
@@ -247,7 +232,6 @@ bool GenerateGeoObjectsData(string const & toDataFile, string const & featuresFi
                                       static_cast<uint32_t>(base::SecondsSinceEpoch()));
   return GenerateLocalityDataImpl(
       localityCollector,
-      static_cast<int (*)(TypesHolder const & types, m2::RectD limitRect)>(GetMinDrawableScale),
       needSerialize, featuresFile);
 }
 
@@ -302,15 +286,13 @@ bool GenerateRegionsData(std::string const & toDataFile, string const & features
   LocalityCollector regionsCollector(toDataFile, header,
                                      static_cast<uint32_t>(base::SecondsSinceEpoch()));
   auto const needSerialize = [](FeatureBuilder const & fb) { return fb.IsArea(); };
-  return GenerateLocalityDataImpl(regionsCollector, GetMinDrawableScaleGeometryOnly,
-                                  needSerialize, featuresFile);
+  return GenerateLocalityDataImpl(regionsCollector, needSerialize, featuresFile);
 }
 
 bool GenerateBorders(std::string const & toDataFile, string const & featuresFile)
 {
   BordersCollector bordersCollector(toDataFile);
   auto const needSerialize = [](FeatureBuilder const & fb) { return fb.IsArea(); };
-  return GenerateLocalityDataImpl(bordersCollector, GetMinDrawableScaleGeometryOnly,
-                                  needSerialize, featuresFile);
+  return GenerateLocalityDataImpl(bordersCollector, needSerialize, featuresFile);
 }
 }  // namespace feature
