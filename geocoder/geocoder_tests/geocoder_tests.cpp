@@ -22,7 +22,7 @@ namespace
 {
 using Id = base::GeoObjectId;
 
-double const kCertaintyEps = 1e-4;
+double const kCertaintyEps = 1e-3;
 string const kRegionsData = R"#(
 C00000000004B279 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-80.1142033187951, 21.55511095]}, "properties": {"kind": "country", "locales": {"default": {"name": "Cuba", "address": {"country": "Cuba"}}}, "rank": 2}}
 C0000000001C4CA7 {"type": "Feature", "geometry": {"type": "Point", "coordinates": [-78.7260117405499, 21.74300205]}, "properties": {"kind": "province", "locales": {"default": {"name": "Ciego de Ávila", "address": {"region": "Ciego de Ávila", "country": "Cuba"}}}, "rank": 4}}
@@ -168,6 +168,29 @@ UNIT_TEST(Geocoder_MismatchedLocality)
 
   // "Krymskaya 3" looks almost like a match to "Paris-Krymskaya-3" but we should not emit it.
   TestGeocoder(geocoder, "Moscow Krymskaya 3", {});
+}
+
+//--------------------------------------------------------------------------------------------------
+UNIT_TEST(Geocoder_HouseNumberPartialMatch)
+{
+  string const kData = R"#(
+10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва"}}}}}
+11 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "Зорге", "locality": "Москва"}}}}}
+12 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "7", "street": "Зорге", "locality": "Москва"}}}}}
+13 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "7 к2", "street": "Зорге", "locality": "Москва"}}}}}
+14 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "7 к2 с3", "street": "Зорге", "locality": "Москва"}}}}}
+)#";
+
+  Geocoder geocoder;
+  ScopedFile const regionsJsonFile("regions.jsonl", kData);
+  geocoder.LoadFromJsonl(regionsJsonFile.GetFullPath());
+
+  TestGeocoder(geocoder, "Москва, Зорге 7к2", {{Id{0x13}, 1.0}, {Id{0x14}, 0.995}, {Id{0x12}, 0.975}});
+  TestGeocoder(geocoder, "Москва, Зорге 7 к2", {{Id{0x13}, 1.0}, {Id{0x14}, 0.995}, {Id{0x12}, 0.975}});
+  TestGeocoder(geocoder, "Москва, Зорге 7", {{Id{0x12}, 1.0}, {Id{0x13}, 0.993}, {Id{0x14}, 0.990}});
+  TestGeocoder(geocoder, "Москва, Зорге 7к1", {{Id{0x12}, 0.95}});
+  TestGeocoder(geocoder, "Москва, Зорге 7A", {{Id{0x12}, 0.95}});
+  TestGeocoder(geocoder, "Москва, Зорге 7 A", {{Id{0x12}, 0.95}});
 }
 
 // Geocoder_Moscow* -----------------------------------------------------------------------------

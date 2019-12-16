@@ -536,14 +536,25 @@ bool HouseNumbersMatch(strings::UniString const & houseNumber, strings::UniStrin
 
 bool HouseNumbersMatch(strings::UniString const & houseNumber, vector<Token> const & queryParse)
 {
+  auto && matchResult = MatchResult{};
+  return HouseNumbersMatch(houseNumber, queryParse, matchResult);
+}
+
+bool HouseNumbersMatch(strings::UniString const & houseNumber, vector<Token> const & queryParse,
+                       MatchResult & matchResult)
+{
   if (houseNumber.empty() || queryParse.empty())
+  {
+    matchResult = {};
     return false;
+  }
 
   // Fast pre-check, helps to early exit without complex house number
   // parsing.
   if (IsASCIIDigit(houseNumber[0]) && IsASCIIDigit(queryParse[0].m_value[0]) &&
       houseNumber[0] != queryParse[0].m_value[0])
   {
+    matchResult = {};
     return false;
   }
 
@@ -554,13 +565,25 @@ bool HouseNumbersMatch(strings::UniString const & houseNumber, vector<Token> con
   {
     if (parse.empty())
       continue;
-    if (parse[0] == queryParse[0] &&
-        (IsSubsequence(parse.begin() + 1, parse.end(), queryParse.begin() + 1, queryParse.end()) ||
-         IsSubsequence(queryParse.begin() + 1, queryParse.end(), parse.begin() + 1, parse.end())))
+    if (parse[0] == queryParse[0])
     {
-      return true;
+      if (IsSubsequence(parse.begin() + 1, parse.end(), queryParse.begin() + 1, queryParse.end()))
+      {
+        matchResult = {queryParse.size(), parse.size() - queryParse.size(),
+                       0 /* queryMismatchedTokensCount */};
+        return true;
+      }
+
+      if (IsSubsequence(queryParse.begin() + 1, queryParse.end(), parse.begin() + 1, parse.end()))
+      {
+        matchResult = {parse.size(), 0 /* houseNumberMismatchedTokensCount */,
+                       queryParse.size() - parse.size()};
+        return true;
+      }
     }
   }
+
+  matchResult = {};
   return false;
 }
 
