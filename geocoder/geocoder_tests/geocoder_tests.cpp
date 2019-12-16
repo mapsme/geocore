@@ -39,7 +39,7 @@ void TestGeocoder(Geocoder & geocoder, string const & query, vector<Result> && e
   TEST_EQUAL(actual.size(), expected.size(), (query, actual, expected));
   sort(actual.begin(), actual.end(), base::LessBy(&Result::m_osmId));
   sort(expected.begin(), expected.end(), base::LessBy(&Result::m_osmId));
-  for (size_t i = 0; i < actual.size(); ++i)
+  for (size_t i = 0; i < std::min(actual.size(), expected.size()); ++i)
   {
     TEST(actual[i].m_certainty >= 0.0 && actual[i].m_certainty <= 1.0,
          (query, actual[i].m_certainty));
@@ -155,7 +155,7 @@ UNIT_TEST(Geocoder_MismatchedLocality)
 22 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "2", "street": "Krymskaya", "locality": "Moscow"}}}}}
 
 31 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "Krymskaya", "locality": "Paris"}}}}}
-32 {"properties": {"kind": "builidng", "locales": {"default": {"address": {"building": "3", "street": "Krymskaya", "locality": "Paris"}}}}}
+32 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "3", "street": "Krymskaya", "locality": "Paris"}}}}}
 )#";
 
   Geocoder geocoder;
@@ -314,7 +314,7 @@ UNIT_TEST(Geocoder_BuildingOnStreetWithNumber)
   string const kData = R"#(
 10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва"}}}}}
 13 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Москва", "street": "улица 8 Марта"}}}}}
-15 {"properties": {"kind": "street", "locales": {"default": {"address": {"locality": "Москва", "street": "улица 8 Марта", "building": "4"}}}}}
+15 {"properties": {"kind": "building", "locales": {"default": {"address": {"locality": "Москва", "street": "улица 8 Марта", "building": "4"}}}}}
 )#";
 
   Geocoder geocoder;
@@ -329,7 +329,7 @@ UNIT_TEST(Geocoder_LocalityBuilding)
 {
   string const kData = R"#(
 10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Zelenograd"}}}}}
-22 {"properties": {"kind": "builiding", "locales": {"default": {"address": {"building": "2", "locality": "Zelenograd"}}}}}
+22 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "2", "locality": "Zelenograd"}}}}}
 31 {"properties": {"kind": "street", "locales": {"default": {"address": {"street": "Krymskaya", "locality": "Zelenograd"}}}}}
 32 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "2", "street": "Krymskaya", "locality": "Zelenograd"}}}}}
 )#";
@@ -348,7 +348,7 @@ UNIT_TEST(Geocoder_LocalityBuildingRankWithSuburb)
   string const kData = R"#(
 10 {"properties": {"kind": "city", "locales": {"default": {"address": {"locality": "Москва"}}}}}
 11 {"properties": {"kind": "suburb", "locales": {"default": {"address": {"suburb": "Арбат", "locality": "Москва"}}}}}
-12 {"properties": {"kind": "builidng", "locales": {"default": {"address": {"building": "1", "suburb": "Арбат", "locality": "Москва"}}}}}
+12 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "1", "suburb": "Арбат", "locality": "Москва"}}}}}
 13 {"properties": {"kind": "suburb", "locales": {"default": {"address": {"suburb": "район Северный", "locality": "Москва"}}}}}
 14 {"properties": {"kind": "building", "locales": {"default": {"address": {"building": "1", "suburb": "район Северный", "locality": "Москва"}}}}}
 )#";
