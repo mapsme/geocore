@@ -536,7 +536,7 @@ bool HouseNumbersMatch(strings::UniString const & houseNumber, strings::UniStrin
 
 bool HouseNumbersMatch(strings::UniString const & houseNumber, vector<Token> const & queryParse)
 {
-  auto && matchResult = MatchResult{};
+  MatchResult matchResult{};
   return HouseNumbersMatch(houseNumber, queryParse, matchResult);
 }
 

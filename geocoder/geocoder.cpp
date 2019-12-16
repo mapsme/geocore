@@ -150,13 +150,6 @@ strings::UniString MakeHouseNumber(Tokens const & tokens)
 {
   return strings::MakeUniString(strings::JoinStrings(tokens, " "));
 }
-
-strings::UniString & AppendToHouseNumber(strings::UniString & houseNumber, std::string const & token)
-{
-  houseNumber += strings::MakeUniString(" ");
-  houseNumber += strings::MakeUniString(token);
-  return houseNumber;
-}
 }  // namespace
 
 // Geocoder::Layer ---------------------------------------------------------------------------------
@@ -522,7 +515,7 @@ void Geocoder::FillBuildingsLayer(
           if (!parentCandidateCertainty)
             return;
 
-          auto totalCertainty =
+          auto const totalCertainty =
               *parentCandidateCertainty + SumHouseNumberSubqueryCertainty(matchResult);
           auto const isOtherSimilar =
               matchResult.queryMismatchedTokensCount || matchResult.houseNumberMismatchedTokensCount;
@@ -554,9 +547,9 @@ void Geocoder::FillRegularLayer(Context const & ctx, Type type, Tokens const & s
     if (type > Type::Locality && !IsRelevantLocalityMember(ctx, d, subquery))
       return;
 
-    auto subqueryWeight =
+    auto const subqueryWeight =
         (d.m_kind != Kind::Unknown ? GetWeight(d.m_kind) : GetWeight(d.m_type)) * subquery.size();
-    auto totalCertainty = *parentCandidateCertainty + subqueryWeight;
+    auto const totalCertainty = *parentCandidateCertainty + subqueryWeight;
 
     candidates.push_back({docId, totalCertainty, false /* m_isOtherSimilar */});
   });
@@ -608,7 +601,8 @@ bool Geocoder::IsValidHouseNumberWithNextUnusedToken(
     return false;
 
   auto subqueryHouseNumber = MakeHouseNumber(subquery);
-  AppendToHouseNumber(subqueryHouseNumber, ctx.GetToken(nextTokenPos));
+  subqueryHouseNumber += strings::MakeUniString(" ");
+  subqueryHouseNumber += strings::MakeUniString(ctx.GetToken(nextTokenPos));
 
   return search::house_numbers::LooksLikeHouseNumber(subqueryHouseNumber, false /* isPrefix */);
 }
