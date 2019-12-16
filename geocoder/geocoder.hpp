@@ -81,11 +81,11 @@ public:
   public:
     struct BeamKey
     {
-      BeamKey(base::GeoObjectId osmId, Type type, std::vector<size_t> const & tokenIds,
+      BeamKey(base::GeoObjectId osmId, Type type, std::vector<size_t> const & tokensPositions,
               std::vector<Type> const & allTypes, bool isOtherSimilar)
         : m_osmId(osmId)
         , m_type(type)
-        , m_tokenIds{tokenIds}
+        , m_tokensPositions{tokensPositions}
         , m_allTypes(allTypes)
         , m_isOtherSimilar(isOtherSimilar)
       {
@@ -94,7 +94,7 @@ public:
 
       base::GeoObjectId m_osmId;
       Type m_type;
-      std::vector<size_t> m_tokenIds;
+      std::vector<size_t> m_tokensPositions;
       std::vector<Type> m_allTypes;
       bool m_isOtherSimilar;
     };
@@ -120,7 +120,7 @@ public:
     bool AllTokensUsed() const;
 
     void AddResult(base::GeoObjectId const & osmId, double certainty, Type type,
-                   std::vector<size_t> const & tokenIds, std::vector<Type> const & allTypes,
+                   std::vector<size_t> const & tokensPositions, std::vector<Type> const & allTypes,
                    bool isOtherSimilar);
 
     void FillResults(std::vector<Result> & results) const;
@@ -129,13 +129,14 @@ public:
 
     std::vector<Layer> const & GetLayers() const;
 
-    void MarkHouseNumberPositionsInQuery(std::vector<size_t> const & tokenIds);
+    void MarkHouseNumberPositionsInQuery(std::vector<size_t> const & tokensPositions);
 
   private:
-    bool IsGoodForPotentialHouseNumberAt(BeamKey const & beamKey, std::set<size_t> const & tokenIds) const;
+    bool IsGoodForPotentialHouseNumberAt(BeamKey const & beamKey,
+                                         std::set<size_t> const & tokensPositions) const;
     bool IsBuildingWithAddress(BeamKey const & beamKey) const;
     bool HasLocalityOrRegion(BeamKey const & beamKey) const;
-    bool ContainsTokenIds(BeamKey const & beamKey, std::set<size_t> const & needTokenIds) const;
+    bool ContainsTokens(BeamKey const & beamKey, std::set<size_t> const & needTokensPostions) const;
 
     Tokens m_tokens;
     std::vector<Type> m_tokenTypes;
@@ -179,14 +180,16 @@ public:
 private:
   void Go(Context & ctx, Type type) const;
 
-  void FillBuildingsLayer(Context & ctx, Tokens const & subquery, std::vector<size_t> const & subqueryTokenIds,
+  void FillBuildingsLayer(Context & ctx, Tokens const & subquery,
+                          std::vector<size_t> const & subqueryTokensPositions,
                           Layer & curLayer) const;
   void FillRegularLayer(Context const & ctx, Type type, Tokens const & subquery,
                         Layer & curLayer) const;
   void AddResults(Context & ctx, std::vector<Candidate> const & candidates) const;
 
-  bool IsValidHouseNumberWithNextUnusedToken(Context const & ctx, Tokens const & subquery,
-                                             std::vector<size_t> const & subqueryTokenIds) const;
+  bool IsValidHouseNumberWithNextUnusedToken(
+      Context const & ctx, Tokens const & subquery,
+      std::vector<size_t> const & subqueryTokensPositions) const;
   double SumHouseNumberSubqueryCertainty(
       search::house_numbers::MatchResult const & matchResult) const;
 
