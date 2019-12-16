@@ -21,7 +21,6 @@ set(
   feature_emitter_iface.hpp
   feature_generator.cpp
   feature_generator.hpp
-  feature_helpers.cpp
   feature_helpers.hpp
   feature_maker.cpp
   feature_maker.hpp
