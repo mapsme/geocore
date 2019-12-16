@@ -41,7 +41,7 @@ struct NullBuildingsInfo
   // Quite possible to have many points for one building. We want to use
   // their addresses for POIs according to buildings and have no idea how to distinguish between
   // them, so take one random
-  std::unordered_map<base::GeoObjectId, base::GeoObjectId> m_Buildings2AddressPoint;
+  std::unordered_map<base::GeoObjectId, base::GeoObjectId> m_buildings2AddressPoints;
 };
 
 NullBuildingsInfo EnrichPointsWithOuterBuildingGeometry(
@@ -54,11 +54,5 @@ void AddPoisEnrichedWithHouseAddresses(GeoObjectMaintainer & geoObjectMaintainer
                                        std::string const & pathInGeoObjectsTmpMwm,
                                        std::ostream & streamPoiIdsToAddToCoveringIndex,
                                        bool verbose, unsigned int threadsCount);
-
-
-void FilterAddresslessThanGaveTheirGeometryToInnerPoints(std::string const & pathInGeoObjectsTmpMwm,
-                                                         NullBuildingsInfo const & buildingsInfo,
-                                                         unsigned int threadsCount);
-
 }  // namespace geo_objects
 }  // namespace generator

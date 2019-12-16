@@ -64,15 +64,11 @@ bool GeoObjectsGenerator::GenerateGeoObjectsPrivate()
   NullBuildingsInfo const & buildingInfo = EnrichPointsWithOuterBuildingGeometry(
       m_geoObjectMaintainer, m_pathInGeoObjectsTmpMwm, m_threadsCount);
 
-  std::ofstream streamPoiIdsToAddToCoveringIndex(m_pathOutPoiIdsToAddToCoveringIndex);
-
-  AddPoisEnrichedWithHouseAddresses(
-      m_geoObjectMaintainer, buildingInfo, m_pathOutGeoObjectsKv, m_pathInGeoObjectsTmpMwm,
-      streamPoiIdsToAddToCoveringIndex, m_verbose, m_threadsCount);
-
-  FilterAddresslessThanGaveTheirGeometryToInnerPoints(m_pathInGeoObjectsTmpMwm, buildingInfo,
-                                                      m_threadsCount);
-  LOG(LINFO, ("Addressless buildings with geometry we used for inner points were filtered"));
+  std::ofstream streamPoiIdsToAddToLocalityIndex(m_pathOutPoiIdsToAddToCoveringIndex);
+  AddPoisEnrichedWithHouseAddresses(m_geoObjectMaintainer, buildingInfo,
+                                    m_pathOutGeoObjectsKv, m_pathInGeoObjectsTmpMwm,
+                                    streamPoiIdsToAddToLocalityIndex,
+                                    m_verbose, m_threadsCount);
 
   LOG(LINFO, ("Geo objects without addresses were built."));
   LOG(LINFO, ("Geo objects key-value storage saved to", m_pathOutGeoObjectsKv));
