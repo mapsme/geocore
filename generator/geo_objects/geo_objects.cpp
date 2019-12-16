@@ -439,13 +439,12 @@ void AddPoisEnrichedWithHouseAddresses(GeoObjectMaintainer & geoObjectMaintainer
     auto const id = fb.GetMostGenericOsmId();
     auto jsonValue = MakeJsonValueWithNameFromFeature(fb, JsonValue{std::move(house)});
 
-    kvWriter.Write(id, JsonValue{std::move(jsonValue)});
-
     counter++;
     if (counter % 100000 == 0)
       LOG(LINFO, (counter, "pois added"));
 
     std::lock_guard<std::mutex> lock(streamMutex);
+    kvWriter.Write(id, JsonValue{std::move(jsonValue)});
     streamPoiIdsToAddToLocalityIndex << id << "\n";
   };
 
