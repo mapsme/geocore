@@ -12,8 +12,6 @@
 #include "generator/translator_collection.hpp"
 #include "generator/translator_factory.hpp"
 
-#include "geocoder/geocoder.hpp"
-
 #include "indexer/classificator_loader.hpp"
 #include "indexer/features_vector.hpp"
 #include "indexer/locality_index_builder.hpp"
@@ -69,7 +67,6 @@ struct CliCommandOptions
   std::string m_streets_features;
   std::string m_geo_objects_features;
   std::string m_geo_objects_index;
-  std::string m_geocoder_token_index;
   std::string m_key_value;
   bool m_preprocess = false;
   bool m_generate_region_features = false;
@@ -79,7 +76,6 @@ struct CliCommandOptions
   bool m_generate_regions_kv = false;
   bool m_generate_streets_features = false;
   bool m_generate_geo_objects_features = false;
-  bool m_generate_geocoder_token_index = false;
   bool m_verbose = false;
 };
 
@@ -160,12 +156,6 @@ CliCommandOptions DefineOptions(int argc, char * argv[])
      ("regions_features",
          po::value(&o.m_regions_features)->default_value(""),
          "Input/Output tmp.mwm file with regions.")
-     ("generate_geocoder_token_index",
-         po::value(&o.m_generate_geocoder_token_index)->default_value(false),
-         "Generate geocoder token index.")
-     ("geocoder_token_index",
-         po::value(&o.m_geocoder_token_index)->default_value(""),
-         "Geocoder token index file.")
      ("key_value",
          po::value(&o.m_key_value)->default_value(""),
          "Input key-value file (.jsonl or .jsonl.gz).")
@@ -367,24 +357,6 @@ int GeneratorToolMain(int argc, char ** argv)
     regions::GenerateRegions(options.m_regions_features, regionsInfoPath,
                              options.m_regions_key_value, options.m_verbose,
                              genInfo.m_threadsCount);
-  }
-
-  if (options.m_generate_geocoder_token_index)
-  {
-    if (options.m_key_value.empty())
-    {
-      LOG(LCRITICAL, ("Unspecified key-value file."));
-      return EXIT_FAILURE;
-    }
-    if (options.m_geocoder_token_index.empty())
-    {
-      LOG(LCRITICAL, ("Unspecified geocoder_token_index file."));
-      return EXIT_FAILURE;
-    }
-
-    geocoder::Geocoder geocoder;
-    geocoder.LoadFromJsonl(options.m_key_value, genInfo.m_threadsCount);
-    geocoder.SaveToBinaryIndex(options.m_geocoder_token_index);
   }
 
   return 0;
