@@ -61,7 +61,6 @@ struct CliCommandOptions
   std::string m_data_path;
   std::string m_nodes_list_path;
   std::string m_regions_features;
-  std::string m_allow_addressless_for_countries;
   std::string m_ids_without_addresses;
   std::string m_geo_objects_key_value;
   std::string m_regions_index;
@@ -158,9 +157,6 @@ CliCommandOptions DefineOptions(int argc, char * argv[])
      ("geo_objects_key_value",
          po::value(&o.m_geo_objects_key_value)->default_value(""),
          "Input/Output geo objects key-value file.")
-     ("allow_addressless_for_countries",
-         po::value(&o.m_allow_addressless_for_countries)->default_value("*"),
-         "Allow addressless buildings for only specified countries separated by commas.")
      ("regions_features",
          po::value(&o.m_regions_features)->default_value(""),
          "Input/Output tmp.mwm file with regions.")
