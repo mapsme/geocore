@@ -18,6 +18,8 @@ namespace indexer
 class LocalityObject
 {
 public:
+  LocalityObject() = default;
+
   // Decodes id stored in LocalityIndex. See GetStoredId().
   static base::GeoObjectId FromStoredId(uint64_t storedId)
   {
@@ -43,6 +45,21 @@ public:
   {
     for (size_t i = 2; i < m_triangles.size(); i += 3)
       toDo(m_triangles[i - 2], m_triangles[i - 1], m_triangles[i]);
+  }
+
+  void SetId(uint64_t id)
+  {
+    m_id = id;
+  }
+
+  void SetPoints(buffer_vector<m2::PointD, 32> && points)
+  {
+    m_points = std::move(points);
+  }
+
+  void SetTriangles(buffer_vector<m2::PointD, 32> && triangles)
+  {
+    m_triangles = std::move(triangles);
   }
 
   void SetForTesting(uint64_t id, m2::PointD point)

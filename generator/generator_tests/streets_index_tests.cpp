@@ -3,10 +3,9 @@
 
 #include "generator/data_version.hpp"
 #include "generator/geo_objects/geo_objects.hpp"
-#include "generator/locality_sorter.hpp"
+#include "generator/locality_index_generator.hpp"
 
 #include "indexer/locality_index.hpp"
-#include "indexer/locality_index_builder.hpp"
 
 #include "base/assert.hpp"
 
@@ -26,17 +25,12 @@ GeoObjectsIndex<IndexReader> GenerateStreetsIndex(std::vector<OsmElementData> co
   ScopedFile const streetsFeatures{"streets"s + DATA_FILE_EXTENSION, ScopedFile::Mode::DoNotCreate};
   WriteFeatures(osmElements, streetsFeatures);
 
-  auto const locDataFile = GetFileName("streets"s + LOC_DATA_FILE_EXTENSION);
-  bool locDataGeneration =
-      feature::GenerateGeoObjectsData(locDataFile, geoObjectsFeatures.GetFullPath(),
-                                      boost::none /* nodesFile */, streetsFeatures.GetFullPath());
-  CHECK(locDataGeneration, ());
-
   ScopedFile const streetsIndex{"streets"s + LOC_IDX_FILE_EXTENSION, ScopedFile::Mode::DoNotCreate};
-  auto streetsIndexBuilding =
-      BuildGeoObjectsIndexFromDataFile(locDataFile, streetsIndex.GetFullPath(), {},
-                                       DataVersion::kFileTag);
-  CHECK(streetsIndexBuilding, ());
+  bool streetsIndexGeneration =
+      GenerateGeoObjectsIndex(streetsIndex.GetFullPath(), geoObjectsFeatures.GetFullPath(),
+                              1 /* threadsCount */, {} /* nodesFile */,
+                              streetsFeatures.GetFullPath());
+  CHECK(streetsIndexGeneration, ());
 
   return ReadIndex<GeoObjectsIndexBox<IndexReader>, MmapReader>(streetsIndex.GetFullPath());
 }

@@ -23,26 +23,17 @@ using namespace std;
 
 namespace
 {
-struct LocalityObjectVector
-{
-  template <typename ToDo>
-  void ForEach(ToDo && toDo) const
-  {
-    for_each(m_objects.cbegin(), m_objects.cend(), forward<ToDo>(toDo));
-  }
-
-  vector<LocalityObject> m_objects;
-};
-
 template <class ObjectsVector, class Writer>
-void BuildGeoObjectsIndex(ObjectsVector const & objects, Writer & writer,
-                          string const & tmpFilePrefix)
+void BuildGeoObjectsIndex(ObjectsVector const & objects, Writer && writer)
 {
-  auto coverLocality = [](indexer::LocalityObject const & o, int cellDepth) {
-    return covering::CoverGeoObject(o, cellDepth);
-  };
-  return covering::BuildLocalityIndex<ObjectsVector, Writer, kGeoObjectsDepthLevels>(
-      objects, writer, coverLocality, tmpFilePrefix);
+  indexer::GeoObjectsLocalityIndexBuilder indexBuilder;
+
+  covering::LocalitiesCovering objectsCovering;
+  for (auto const & object : objects)
+    indexBuilder.Cover(object, objectsCovering);
+
+  indexBuilder.BuildCoveringIndex(std::move(objectsCovering), std::forward<Writer>(writer),
+                                  kGeoObjectsDepthLevels);
 }
 
 using Ids = set<uint64_t>;
@@ -70,16 +61,16 @@ RankedIds GetRankedIds(LocalityIndex const & index, m2::PointD const & center,
 
 UNIT_TEST(BuildLocalityIndexTest)
 {
-  LocalityObjectVector objects;
-  objects.m_objects.resize(4);
-  objects.m_objects[0].SetForTesting(1, m2::PointD{0, 0});
-  objects.m_objects[1].SetForTesting(2, m2::PointD{1, 0});
-  objects.m_objects[2].SetForTesting(3, m2::PointD{1, 1});
-  objects.m_objects[3].SetForTesting(4, m2::PointD{0, 1});
+  vector<LocalityObject> objects;
+  objects.resize(4);
+  objects[0].SetForTesting(1, m2::PointD{0, 0});
+  objects[1].SetForTesting(2, m2::PointD{1, 0});
+  objects[2].SetForTesting(3, m2::PointD{1, 1});
+  objects[3].SetForTesting(4, m2::PointD{0, 1});
 
   vector<uint8_t> localityIndex;
   MemWriter<vector<uint8_t>> writer(localityIndex);
-  BuildGeoObjectsIndex(objects, writer, "tmp");
+  BuildGeoObjectsIndex(objects, writer);
   MemReader reader(localityIndex.data(), localityIndex.size());
 
   indexer::GeoObjectsIndex<MemReader> index(reader);
@@ -91,16 +82,16 @@ UNIT_TEST(BuildLocalityIndexTest)
 
 UNIT_TEST(LocalityIndexRankTest)
 {
-  LocalityObjectVector objects;
-  objects.m_objects.resize(4);
-  objects.m_objects[0].SetForTesting(1, m2::PointD{1, 0});
-  objects.m_objects[1].SetForTesting(2, m2::PointD{2, 0});
-  objects.m_objects[2].SetForTesting(3, m2::PointD{3, 0});
-  objects.m_objects[3].SetForTesting(4, m2::PointD{4, 0});
+  vector<LocalityObject> objects;
+  objects.resize(4);
+  objects[0].SetForTesting(1, m2::PointD{1, 0});
+  objects[1].SetForTesting(2, m2::PointD{2, 0});
+  objects[2].SetForTesting(3, m2::PointD{3, 0});
+  objects[3].SetForTesting(4, m2::PointD{4, 0});
 
   vector<uint8_t> localityIndex;
   MemWriter<vector<uint8_t>> writer(localityIndex);
-  BuildGeoObjectsIndex(objects, writer, "tmp");
+  BuildGeoObjectsIndex(objects, writer);
   MemReader reader(localityIndex.data(), localityIndex.size());
 
   indexer::GeoObjectsIndex<MemReader> index(reader);
@@ -123,24 +114,24 @@ UNIT_TEST(LocalityIndexRankTest)
 
 UNIT_TEST(LocalityIndexTopSizeTest)
 {
-  LocalityObjectVector objects;
-  objects.m_objects.resize(8);
+  vector<LocalityObject> objects;
+  objects.resize(8);
   // Same cell.
-  objects.m_objects[0].SetForTesting(1, m2::PointD{1.0, 0.0});
-  objects.m_objects[1].SetForTesting(2, m2::PointD{1.0, 0.0});
-  objects.m_objects[2].SetForTesting(3, m2::PointD{1.0, 0.0});
-  objects.m_objects[3].SetForTesting(4, m2::PointD{1.0, 0.0});
+  objects[0].SetForTesting(1, m2::PointD{1.0, 0.0});
+  objects[1].SetForTesting(2, m2::PointD{1.0, 0.0});
+  objects[2].SetForTesting(3, m2::PointD{1.0, 0.0});
+  objects[3].SetForTesting(4, m2::PointD{1.0, 0.0});
   // Another close cell.
-  objects.m_objects[4].SetForTesting(5, m2::PointD{1.0, 1.0});
-  objects.m_objects[5].SetForTesting(6, m2::PointD{1.0, 1.0});
+  objects[4].SetForTesting(5, m2::PointD{1.0, 1.0});
+  objects[5].SetForTesting(6, m2::PointD{1.0, 1.0});
   // Far cell.
-  objects.m_objects[6].SetForTesting(7, m2::PointD{10.0, 10.0});
+  objects[6].SetForTesting(7, m2::PointD{10.0, 10.0});
   // The big object contains all points and must be returned on any query.
-  objects.m_objects[7].SetForTesting(8, m2::RectD{0.0, 0.0, 10.0, 10.0});
+  objects[7].SetForTesting(8, m2::RectD{0.0, 0.0, 10.0, 10.0});
 
   vector<uint8_t> localityIndex;
   MemWriter<vector<uint8_t>> writer(localityIndex);
-  BuildGeoObjectsIndex(objects, writer, "tmp");
+  BuildGeoObjectsIndex(objects, writer);
   MemReader reader(localityIndex.data(), localityIndex.size());
 
   indexer::GeoObjectsIndex<MemReader> index(reader);
@@ -189,21 +180,21 @@ UNIT_TEST(LocalityIndexWeightRankTest)
   m2::PointD queryPoint{0, 0};
   m2::PointD queryBorder{0, 2};
 
-  LocalityObjectVector objects;
-  objects.m_objects.resize(7);
+  vector<LocalityObject> objects;
+  objects.resize(7);
   // Enclose query point.
-  objects.m_objects[0].SetForTesting(1, m2::PointD{0, 0});
-  objects.m_objects[1].SetForTesting(2, m2::PointD{0.000001, 0.000001}); // in the same lowermost cell
-  objects.m_objects[2].SetForTesting(3, m2::RectD{-1, -1, 1, 1});
+  objects[0].SetForTesting(1, m2::PointD{0, 0});
+  objects[1].SetForTesting(2, m2::PointD{0.000001, 0.000001}); // in the same lowermost cell
+  objects[2].SetForTesting(3, m2::RectD{-1, -1, 1, 1});
   // Closest objects.
-  objects.m_objects[3].SetForTesting(4, m2::RectD{0.5, 0.5, 1.0, 1.0});
-  objects.m_objects[4].SetForTesting(5, m2::PointD{1, 0});
-  objects.m_objects[5].SetForTesting(6, m2::PointD{1, 1});
-  objects.m_objects[6].SetForTesting(7, m2::RectD{1, 0, 1.1, 0.1});
+  objects[3].SetForTesting(4, m2::RectD{0.5, 0.5, 1.0, 1.0});
+  objects[4].SetForTesting(5, m2::PointD{1, 0});
+  objects[5].SetForTesting(6, m2::PointD{1, 1});
+  objects[6].SetForTesting(7, m2::RectD{1, 0, 1.1, 0.1});
 
   vector<uint8_t> localityIndex;
   MemWriter<vector<uint8_t>> writer(localityIndex);
-  BuildGeoObjectsIndex(objects, writer, "tmp");
+  BuildGeoObjectsIndex(objects, writer);
   MemReader reader(localityIndex.data(), localityIndex.size());
 
   indexer::GeoObjectsIndex<MemReader> index(reader);

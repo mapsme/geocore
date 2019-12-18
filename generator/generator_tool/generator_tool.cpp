@@ -1,7 +1,7 @@
 #include "generator/data_version.hpp"
 #include "generator/generate_info.hpp"
 #include "generator/geo_objects/geo_objects_generator.hpp"
-#include "generator/locality_sorter.hpp"
+#include "generator/locality_index_generator.hpp"
 #include "generator/osm_source.hpp"
 #include "generator/processor_factory.hpp"
 #include "generator/raw_generator.hpp"
@@ -294,29 +294,21 @@ int GeneratorToolMain(int argc, char ** argv)
       return EXIT_FAILURE;
     }
 
-    auto const locDataFile =
-        base::FilenameWithoutExt(options.m_geo_objects_index) + LOC_DATA_FILE_EXTENSION;
-
     auto const nodesListPath =
         boost::make_optional(!options.m_nodes_list_path.empty(), options.m_nodes_list_path);
     auto const streetsFeaturesPath =
         boost::make_optional(!options.m_streets_features.empty(), options.m_streets_features);
-    if (!feature::GenerateGeoObjectsData(locDataFile, options.m_geo_objects_features,
-                                         nodesListPath, streetsFeaturesPath))
-    {
-      LOG(LCRITICAL, ("Error generating geo objects data."));
-      return EXIT_FAILURE;
-    }
 
     LOG(LINFO, ("Saving geo objects index to", options.m_geo_objects_index));
-    if (!indexer::BuildGeoObjectsIndexFromDataFile(
-            locDataFile, options.m_geo_objects_index,
-            DataVersion::LoadFromPath(path).GetVersionJson(),
-            DataVersion::kFileTag))
+    if (!GenerateGeoObjectsIndex(options.m_geo_objects_index, options.m_geo_objects_features,
+                                 genInfo.m_threadsCount, nodesListPath, streetsFeaturesPath))
     {
       LOG(LCRITICAL, ("Error generating geo objects index."));
       return EXIT_FAILURE;
     }
+
+    WriteDataVersionSection(options.m_geo_objects_index,
+                            DataVersion::LoadFromPath(genInfo.m_dataPath).GetVersionJson());
   }
 
   if (options.m_generate_regions)
@@ -327,29 +319,23 @@ int GeneratorToolMain(int argc, char ** argv)
       return EXIT_FAILURE;
     }
 
-    auto const locDataFile =
-        base::FilenameWithoutExt(options.m_regions_index) + LOC_DATA_FILE_EXTENSION;
-
-    if (!feature::GenerateRegionsData(locDataFile, options.m_regions_features))
-    {
-      LOG(LCRITICAL, ("Error generating regions data."));
-      return EXIT_FAILURE;
-    }
-
     LOG(LINFO, ("Saving regions index to", options.m_regions_index));
-
-    if (!indexer::BuildRegionsIndexFromDataFile(locDataFile, options.m_regions_index,
-                                                DataVersion::LoadFromPath(path).GetVersionJson(),
-                                                DataVersion::kFileTag))
+    if (!GenerateRegionsIndex(options.m_regions_index, options.m_regions_features,
+                              genInfo.m_threadsCount))
     {
       LOG(LCRITICAL, ("Error generating regions index."));
       return EXIT_FAILURE;
     }
-    if (!feature::GenerateBorders(options.m_regions_index, options.m_regions_features))
+
+    LOG(LINFO, ("Saving regions borders to", options.m_regions_index));
+    if (!GenerateBorders(options.m_regions_index, options.m_regions_features))
     {
       LOG(LCRITICAL, ("Error generating regions borders."));
       return EXIT_FAILURE;
     }
+
+    WriteDataVersionSection(options.m_regions_index,
+                            DataVersion::LoadFromPath(genInfo.m_dataPath).GetVersionJson());
   }
 
   if (options.m_generate_regions_kv)
