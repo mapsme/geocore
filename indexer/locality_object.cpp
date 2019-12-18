@@ -27,7 +27,7 @@ void LocalityObject::Deserialize(char const * data)
     ReadPrimitiveFromSource(src, ptsCount);
     CHECK_GREATER(ptsCount, 1, ());
     char const * start = src.PtrC();
-    src = ArrayByteSource(serial::LoadInnerPath(start, ptsCount, cp, m_points));
+    serial::LoadInnerPath(start, ptsCount, cp, m_points);
     return;
   }
 

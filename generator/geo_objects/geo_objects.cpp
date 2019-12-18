@@ -3,7 +3,7 @@
 #include "generator/feature_generator.hpp"
 #include "generator/key_value_concurrent_writer.hpp"
 #include "generator/key_value_storage.hpp"
-#include "generator/locality_sorter.hpp"
+#include "generator/locality_index_generator.hpp"
 
 #include "generator/geo_objects/geo_objects.hpp"
 #include "generator/geo_objects/geo_objects_filter.hpp"
@@ -13,7 +13,6 @@
 
 #include "indexer/classificator.hpp"
 #include "indexer/locality_index.hpp"
-#include "indexer/locality_index_builder.hpp"
 
 #include "coding/mmap_reader.hpp"
 
@@ -372,17 +371,9 @@ bool JsonHasBuilding(JsonValue const & json)
 boost::optional<indexer::GeoObjectsIndex<IndexReader>> MakeTempGeoObjectsIndex(
     std::string const & pathToGeoObjectsTmpMwm)
 {
-  auto const dataFile = GetPlatform().TmpPathForFile();
-  SCOPE_GUARD(removeDataFile, std::bind(Platform::RemoveFileIfExists, std::cref(dataFile)));
-  if (!GenerateGeoObjectsData(dataFile, pathToGeoObjectsTmpMwm))
-  {
-    LOG(LCRITICAL, ("Error generating geo objects data."));
-    return {};
-  }
-
   auto const indexFile = GetPlatform().TmpPathForFile();
   SCOPE_GUARD(removeIndexFile, std::bind(Platform::RemoveFileIfExists, std::cref(indexFile)));
-  if (!indexer::BuildGeoObjectsIndexFromDataFile(dataFile, indexFile, std::string(), DataVersion::kFileTag))
+  if (!GenerateGeoObjectsIndex(indexFile, pathToGeoObjectsTmpMwm, 1))
   {
     LOG(LCRITICAL, ("Error generating geo objects index."));
     return {};

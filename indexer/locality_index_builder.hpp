@@ -6,8 +6,7 @@
 #include "indexer/locality_object.hpp"
 #include "indexer/scales.hpp"
 
-#include "coding/dd_vector.hpp"
-#include "coding/file_sort.hpp"
+#include "coding/file_container.hpp"
 #include "coding/writer.hpp"
 
 #include "base/logging.hpp"
@@ -17,57 +16,97 @@
 #include "defines.hpp"
 
 #include <cstdint>
+#include <deque>
 #include <functional>
 #include <string>
 #include <vector>
 
+#include <boost/sort/sort.hpp>
+
 namespace covering
 {
-using CoverLocality =
-    std::function<std::vector<int64_t>(indexer::LocalityObject const & o, int cellDepth)>;
-
-template <class ObjectsVector, class Writer, int DEPTH_LEVELS>
-void BuildLocalityIndex(ObjectsVector const & objects, Writer & writer,
-                        CoverLocality const & coverLocality, std::string const & tmpFilePrefix,
-                        IntervalIndexVersion version = IntervalIndexVersion::V1)
-{
-  std::string const cellsToValueFile = tmpFilePrefix + CELL2LOCALITY_SORTED_EXT + ".all";
-  SCOPE_GUARD(cellsToValueFileGuard, std::bind(&FileWriter::DeleteFileX, cellsToValueFile));
-  {
-    FileWriter cellsToValueWriter(cellsToValueFile);
-
-    WriterFunctor<FileWriter> out(cellsToValueWriter);
-    FileSorter<CellValuePair<uint64_t>, WriterFunctor<FileWriter>> sorter(
-        1024 * 1024 /* bufferBytes */, tmpFilePrefix + CELL2LOCALITY_TMP_EXT, out);
-    objects.ForEach([&sorter, &coverLocality](indexer::LocalityObject const & o) {
-      std::vector<int64_t> const cells =
-          coverLocality(o, GetCodingDepth<DEPTH_LEVELS>(scales::GetUpperScale()));
-      for (auto const & cell : cells)
-        sorter.Add(CellValuePair<uint64_t>(cell, o.GetStoredId()));
-    });
-    sorter.SortAndFinish();
-  }
-
-  FileReader reader(cellsToValueFile);
-  DDVector<CellValuePair<uint64_t>, FileReader, uint64_t> cellsToValue(reader);
-
-  {
-    BuildIntervalIndex(cellsToValue.begin(), cellsToValue.end(), writer, DEPTH_LEVELS * 2 + 1, version);
-  }
-}
+using LocalitiesCovering = std::deque<CellValuePair<uint64_t>>;
 }  // namespace covering
 
 namespace indexer
 {
-// Builds indexer::GeoObjectsIndex for reverse geocoder with |kGeoObjectsDepthLevels| depth levels
-// and saves it to |GEO_OBJECTS_INDEX_FILE_TAG| of |out|.
-bool BuildGeoObjectsIndexFromDataFile(std::string const & dataFile, std::string const & out,
-                                      std::string const & dataVersionJson,
-                                      std::string const & dataVersionTag);
+template <typename BuilderSpec>
+class LocalityIndexBuilder
+{
+public:
+  void Cover(LocalityObject const & localityObject, covering::LocalitiesCovering & covering) const
+  {
+    static auto const cellDepth =
+        covering::GetCodingDepth<BuilderSpec::kDepthLevels>(scales::GetUpperScale());
 
-// Builds indexer::RegionsIndex for reverse geocoder with |kRegionsDepthLevels| depth levels and
-// saves it to |REGIONS_INDEX_FILE_TAG| of |out|.
-bool BuildRegionsIndexFromDataFile(std::string const & dataFile, std::string const & out,
-                                   std::string const & dataVersionJson,
-                                   std::string const & dataVersionTag);
+    auto const id = localityObject.GetStoredId();
+    auto && cells = m_builderSpec.Cover(localityObject, cellDepth);
+    for (auto const & cell : cells)
+      covering.emplace_back(cell, id);
+  }
+
+  bool BuildCoveringIndex(covering::LocalitiesCovering && covering,
+                          std::string const & localityIndexPath) const
+  {
+    std::vector<char> buffer;
+    buffer.reserve(covering.size() * 10 /* ~ ratio file-size / cell-pair */);
+    MemWriter<std::vector<char>> indexWriter{buffer};
+
+    BuildCoveringIndex(std::move(covering), indexWriter, BuilderSpec::kDepthLevels);
+
+    try
+    {
+      FilesContainerW writer(localityIndexPath, FileWriter::OP_WRITE_TRUNCATE);
+      writer.Write(buffer, BuilderSpec::kIndexFileTag);
+    }
+    catch (Writer::Exception const & e)
+    {
+      LOG(LERROR, ("Error writing index file:", e.Msg()));
+      return false;
+    }
+
+    return true;
+  }
+
+  template <typename Writer>
+  void BuildCoveringIndex(covering::LocalitiesCovering && covering, Writer && writer,
+                          int depthLevel) const
+  {
+    // 32 threads block_indirect_sort is fastest for |block_size| (internal parameter) and
+    // sizeof(CellValuePair<uint64_t>).
+    auto sortThreadsCount = std::min(32u, std::thread::hardware_concurrency());
+    boost::sort::block_indirect_sort(covering.begin(), covering.end(), sortThreadsCount);
+
+    BuildIntervalIndex(covering.begin(), covering.end(), std::forward<Writer>(writer),
+                       depthLevel * 2 + 1, IntervalIndexVersion::V2);
+  }
+
+private:
+  BuilderSpec m_builderSpec;
+};
+
+struct RegionsIndexBuilderSpec
+{
+  static constexpr int kDepthLevels = kRegionsDepthLevels;
+  static constexpr auto const & kIndexFileTag = REGIONS_INDEX_FILE_TAG;
+
+  std::vector<int64_t> Cover(indexer::LocalityObject const & o, int cellDepth) const
+  {
+    return covering::CoverRegion(o, cellDepth);
+  }
+};
+
+struct GeoObjectsIndexBuilderSpec
+{
+  static constexpr int kDepthLevels = kGeoObjectsDepthLevels;
+  static constexpr auto const & kIndexFileTag = GEO_OBJECTS_INDEX_FILE_TAG;
+
+  std::vector<int64_t> Cover(indexer::LocalityObject const & o, int cellDepth) const
+  {
+    return covering::CoverGeoObject(o, cellDepth);
+  }
+};
+
+using RegionsLocalityIndexBuilder = LocalityIndexBuilder<RegionsIndexBuilderSpec>;
+using GeoObjectsLocalityIndexBuilder = LocalityIndexBuilder<GeoObjectsIndexBuilderSpec>;
 }  // namespace indexer

@@ -58,8 +58,8 @@ set(
   key_value_concurrent_writer.hpp
   key_value_storage.cpp
   key_value_storage.hpp
-  locality_sorter.cpp
-  locality_sorter.hpp
+  locality_index_generator.cpp
+  locality_index_generator.hpp
   osm2meta.cpp
   osm2meta.hpp
   osm2type.cpp
