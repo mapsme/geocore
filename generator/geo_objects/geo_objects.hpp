@@ -26,7 +26,7 @@ using IndexReader = ReaderPtr<Reader>;
 using RegionInfoLocater = std::function<boost::optional<KeyValue>(m2::PointD const & pathPoint)>;
 
 boost::optional<indexer::GeoObjectsIndex<IndexReader>> MakeTempGeoObjectsIndex(
-    std::string const & pathToGeoObjectsTmpMwm);
+    std::string const & pathToGeoObjectsTmpMwm, unsigned int threadsCount);
 
 bool JsonHasBuilding(JsonValue const & json);
 

@@ -369,11 +369,11 @@ bool JsonHasBuilding(JsonValue const & json)
 }
 
 boost::optional<indexer::GeoObjectsIndex<IndexReader>> MakeTempGeoObjectsIndex(
-    std::string const & pathToGeoObjectsTmpMwm)
+    std::string const & pathToGeoObjectsTmpMwm, unsigned int threadsCount)
 {
   auto const indexFile = GetPlatform().TmpPathForFile();
   SCOPE_GUARD(removeIndexFile, std::bind(Platform::RemoveFileIfExists, std::cref(indexFile)));
-  if (!GenerateGeoObjectsIndex(indexFile, pathToGeoObjectsTmpMwm, 1))
+  if (!GenerateGeoObjectsIndex(indexFile, pathToGeoObjectsTmpMwm, threadsCount))
   {
     LOG(LCRITICAL, ("Error generating geo objects index."));
     return {};

@@ -134,7 +134,8 @@ void TestFindReverse(std::vector<OsmElementData> const & osmElements,
   std::unique_ptr<GeoObjectsGenerator> geoObjectsGenerator{
       TearUp(osmElements, geoObjectsFeatures, idsWithoutAddresses, geoObjectsKeyValue)};
 
-  auto const geoObjectsIndex = MakeTempGeoObjectsIndex(geoObjectsFeatures.GetFullPath());
+  auto const geoObjectsIndex = MakeTempGeoObjectsIndex(geoObjectsFeatures.GetFullPath(),
+                                                       1 /* threadsCount */);
 
   TEST(geoObjectsIndex, ("Temporary index build failed"));
 
