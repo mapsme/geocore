@@ -1,9 +1,9 @@
 #pragma once
 
 #include "indexer/cell_id.hpp"
+#include "indexer/covered_object.hpp"
 #include "indexer/feature_covering.hpp"
 #include "indexer/interval_index.hpp"
-#include "indexer/locality_object.hpp"
 #include "indexer/scales.hpp"
 
 #include "coding/file_container.hpp"
@@ -28,14 +28,14 @@ namespace indexer
 // Used for geocoder server, stores only POIs and buildings which have address information.
 // Based on IntervalIndex.
 template <typename Reader, int DEPTH_LEVELS>
-class LocalityIndex
+class CoveringIndex
 {
 public:
   using ProcessObject = std::function<void(base::GeoObjectId const &)>;
   using ProcessCloseObject = std::function<void(base::GeoObjectId const & objectId, double closenessWeight)>;
 
-  LocalityIndex() = default;
-  explicit LocalityIndex(Reader const & reader)
+  CoveringIndex() = default;
+  explicit CoveringIndex(Reader const & reader)
   {
     m_intervalIndex = std::make_unique<IntervalIndex<Reader, uint64_t>>(reader);
   }
@@ -54,7 +54,7 @@ public:
     {
       m_intervalIndex->ForEach(
             [&processObject](uint64_t /* key */, uint64_t storedId) {
-        processObject(LocalityObject::FromStoredId(storedId));
+        processObject(CoveredObject::FromStoredId(storedId));
       },
       i.first, i.second);
     }
@@ -113,7 +113,7 @@ public:
     };
 
     auto insertObject = [&] (int64_t cellNumber, uint64_t storedId) {
-      auto const objectId = LocalityObject::FromStoredId(storedId).GetEncodedId();
+      auto const objectId = CoveredObject::FromStoredId(storedId).GetEncodedId();
       auto & objectWeight = objectWeights[objectId];
       objectWeight = std::max(objectWeight, cellRelativeWeight(cellNumber));
     };
@@ -142,10 +142,10 @@ private:
 };
 
 template <typename Reader>
-using GeoObjectsIndex = LocalityIndex<Reader, kGeoObjectsDepthLevels>;
+using GeoObjectsIndex = CoveringIndex<Reader, kGeoObjectsDepthLevels>;
 
 template <typename Reader>
-using RegionsIndex = LocalityIndex<Reader, kRegionsDepthLevels>;
+using RegionsIndex = CoveringIndex<Reader, kRegionsDepthLevels>;
 
 template <typename Reader>
 struct GeoObjectsIndexBox

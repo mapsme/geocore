@@ -1,9 +1,9 @@
 #pragma once
 #include "indexer/cell_id.hpp"
 #include "indexer/cell_value_pair.hpp"
+#include "indexer/covered_object.hpp"
 #include "indexer/feature_covering.hpp"
 #include "indexer/interval_index_builder.hpp"
-#include "indexer/locality_object.hpp"
 #include "indexer/scales.hpp"
 
 #include "coding/file_container.hpp"
@@ -25,27 +25,27 @@
 
 namespace covering
 {
-using LocalitiesCovering = std::deque<CellValuePair<uint64_t>>;
+using ObjectsCovering = std::deque<CellValuePair<uint64_t>>;
 }  // namespace covering
 
 namespace indexer
 {
 template <typename BuilderSpec>
-class LocalityIndexBuilder
+class CoveringIndexBuilder
 {
 public:
-  void Cover(LocalityObject const & localityObject, covering::LocalitiesCovering & covering) const
+  void Cover(CoveredObject const & coveredObject, covering::ObjectsCovering & covering) const
   {
     static auto const cellDepth =
         covering::GetCodingDepth<BuilderSpec::kDepthLevels>(scales::GetUpperScale());
 
-    auto const id = localityObject.GetStoredId();
-    auto && cells = m_builderSpec.Cover(localityObject, cellDepth);
+    auto const id = coveredObject.GetStoredId();
+    auto && cells = m_builderSpec.Cover(coveredObject, cellDepth);
     for (auto const & cell : cells)
       covering.emplace_back(cell, id);
   }
 
-  bool BuildCoveringIndex(covering::LocalitiesCovering && covering,
+  bool BuildCoveringIndex(covering::ObjectsCovering && covering,
                           std::string const & localityIndexPath) const
   {
     std::vector<char> buffer;
@@ -69,7 +69,7 @@ public:
   }
 
   template <typename Writer>
-  void BuildCoveringIndex(covering::LocalitiesCovering && covering, Writer && writer,
+  void BuildCoveringIndex(covering::ObjectsCovering && covering, Writer && writer,
                           int depthLevel) const
   {
     // 32 threads block_indirect_sort is fastest for |block_size| (internal parameter) and
@@ -90,7 +90,7 @@ struct RegionsIndexBuilderSpec
   static constexpr int kDepthLevels = kRegionsDepthLevels;
   static constexpr auto const & kIndexFileTag = REGIONS_INDEX_FILE_TAG;
 
-  std::vector<int64_t> Cover(indexer::LocalityObject const & o, int cellDepth) const
+  std::vector<int64_t> Cover(indexer::CoveredObject const & o, int cellDepth) const
   {
     return covering::CoverRegion(o, cellDepth);
   }
@@ -101,12 +101,12 @@ struct GeoObjectsIndexBuilderSpec
   static constexpr int kDepthLevels = kGeoObjectsDepthLevels;
   static constexpr auto const & kIndexFileTag = GEO_OBJECTS_INDEX_FILE_TAG;
 
-  std::vector<int64_t> Cover(indexer::LocalityObject const & o, int cellDepth) const
+  std::vector<int64_t> Cover(indexer::CoveredObject const & o, int cellDepth) const
   {
     return covering::CoverGeoObject(o, cellDepth);
   }
 };
 
-using RegionsLocalityIndexBuilder = LocalityIndexBuilder<RegionsIndexBuilderSpec>;
-using GeoObjectsLocalityIndexBuilder = LocalityIndexBuilder<GeoObjectsIndexBuilderSpec>;
+using RegionsIndexBuilder = CoveringIndexBuilder<RegionsIndexBuilderSpec>;
+using GeoObjectsIndexBuilder = CoveringIndexBuilder<GeoObjectsIndexBuilderSpec>;
 }  // namespace indexer

@@ -24,6 +24,11 @@ set(
   classificator.hpp
   classificator_loader.cpp
   classificator_loader.hpp
+  covered_object.cpp
+  covered_object.hpp
+  covering_index.cpp
+  covering_index.hpp
+  covering_index_builder.hpp
   data_factory.cpp
   data_factory.hpp
   data_header.cpp
@@ -84,11 +89,6 @@ set(
   index_builder.hpp
   interval_index.hpp
   interval_index_builder.hpp
-  locality_index.cpp
-  locality_index.hpp
-  locality_index_builder.hpp
-  locality_object.cpp
-  locality_object.hpp
   map_object.cpp
   map_object.hpp
   map_style.cpp

@@ -6,10 +6,10 @@
 #include "generator/generator_tests_support/test_with_classificator.hpp"
 #include "generator/geometry_holder.hpp"
 
-#include "indexer/data_header.cpp"
 #include "indexer/classificator_loader.hpp"
+#include "indexer/covered_object.hpp"
+#include "indexer/data_header.cpp"
 #include "indexer/feature_visibility.hpp"
-#include "indexer/locality_object.hpp"
 
 #include "base/geo_object_id.hpp"
 
@@ -230,7 +230,7 @@ UNIT_CLASS_TEST(TestWithClassificator, FeatureParams_Parsing)
   }
 }
 
-UNIT_CLASS_TEST(TestWithClassificator, FeatureBuilder_SerializeLocalityObjectForBuildingPoint)
+UNIT_CLASS_TEST(TestWithClassificator, FeatureBuilder_SerializeCoveredObjectForBuildingPoint)
 {
   FeatureBuilder fb;
   FeatureParams params;
@@ -259,19 +259,19 @@ UNIT_CLASS_TEST(TestWithClassificator, FeatureBuilder_SerializeLocalityObjectFor
 
   auto & buffer = holder.GetBuffer();
   TEST(fb.PreSerializeAndRemoveUselessNamesForMwm(buffer), ());
-  fb.SerializeLocalityObject(serial::GeometryCodingParams(), buffer);
+  fb.SerializeCoveredObject(serial::GeometryCodingParams(), buffer);
 
-  using indexer::LocalityObject;
-  LocalityObject object;
+  using indexer::CoveredObject;
+  CoveredObject object;
   object.Deserialize(buffer.m_buffer.data());
 
-  TEST_EQUAL(LocalityObject::FromStoredId(object.GetStoredId()), base::MakeOsmNode(1), ());
+  TEST_EQUAL(CoveredObject::FromStoredId(object.GetStoredId()), base::MakeOsmNode(1), ());
   object.ForEachPoint([] (auto && point) {
     TEST(base::AlmostEqualAbs(point, m2::PointD(10.1, 15.8), 1e-7), ());
   });
 }
 
-UNIT_CLASS_TEST(TestWithClassificator, FeatureBuilder_SerializeLocalityObjectForLine)
+UNIT_CLASS_TEST(TestWithClassificator, FeatureBuilder_SerializeCoveredObjectForLine)
 {
   FeatureBuilder fb;
   FeatureParams params;
@@ -303,13 +303,13 @@ UNIT_CLASS_TEST(TestWithClassificator, FeatureBuilder_SerializeLocalityObjectFor
   auto & buffer = holder.GetBuffer();
   auto preserialize = fb.PreSerializeAndRemoveUselessNamesForMwm(buffer);
   CHECK(preserialize, ());
-  fb.SerializeLocalityObject(serial::GeometryCodingParams(), buffer);
+  fb.SerializeCoveredObject(serial::GeometryCodingParams(), buffer);
 
-  using indexer::LocalityObject;
-  LocalityObject object;
+  using indexer::CoveredObject;
+  CoveredObject object;
   object.Deserialize(buffer.m_buffer.data());
 
-  TEST_EQUAL(LocalityObject::FromStoredId(object.GetStoredId()), base::MakeOsmNode(1), ());
+  TEST_EQUAL(CoveredObject::FromStoredId(object.GetStoredId()), base::MakeOsmNode(1), ());
   auto localityObjectsPoints = std::vector<m2::PointD>{};
   object.ForEachPoint([&] (auto && point) {
     localityObjectsPoints.push_back(point);

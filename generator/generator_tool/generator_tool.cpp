@@ -1,7 +1,7 @@
+#include "generator/covering_index_generator.hpp"
 #include "generator/data_version.hpp"
 #include "generator/generate_info.hpp"
 #include "generator/geo_objects/geo_objects_generator.hpp"
-#include "generator/locality_index_generator.hpp"
 #include "generator/osm_source.hpp"
 #include "generator/processor_factory.hpp"
 #include "generator/raw_generator.hpp"
@@ -13,8 +13,8 @@
 #include "generator/translator_factory.hpp"
 
 #include "indexer/classificator_loader.hpp"
+#include "indexer/covering_index_builder.hpp"
 #include "indexer/features_vector.hpp"
-#include "indexer/locality_index_builder.hpp"
 #include "indexer/map_style_reader.hpp"
 
 #include "platform/platform.hpp"

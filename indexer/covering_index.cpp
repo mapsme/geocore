@@ -1,4 +1,4 @@
-#include "indexer/locality_index.hpp"
+#include "indexer/covering_index.hpp"
 
 #include "coding/file_container.hpp"
 #include "coding/mmap_reader.hpp"

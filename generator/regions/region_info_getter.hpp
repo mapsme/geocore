@@ -3,7 +3,7 @@
 #include "generator/key_value_storage.hpp"
 
 #include "indexer/borders.hpp"
-#include "indexer/locality_index.hpp"
+#include "indexer/covering_index.hpp"
 
 #include "coding/reader.hpp"
 

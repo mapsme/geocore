@@ -1,4 +1,4 @@
-#include "indexer/locality_object.hpp"
+#include "indexer/covered_object.hpp"
 
 #include "indexer/feature_decl.hpp"
 
@@ -7,7 +7,7 @@
 
 namespace indexer
 {
-void LocalityObject::Deserialize(char const * data)
+void CoveredObject::Deserialize(char const * data)
 {
   ArrayByteSource src(data);
   serial::GeometryCodingParams cp = {};
