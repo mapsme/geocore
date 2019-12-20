@@ -46,26 +46,21 @@ bool GeoObjectsGenerator::GenerateGeoObjects()
 
 bool GeoObjectsGenerator::GenerateGeoObjectsPrivate()
 {
-  auto geoObjectIndexFuture =
-      std::async(std::launch::async, MakeTempGeoObjectsIndex, m_pathInGeoObjectsTmpMwm);
+  // Index buidling requires a lot of memory (~140GB).
+  // Build index when there is a lot of memory,
+  // before AddBuildingsAndThingsWithHousesThenEnrichAllWithRegionAddresses().
+  auto geoObjectIndex = MakeTempGeoObjectsIndex(m_pathInGeoObjectsTmpMwm, m_threadsCount);
+  if (!geoObjectIndex)
+    return false;
+  LOG(LINFO, ("Index was built."));
+  m_geoObjectMaintainer.SetIndex(std::move(*geoObjectIndex));
 
   AddBuildingsAndThingsWithHousesThenEnrichAllWithRegionAddresses(
       m_pathOutGeoObjectsKv, m_geoObjectMaintainer, m_pathInGeoObjectsTmpMwm, m_regionInfoLocater,
       m_verbose, m_threadsCount);
-
   LOG(LINFO, ("Geo objects with addresses were built."));
 
-  auto geoObjectIndex = geoObjectIndexFuture.get();
-
-  LOG(LINFO, ("Index was built."));
-
-  if (!geoObjectIndex)
-    return false;
-
-  m_geoObjectMaintainer.SetIndex(std::move(*geoObjectIndex));
-
   LOG(LINFO, ("Enrich address points with outer null building geometry."));
-
   NullBuildingsInfo const & buildingInfo = EnrichPointsWithOuterBuildingGeometry(
       m_geoObjectMaintainer, m_pathInGeoObjectsTmpMwm, m_threadsCount);
 
@@ -77,7 +72,6 @@ bool GeoObjectsGenerator::GenerateGeoObjectsPrivate()
 
   FilterAddresslessThanGaveTheirGeometryToInnerPoints(m_pathInGeoObjectsTmpMwm, buildingInfo,
                                                       m_threadsCount);
-
   LOG(LINFO, ("Addressless buildings with geometry we used for inner points were filtered"));
 
   LOG(LINFO, ("Geo objects without addresses were built."));
