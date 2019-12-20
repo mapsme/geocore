@@ -1,9 +1,9 @@
 #include "testing/testing.hpp"
 
 #include "indexer/cell_id.hpp"
-#include "indexer/locality_index.hpp"
-#include "indexer/locality_index_builder.hpp"
-#include "indexer/locality_object.hpp"
+#include "indexer/covering_index.hpp"
+#include "indexer/covering_index_builder.hpp"
+#include "indexer/covered_object.hpp"
 
 #include "coding/file_container.hpp"
 #include "coding/reader.hpp"
@@ -26,9 +26,9 @@ namespace
 template <class ObjectsVector, class Writer>
 void BuildGeoObjectsIndex(ObjectsVector const & objects, Writer && writer)
 {
-  indexer::GeoObjectsLocalityIndexBuilder indexBuilder;
+  indexer::GeoObjectsIndexBuilder indexBuilder;
 
-  covering::LocalitiesCovering objectsCovering;
+  covering::ObjectsCovering objectsCovering;
   for (auto const & object : objects)
     indexBuilder.Cover(object, objectsCovering);
 
@@ -39,8 +39,8 @@ void BuildGeoObjectsIndex(ObjectsVector const & objects, Writer && writer)
 using Ids = set<uint64_t>;
 using RankedIds = vector<uint64_t>;
 
-template <typename LocalityIndex>
-Ids GetIds(LocalityIndex const & index, m2::RectD const & rect)
+template <typename CoveringIndex>
+Ids GetIds(CoveringIndex const & index, m2::RectD const & rect)
 {
   Ids ids;
   index.ForEachInRect([&ids](base::GeoObjectId const & id) { ids.insert(id.GetEncodedId()); },
@@ -48,8 +48,8 @@ Ids GetIds(LocalityIndex const & index, m2::RectD const & rect)
   return ids;
 };
 
-template <typename LocalityIndex>
-RankedIds GetRankedIds(LocalityIndex const & index, m2::PointD const & center,
+template <typename CoveringIndex>
+RankedIds GetRankedIds(CoveringIndex const & index, m2::PointD const & center,
                        m2::PointD const & border, uint32_t topSize)
 {
   RankedIds ids;
@@ -59,9 +59,9 @@ RankedIds GetRankedIds(LocalityIndex const & index, m2::PointD const & center,
   return ids;
 };
 
-UNIT_TEST(BuildLocalityIndexTest)
+UNIT_TEST(BuildCoveringIndexTest)
 {
-  vector<LocalityObject> objects;
+  vector<CoveredObject> objects;
   objects.resize(4);
   objects[0].SetForTesting(1, m2::PointD{0, 0});
   objects[1].SetForTesting(2, m2::PointD{1, 0});
@@ -80,9 +80,9 @@ UNIT_TEST(BuildLocalityIndexTest)
   TEST_EQUAL(GetIds(index, m2::RectD{-0.5, -0.5, 1.5, 1.5}), (Ids{1, 2, 3, 4}), ());
 }
 
-UNIT_TEST(LocalityIndexRankTest)
+UNIT_TEST(CoveringIndexRankTest)
 {
-  vector<LocalityObject> objects;
+  vector<CoveredObject> objects;
   objects.resize(4);
   objects[0].SetForTesting(1, m2::PointD{1, 0});
   objects[1].SetForTesting(2, m2::PointD{2, 0});
@@ -112,9 +112,9 @@ UNIT_TEST(LocalityIndexRankTest)
              (vector<uint64_t>{3}), ());
 }
 
-UNIT_TEST(LocalityIndexTopSizeTest)
+UNIT_TEST(CoveringIndexTopSizeTest)
 {
-  vector<LocalityObject> objects;
+  vector<CoveredObject> objects;
   objects.resize(8);
   // Same cell.
   objects[0].SetForTesting(1, m2::PointD{1.0, 0.0});
@@ -175,12 +175,12 @@ UNIT_TEST(LocalityIndexTopSizeTest)
              8, ());
 }
 
-UNIT_TEST(LocalityIndexWeightRankTest)
+UNIT_TEST(CoveringIndexWeightRankTest)
 {
   m2::PointD queryPoint{0, 0};
   m2::PointD queryBorder{0, 2};
 
-  vector<LocalityObject> objects;
+  vector<CoveredObject> objects;
   objects.resize(7);
   // Enclose query point.
   objects[0].SetForTesting(1, m2::PointD{0, 0});

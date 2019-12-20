@@ -632,8 +632,8 @@ bool FeatureBuilder::PreSerializeAndRemoveUselessNamesForMwm(SupportingData cons
   return PreSerializeAndRemoveUselessNamesForIntermediate();
 }
 
-void FeatureBuilder::SerializeLocalityObject(serial::GeometryCodingParams const & params,
-                                             SupportingData & data) const
+void FeatureBuilder::SerializeCoveredObject(serial::GeometryCodingParams const & params,
+                                            SupportingData & data) const
 {
   data.m_buffer.clear();
 

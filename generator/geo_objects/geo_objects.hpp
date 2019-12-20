@@ -52,7 +52,7 @@ void AddPoisEnrichedWithHouseAddresses(GeoObjectMaintainer & geoObjectMaintainer
                                        NullBuildingsInfo const & buildingsInfo,
                                        std::string const & geoObjectKeyValuePath,
                                        std::string const & pathInGeoObjectsTmpMwm,
-                                       std::ostream & streamPoiIdsToAddToLocalityIndex,
+                                       std::ostream & streamPoiIdsToAddToCoveringIndex,
                                        bool verbose, unsigned int threadsCount);
 
 

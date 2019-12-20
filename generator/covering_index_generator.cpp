@@ -1,4 +1,4 @@
-#include "generator/locality_index_generator.hpp"
+#include "generator/covering_index_generator.hpp"
 
 #include "generator/data_version.hpp"
 #include "generator/geo_objects/geo_objects_filter.hpp"
@@ -6,9 +6,9 @@
 #include "generator/streets/streets_filter.hpp"
 #include "generator/utils.hpp"
 
+#include "indexer/covered_object.hpp"
+#include "indexer/covering_index_builder.hpp"
 #include "indexer/data_header.hpp"
-#include "indexer/locality_index_builder.hpp"
-#include "indexer/locality_object.hpp"
 #include "indexer/scales.hpp"
 
 #include "coding/file_container.hpp"
@@ -40,16 +40,16 @@ using namespace std;
 
 namespace generator
 {
-class LocalityObjectBuilder
+class CoveredObjectBuilder
 {
 public:
-  LocalityObjectBuilder()
+  CoveredObjectBuilder()
   {
     m_header.SetGeometryCodingParams(serial::GeometryCodingParams());
     m_header.SetScales({scales::GetUpperScale()});
   }
 
-  boost::optional<indexer::LocalityObject const &> operator()(FeatureBuilder & fb)
+  boost::optional<indexer::CoveredObject const &> operator()(FeatureBuilder & fb)
   {
     auto && geometryHolder = MakeGeometryHolder(fb);
     if (!geometryHolder)
@@ -57,20 +57,20 @@ public:
     auto & data = geometryHolder->GetBuffer();
 
     auto const encodedId = fb.GetMostGenericOsmId().GetEncodedId();
-    m_localityObject.SetId(encodedId);
+    m_coveredObject.SetId(encodedId);
 
     switch (fb.GetGeomType())
     {
     case GeomType::Point:
     {
       buffer_vector<m2::PointD, 32> points{fb.GetKeyPoint()};
-      m_localityObject.SetPoints(std::move(points));
+      m_coveredObject.SetPoints(std::move(points));
       break;
     }
     case GeomType::Line:
     {
       buffer_vector<m2::PointD, 32> points{data.m_innerPts.begin(), data.m_innerPts.end()};
-      m_localityObject.SetPoints(std::move(points));
+      m_coveredObject.SetPoints(std::move(points));
       break;
     }
     case GeomType::Area:
@@ -82,14 +82,14 @@ public:
 
       buffer_vector<m2::PointD, 32> triangles;
       serial::StripToTriangles(m_pointsBuffer.size(), m_pointsBuffer, triangles);
-      m_localityObject.SetTriangles(std::move(triangles));
+      m_coveredObject.SetTriangles(std::move(triangles));
       break;
     }
     default:
       UNREACHABLE();
     };
 
-    return {m_localityObject};
+    return {m_coveredObject};
   }
 
 private:
@@ -149,21 +149,21 @@ private:
   }
 
   DataHeader m_header;
-  indexer::LocalityObject m_localityObject;
+  indexer::CoveredObject m_coveredObject;
   buffer_vector<m2::PointD, 32> m_pointsBuffer;
 };
 
 template <typename FeatureFilter, typename IndexBuilder>
-bool GenerateLocalityIndex(
+bool GenerateCoveringIndex(
     std::string const & outPath, std::string const & featuresFile, FeatureFilter && featureFilter,
     IndexBuilder && indexBuilder, unsigned int threadsCount, uint64_t chunkFeaturesCount)
 {
-  std::list<covering::LocalitiesCovering> coveringsParts{};
+  std::list<covering::ObjectsCovering> coveringsParts{};
   auto makeProcessor = [&] {
     coveringsParts.emplace_back();
     auto & covering = coveringsParts.back();
 
-    LocalityObjectBuilder localityObjectBuilder;
+    CoveredObjectBuilder localityObjectBuilder;
     auto processor = [featureFilter, &indexBuilder, &covering, localityObjectBuilder]
                      (FeatureBuilder & fb, uint64_t /* currPos */) mutable
     {
@@ -183,17 +183,17 @@ bool GenerateLocalityIndex(
   LOG(LINFO, ("Finish features geometry covering"));
 
   LOG(LINFO, ("Merge geometry coverings..."));
-  covering::LocalitiesCovering localitiesCovering;
+  covering::ObjectsCovering objectsCovering;
   while (!coveringsParts.empty())
   {
     auto const & part = coveringsParts.back();
-    localitiesCovering.insert(localitiesCovering.end(), part.begin(), part.end());
+    objectsCovering.insert(objectsCovering.end(), part.begin(), part.end());
     coveringsParts.pop_back();
   }
   LOG(LINFO, ("Finish merging of geometry coverings"));
 
   LOG(LINFO, ("Build locality index..."));
-  if (!indexBuilder.BuildCoveringIndex(std::move(localitiesCovering), outPath))
+  if (!indexBuilder.BuildCoveringIndex(std::move(objectsCovering), outPath))
     return false;
   LOG(LINFO, ("Finish locality index building ", outPath));
 
@@ -237,8 +237,8 @@ bool GenerateRegionsIndex(std::string const & outPath, std::string const & featu
                           unsigned int threadsCount)
 {
   auto const featuresFilter = [](FeatureBuilder & fb) { return fb.IsArea(); };
-  indexer::RegionsLocalityIndexBuilder indexBuilder;
-  return GenerateLocalityIndex(outPath, featuresFile, featuresFilter, indexBuilder,
+  indexer::RegionsIndexBuilder indexBuilder;
+  return GenerateCoveringIndex(outPath, featuresFile, featuresFilter, indexBuilder,
                                threadsCount, 1 /* chunkFeaturesCount */);
 }
 
@@ -270,11 +270,11 @@ bool GenerateGeoObjectsIndex(
     return false;
   };
 
-  indexer::GeoObjectsLocalityIndexBuilder indexBuilder;
+  indexer::GeoObjectsIndexBuilder indexBuilder;
 
   if (!streetsFeaturesFile)
   {
-    return GenerateLocalityIndex(outPath, geoObjectsFeaturesFile, featuresFilter, indexBuilder,
+    return GenerateCoveringIndex(outPath, geoObjectsFeaturesFile, featuresFilter, indexBuilder,
                                  threadsCount, 10 /* chunkFeaturesCount */);
   }
 
@@ -286,7 +286,7 @@ bool GenerateGeoObjectsIndex(
   base::AppendFileToFile(geoObjectsFeaturesFile, featuresFile);
   base::AppendFileToFile(*streetsFeaturesFile, featuresFile);
 
-  return GenerateLocalityIndex(outPath, featuresFile, featuresFilter, indexBuilder,
+  return GenerateCoveringIndex(outPath, featuresFile, featuresFilter, indexBuilder,
                                threadsCount, 100 /* chunkFeaturesCount */);
 }
 

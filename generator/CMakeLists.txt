@@ -11,6 +11,8 @@ set(
   collector_interface.hpp
   collector_tag.cpp
   collector_tag.hpp
+  covering_index_generator.cpp
+  covering_index_generator.hpp
   data_version.cpp
   data_version.hpp
   dumper.cpp
@@ -58,8 +60,6 @@ set(
   key_value_concurrent_writer.hpp
   key_value_storage.cpp
   key_value_storage.hpp
-  locality_index_generator.cpp
-  locality_index_generator.hpp
   osm2meta.cpp
   osm2meta.hpp
   osm2type.cpp

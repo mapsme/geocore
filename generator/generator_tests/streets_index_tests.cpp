@@ -1,11 +1,11 @@
 #include "testing/testing.hpp"
 #include "generator/generator_tests/common.hpp"
 
+#include "generator/covering_index_generator.hpp"
 #include "generator/data_version.hpp"
 #include "generator/geo_objects/geo_objects.hpp"
-#include "generator/locality_index_generator.hpp"
 
-#include "indexer/locality_index.hpp"
+#include "indexer/covering_index.hpp"
 
 #include "base/assert.hpp"
 

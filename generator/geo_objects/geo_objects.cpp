@@ -1,9 +1,9 @@
+#include "generator/covering_index_generator.hpp"
 #include "generator/data_version.hpp"
 #include "generator/feature_builder.hpp"
 #include "generator/feature_generator.hpp"
 #include "generator/key_value_concurrent_writer.hpp"
 #include "generator/key_value_storage.hpp"
-#include "generator/locality_index_generator.hpp"
 
 #include "generator/geo_objects/geo_objects.hpp"
 #include "generator/geo_objects/geo_objects_filter.hpp"
@@ -12,7 +12,7 @@
 #include "generator/regions/region_base.hpp"
 
 #include "indexer/classificator.hpp"
-#include "indexer/locality_index.hpp"
+#include "indexer/covering_index.hpp"
 
 #include "coding/mmap_reader.hpp"
 
@@ -408,7 +408,7 @@ void AddPoisEnrichedWithHouseAddresses(GeoObjectMaintainer & geoObjectMaintainer
                                        NullBuildingsInfo const & buildingsInfo,
                                        std::string const & geoObjectKeyValuePath,
                                        std::string const & pathInGeoObjectsTmpMwm,
-                                       std::ostream & streamPoiIdsToAddToLocalityIndex,
+                                       std::ostream & streamPoiIdsToAddToCoveringIndex,
                                        bool /*verbose*/, unsigned int threadsCount)
 {
   std::atomic_size_t counter{0};
@@ -436,7 +436,7 @@ void AddPoisEnrichedWithHouseAddresses(GeoObjectMaintainer & geoObjectMaintainer
 
     std::lock_guard<std::mutex> lock(streamMutex);
     kvWriter.Write(id, JsonValue{std::move(jsonValue)});
-    streamPoiIdsToAddToLocalityIndex << id << "\n";
+    streamPoiIdsToAddToCoveringIndex << id << "\n";
   };
 
   ForEachParallelFromDatRawFormat(threadsCount, pathInGeoObjectsTmpMwm, concurrentTransformer);

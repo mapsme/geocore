@@ -14,19 +14,19 @@
 
 namespace indexer
 {
-// Class for intermediate objects used to build LocalityIndex.
-class LocalityObject
+// Class for intermediate objects used to build CoveringIndex.
+class CoveredObject
 {
 public:
-  LocalityObject() = default;
+  CoveredObject() = default;
 
-  // Decodes id stored in LocalityIndex. See GetStoredId().
+  // Decodes id stored in CoveringIndex. See GetStoredId().
   static base::GeoObjectId FromStoredId(uint64_t storedId)
   {
     return base::GeoObjectId(storedId >> 2 | storedId << 62);
   }
 
-  // We need LocalityIndex object id to be at most numeric_limits<int64_t>::max().
+  // We need CoveringIndex object id to be at most numeric_limits<int64_t>::max().
   // We use incremental encoding for ids and need to keep ids of close object close if it is possible.
   // To ensure it we move two leading bits which encodes object type to the end of id.
   uint64_t GetStoredId() const { return m_id << 2 | m_id >> 62; }

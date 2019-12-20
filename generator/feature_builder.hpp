@@ -193,8 +193,8 @@ public:
   void DeserializeAccuratelyFromIntermediate(Buffer & data);
 
   bool PreSerializeAndRemoveUselessNamesForMwm(SupportingData const & data);
-  void SerializeLocalityObject(serial::GeometryCodingParams const & params,
-                               SupportingData & data) const;
+  void SerializeCoveredObject(serial::GeometryCodingParams const & params,
+                              SupportingData & data) const;
   void SerializeForMwm(SupportingData & data, serial::GeometryCodingParams const & params) const;
 
   // Get common parameters of feature.

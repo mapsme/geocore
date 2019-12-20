@@ -1,7 +1,7 @@
 #include "indexer/feature_covering.hpp"
 
+#include "indexer/covered_object.hpp"
 #include "indexer/feature.hpp"
-#include "indexer/locality_object.hpp"
 
 #include "geometry/covering_utils.hpp"
 
@@ -150,7 +150,7 @@ vector<int64_t> CoverIntersection(FeatureIntersector<DEPTH_LEVELS> const & fIsec
 }
 
 template <int DEPTH_LEVELS>
-vector<int64_t> CoverLocality(indexer::LocalityObject const & o, int cellDepth)
+vector<int64_t> Cover(indexer::CoveredObject const & o, int cellDepth)
 {
   FeatureIntersector<DEPTH_LEVELS> fIsect;
   o.ForEachPoint(fIsect);
@@ -168,14 +168,14 @@ vector<int64_t> CoverFeature(FeatureType & f, int cellDepth, uint64_t cellPenalt
   return CoverIntersection(fIsect, cellDepth, cellPenaltyArea);
 }
 
-vector<int64_t> CoverGeoObject(indexer::LocalityObject const & o, int cellDepth)
+vector<int64_t> CoverGeoObject(indexer::CoveredObject const & o, int cellDepth)
 {
-  return CoverLocality<kGeoObjectsDepthLevels>(o, cellDepth);
+  return Cover<kGeoObjectsDepthLevels>(o, cellDepth);
 }
 
-vector<int64_t> CoverRegion(indexer::LocalityObject const & o, int cellDepth)
+vector<int64_t> CoverRegion(indexer::CoveredObject const & o, int cellDepth)
 {
-  return CoverLocality<kRegionsDepthLevels>(o, cellDepth);
+  return Cover<kRegionsDepthLevels>(o, cellDepth);
 }
 
 void SortAndMergeIntervals(Intervals v, Intervals & res)
