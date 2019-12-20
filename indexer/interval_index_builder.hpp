@@ -6,6 +6,7 @@
 #include "coding/endianness.hpp"
 #include "coding/varint.hpp"
 #include "coding/write_to_sink.hpp"
+#include "coding/writer.hpp"
 
 #include "base/assert.hpp"
 #include "base/base.hpp"
@@ -64,8 +65,6 @@ public:
   template <class Writer, typename CellIdValueIter>
   void BuildIndex(Writer & writer, CellIdValueIter const & beg, CellIdValueIter const & end)
   {
-    CHECK(CheckIntervalIndexInputSequence(beg, end), ());
-
     if (beg == end)
     {
       IntervalIndexBase::Header header;
@@ -77,24 +76,29 @@ public:
       return;
     }
 
+    m_levelsAssembly.clear();
+    for (int i = 0; i <= static_cast<int>(m_Levels); ++i)
+      m_levelsAssembly.emplace_back(*this, i);
+
     uint64_t const initialPos = writer.Pos();
     WriteZeroesToSink(writer, sizeof(IntervalIndexBase::Header));
     WriteZeroesToSink(writer, (m_version == IntervalIndexVersion::V1 ? 4 : 8) * (m_Levels + 2));
     uint64_t const afterHeaderPos = writer.Pos();
 
     std::vector<uint64_t> levelOffset;
+
+    levelOffset.push_back(writer.Pos());
+    BuildAllLevels(writer, beg, end);
+    levelOffset.push_back(writer.Pos());
+
+    // Write levels.
+    for (int i = 1; i <= static_cast<int>(m_Levels); ++i)
     {
-      std::vector<uint64_t> offsets;
+      auto const & levelAssembly = m_levelsAssembly[i];
+      auto const & levelData = levelAssembly.GetLevelData();
+      writer.Write(levelData.data(), levelData.size());
+
       levelOffset.push_back(writer.Pos());
-      BuildLeaves(writer, beg, end, offsets);
-      levelOffset.push_back(writer.Pos());
-      for (int i = 1; i <= static_cast<int>(m_Levels); ++i)
-      {
-        std::vector<uint64_t> nextOffsets;
-        BuildLevel(writer, beg, end, i, &offsets[0], &offsets[0] + offsets.size(), nextOffsets);
-        nextOffsets.swap(offsets);
-        levelOffset.push_back(writer.Pos());
-      }
     }
 
     uint64_t const lastPos = writer.Pos();
@@ -127,47 +131,6 @@ public:
     writer.Seek(lastPos);
   }
 
-  template <typename CellIdValueIter>
-  bool CheckIntervalIndexInputSequence(CellIdValueIter const & beg, CellIdValueIter const & end)
-  {
-    // Check that [beg, end) is sorted and log most populous cell.
-    if (beg != end)
-    {
-      uint64_t count = 0;
-      uint64_t maxCount = 0;
-      typename CellIdValueIter::value_type mostPopulousCell = *beg;
-      CellIdValueIter it = beg;
-      uint64_t prev = it->GetCell();
-      for (++it; it != end; ++it)
-      {
-        CHECK_GREATER(it->GetCell(), 0, ());
-        CHECK_LESS_OR_EQUAL(prev, it->GetCell(), ());
-        count = (prev == it->GetCell() ? count + 1 : 0);
-        if (count > maxCount)
-        {
-          maxCount = count;
-          mostPopulousCell = *it;
-        }
-        prev = it->GetCell();
-      }
-      if (maxCount > 0)
-      {
-        LOG(LINFO, ("Most populous cell:", maxCount, mostPopulousCell.GetCell(),
-                    mostPopulousCell.GetValue()));
-      }
-    }
-
-    uint32_t const keyBits = 8 * m_LeafBytes + m_Levels * m_BitsPerLevel;
-    for (CellIdValueIter it = beg; it != end; ++it)
-    {
-      CHECK_LESS(it->GetCell(), 1ULL << keyBits, ());
-      // We use static_cast<int64_t>(value) in BuildLeaves to store values difference as VarInt.
-      CHECK_LESS_OR_EQUAL(it->GetValue(), static_cast<uint64_t>(std::numeric_limits<int64_t>::max()), ());
-    }
-
-    return true;
-  }
-
   template <class SinkT>
   uint64_t WriteNode(SinkT & sink, uint64_t offset, uint64_t * childSizes)
   {
@@ -189,72 +152,6 @@ public:
       ASSERT_EQUAL(listSerial.size(), static_cast<uint32_t>(listSerial.size()), ());
       return listSerial.size();
     }
-  }
-
-  template <class Writer, typename CellIdValueIter>
-  void BuildLevel(Writer & writer, CellIdValueIter const & beg, CellIdValueIter const & end,
-                  int level, uint64_t const * childSizesBeg, uint64_t const * childSizesEnd,
-                  std::vector<uint64_t> & sizes)
-  {
-    UNUSED_VALUE(childSizesEnd);
-    ASSERT_GREATER(level, 0, ());
-    uint32_t const skipBits = m_LeafBytes * 8 + (level - 1) * m_BitsPerLevel;
-    std::vector<uint64_t> expandedSizes(1 << m_BitsPerLevel);
-    uint64_t prevKey = static_cast<uint64_t>(-1);
-    uint64_t childOffset = 0;
-    uint64_t nextChildOffset = 0;
-    for (CellIdValueIter it = beg; it != end; ++it)
-    {
-      uint64_t const key = it->GetCell() >> skipBits;
-      if (key == prevKey)
-        continue;
-
-      if (it != beg && (key >> m_BitsPerLevel) != (prevKey >> m_BitsPerLevel))
-      {
-        sizes.push_back(WriteNode(writer, childOffset, &expandedSizes[0]));
-        childOffset = nextChildOffset;
-        expandedSizes.assign(expandedSizes.size(), 0);
-      }
-
-      nextChildOffset += *childSizesBeg;
-      CHECK_EQUAL(expandedSizes[key & m_LastBitsMask], 0, ());
-      expandedSizes[key & m_LastBitsMask] = *childSizesBeg;
-      ++childSizesBeg;
-      prevKey = key;
-    }
-    sizes.push_back(WriteNode(writer, childOffset, &expandedSizes[0]));
-    ASSERT_EQUAL(childSizesBeg, childSizesEnd, ());
-  }
-
-  template <class Writer, typename CellIdValueIter>
-  void BuildLeaves(Writer & writer, CellIdValueIter const & beg, CellIdValueIter const & end,
-                   std::vector<uint64_t> & sizes)
-  {
-    using Value = typename CellIdValueIter::value_type::ValueType;
-
-    uint32_t const skipBits = 8 * m_LeafBytes;
-    uint64_t prevKey = 0;
-    uint64_t prevValue = 0;
-    uint64_t prevPos = writer.Pos();
-    for (CellIdValueIter it = beg; it != end; ++it)
-    {
-      uint64_t const key = it->GetCell();
-      Value const value = it->GetValue();
-      if (key == prevKey && value == prevValue)
-        continue;
-      if (it != beg && (key >> skipBits) != (prevKey >> skipBits))
-      {
-        sizes.push_back(writer.Pos() - prevPos);
-        prevValue = 0;
-        prevPos = writer.Pos();
-      }
-      uint64_t const keySerial = SwapIfBigEndianMacroBased(key);
-      writer.Write(&keySerial, m_LeafBytes);
-      WriteVarInt(writer, static_cast<int64_t>(value) - static_cast<int64_t>(prevValue));
-      prevKey = key;
-      prevValue = value;
-    }
-    sizes.push_back(writer.Pos() - prevPos);
   }
 
   template <class SinkT>
@@ -314,8 +211,111 @@ public:
   }
 
 private:
+  class LevelAssembly
+  {
+  public:
+    LevelAssembly(IntervalIndexBuilder & indexBuilder, int level)
+      : m_indexBuilder{indexBuilder}
+      , m_level{level}
+      , m_expandedSizes(1 << indexBuilder.m_BitsPerLevel)
+    { }
+
+    void NewChildNode(uint64_t childNodeKey, uint64_t childNodeSize, bool last = false)
+    {
+      CHECK(childNodeKey != m_prevChildNodeKey, ());
+
+      auto const bitsPerLevel = m_indexBuilder.m_BitsPerLevel;
+      if ((childNodeKey >> bitsPerLevel) != (m_prevChildNodeKey >> bitsPerLevel) &&
+          m_nextChildOffset)
+      {
+        auto nodeSize = m_indexBuilder.WriteNode(m_writer, m_childOffset, &m_expandedSizes[0]);
+        m_indexBuilder.NewNode(m_level, m_prevChildNodeKey >> bitsPerLevel, nodeSize);
+
+        m_childOffset = m_nextChildOffset;
+        m_expandedSizes.assign(m_expandedSizes.size(), 0);
+      }
+
+      m_nextChildOffset += childNodeSize;
+      auto const lastBitsMask = m_indexBuilder.m_LastBitsMask;
+      CHECK_EQUAL(m_expandedSizes[childNodeKey & lastBitsMask], 0, ());
+      m_expandedSizes[childNodeKey & lastBitsMask] = childNodeSize;
+      m_prevChildNodeKey = childNodeKey;
+
+      if (last)
+      {
+        auto nodeSize = m_indexBuilder.WriteNode(m_writer, m_childOffset, &m_expandedSizes[0]);
+        m_indexBuilder.NewNode(m_level, childNodeKey >> bitsPerLevel, nodeSize, true /* last */);
+      }
+    }
+
+    std::vector<char> const & GetLevelData() const
+    {
+      return *m_buffer;
+    }
+
+  private:
+    IntervalIndexBuilder & m_indexBuilder;
+    int m_level;
+    uint64_t m_prevChildNodeKey = std::numeric_limits<uint64_t>::max();
+    uint64_t m_childOffset{0};
+    uint64_t m_nextChildOffset{0};
+    std::vector<uint64_t> m_expandedSizes;
+    // |m_buffer| are allocated because of reference to buffer must be fixed for |m_writer|.
+    std::unique_ptr<std::vector<char>> m_buffer = std::make_unique<std::vector<char>>();
+    MemWriter<std::vector<char>> m_writer{*m_buffer};
+  };
+
+  void NewNode(int nodeLevel, uint64_t nodeKey, uint64_t nodeSize, bool last = false)
+  {
+    if (nodeLevel == static_cast<int>(m_Levels))
+      return;
+
+    m_levelsAssembly[nodeLevel + 1].NewChildNode(nodeKey, nodeSize, last);
+  }
+
+  template <class Writer, typename CellIdValueIter>
+  void BuildAllLevels(Writer & writer, CellIdValueIter const & beg, CellIdValueIter const & end)
+  {
+    using Value = typename CellIdValueIter::value_type::ValueType;
+
+    uint32_t const keyBits = 8 * m_LeafBytes + m_Levels * m_BitsPerLevel;
+    uint32_t const skipBits = 8 * m_LeafBytes;
+    uint64_t prevKey = 0;
+    uint64_t prevValue = 0;
+    uint64_t prevPos = writer.Pos();
+    for (CellIdValueIter it = beg; it != end; ++it)
+    {
+      uint64_t const key = it->GetCell();
+      CHECK_GREATER(key, 0, ());
+      CHECK_LESS(key, 1ULL << keyBits, ());
+      CHECK_GREATER_OR_EQUAL(key, prevKey, ());
+
+      Value const value = it->GetValue();
+      if (key == prevKey && value == prevValue)
+        continue;
+
+      if ((key >> skipBits) != (prevKey >> skipBits) && prevKey)
+      {
+        auto const nodeSize = writer.Pos() - prevPos;
+        NewNode(0 /* nodeLevel */, prevKey >> skipBits, nodeSize);
+
+        prevValue = 0;
+        prevPos = writer.Pos();
+      }
+      uint64_t const keySerial = SwapIfBigEndianMacroBased(key);
+      writer.Write(&keySerial, m_LeafBytes);
+      WriteVarInt(writer, static_cast<int64_t>(value) - static_cast<int64_t>(prevValue));
+      prevKey = key;
+      prevValue = value;
+    }
+
+    auto const nodeSize = writer.Pos() - prevPos;
+    NewNode(0 /* nodeLevel */, prevKey >> skipBits, nodeSize, true /* last */);
+  }
+
   IntervalIndexVersion m_version;
   uint32_t m_Levels, m_BitsPerLevel, m_LeafBytes, m_LastBitsMask;
+  std::vector<LevelAssembly> m_levelsAssembly;
 };
 
 template <class Writer, typename CellIdValueIter>
