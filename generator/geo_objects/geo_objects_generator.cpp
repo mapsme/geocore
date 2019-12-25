@@ -64,10 +64,9 @@ bool GeoObjectsGenerator::GenerateGeoObjectsPrivate()
   NullBuildingsInfo const & buildingInfo = EnrichPointsWithOuterBuildingGeometry(
       m_geoObjectMaintainer, m_pathInGeoObjectsTmpMwm, m_threadsCount);
 
-  std::ofstream streamPoiIdsToAddToLocalityIndex(m_pathOutPoiIdsToAddToCoveringIndex);
   AddPoisEnrichedWithHouseAddresses(m_geoObjectMaintainer, buildingInfo,
                                     m_pathOutGeoObjectsKv, m_pathInGeoObjectsTmpMwm,
-                                    streamPoiIdsToAddToLocalityIndex,
+                                    m_pathOutPoiIdsToAddToCoveringIndex,
                                     m_verbose, m_threadsCount);
 
   LOG(LINFO, ("Geo objects without addresses were built."));
