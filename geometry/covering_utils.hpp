@@ -78,18 +78,18 @@ template <class CellId, class CellIdContainerT, typename IntersectF>
 void CoverObject(IntersectF const & intersect, uint64_t cellPenaltyArea, CellIdContainerT & out,
                  int cellDepth, CellId cell)
 {
-  if (cell.Level() == cellDepth - 1)
-  {
-    out.push_back(cell);
-    return;
-  }
-
   uint64_t const cellArea = std::pow(uint64_t(1 << (cellDepth - 1 - cell.Level())), 2);
   CellObjectIntersection const intersection = intersect(cell);
 
   if (intersection == CELL_OBJECT_NO_INTERSECTION)
     return;
   if (intersection == CELL_INSIDE_OBJECT || cellPenaltyArea >= cellArea)
+  {
+    out.push_back(cell);
+    return;
+  }
+
+  if (cell.Level() == cellDepth - 1)
   {
     out.push_back(cell);
     return;

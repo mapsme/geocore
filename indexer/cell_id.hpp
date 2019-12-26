@@ -11,11 +11,11 @@
 
 using RectId = m2::CellId<19>;
 
-// 24 is enough to have cell size < 2.5m * 2.5m for world.
-constexpr int kGeoObjectsDepthLevels = 24;
+// 23 is enough to have cell size < 10m * 10m for world.
+constexpr int kGeoObjectsDepthLevels = 23;
 
-// Cell size < 40m * 40m for world is good for regions.
-constexpr int kRegionsDepthLevels = 20;
+// Cell size < 150m * 150m for world is good for regions.
+constexpr int kRegionsDepthLevels = 19;
 
 template <typename Bounds, typename CellId>
 class CellIdConverter
