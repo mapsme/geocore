@@ -12,12 +12,14 @@
 
 #include "base/geo_object_id.hpp"
 
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <mutex>
 #include <ostream>
 #include <stdint.h>
 #include <string>
+#include <vector>
 #include <unordered_map>
 
 #include <boost/optional.hpp>
@@ -54,8 +56,28 @@ private:
     StringUtf8Multilang m_name;
     StreetGeometry m_geometry;
   };
+
   using RegionStreets = std::unordered_map<std::string, Street>;
 
+  struct RegionsArena
+  {
+    std::unordered_map<uint64_t, RegionStreets> m_regions;
+    std::mutex m_updateMutex;
+
+    Street & InsertStreet(uint64_t regionId, std::string && streetName,
+                          StringUtf8Multilang const & multilangName);
+  };
+
+  struct FeaturesArena
+  {
+    std::unordered_multimap<base::GeoObjectId, Street const *> m_streetFeatures2Streets;
+    std::mutex m_updateMutex;
+  };
+
+  RegionsArena & GetRegionsArena(uint64_t regionsId);
+  RegionsArena const & GetRegionsArena(uint64_t regionId) const;
+  FeaturesArena & GetFeaturesArena(base::GeoObjectId const & osmId);
+  FeaturesArena const & GetFeaturesArena(base::GeoObjectId const & osmId) const;
   void WriteAsAggregatedStreet(feature::FeatureBuilder & fb, Street const & street,
                                feature::FeaturesCollector & collector) const;
 
@@ -70,19 +92,19 @@ private:
                         StringUtf8Multilang const & multiLangName);
   boost::optional<KeyValue> FindStreetRegionOwner(m2::PointD const & point,
                                                   bool needLocality = false);
-  Street & InsertStreet(uint64_t regionId, std::string && streetName,
-                        StringUtf8Multilang const & multilangName);
   base::JSONPtr MakeStreetValue(uint64_t regionId, JsonValue const & regionObject,
                                 const StringUtf8Multilang & streetName, m2::RectD const & bbox,
                                 m2::PointD const & pinPoint);
   base::GeoObjectId NextOsmSurrogateId();
 
-  std::unordered_map<uint64_t, RegionStreets> m_regions;
-  std::unordered_multimap<base::GeoObjectId, Street const *> m_streetFeatures2Streets;
+  static unsigned int GetArenasCount(unsigned int threadsCount);
+
+  std::vector<RegionsArena> m_regionsArenas;
+  std::vector<FeaturesArena> m_featuresArenas;
+
   RegionFinder m_regionFinder;
-  uint64_t m_osmSurrogateCounter{0};
+  std::atomic<uint64_t> m_osmSurrogateCounter{0};
   unsigned int m_threadsCount;
-  std::mutex m_updateMutex;
 };
 }  // namespace streets
 }  // namespace generator
