@@ -28,7 +28,10 @@ namespace streets
 {
 StreetsBuilder::StreetsBuilder(RegionFinder const & regionFinder,
                                unsigned int threadsCount)
-  : m_regionFinder{regionFinder}, m_threadsCount{threadsCount}
+  : m_regionsArenas(GetArenasCount(threadsCount))
+  , m_featuresArenas{GetArenasCount(threadsCount)}
+  , m_regionFinder{regionFinder}
+  , m_threadsCount{threadsCount}
 {
 }
 
@@ -70,8 +73,10 @@ void StreetsBuilder::RegenerateAggregatedStreetsFeatures(
 
   std::set<Street const *> processedStreets;
   auto const transform = [&](FeatureBuilder & fb, uint64_t /* currPos */) {
-    auto street = m_streetFeatures2Streets.find(fb.GetMostGenericOsmId());
-    if (street == m_streetFeatures2Streets.end())
+    auto const osmId = fb.GetMostGenericOsmId();
+    auto const & featuresArena = GetFeaturesArena(osmId);
+    auto street = featuresArena.m_streetFeatures2Streets.find(osmId);
+    if (street == featuresArena.m_streetFeatures2Streets.end())
         return;
 
     if (!processedStreets.insert(street->second).second)
@@ -131,11 +136,14 @@ void StreetsBuilder::WriteAsAggregatedStreet(FeatureBuilder & fb, Street const &
 void StreetsBuilder::SaveStreetsKv(RegionGetter const & regionGetter,
                                    std::ostream & streamStreetsKv)
 {
-  for (auto const & region : m_regions)
+  for (auto const & regionsArena : m_regionsArenas)
   {
-    auto const & regionObject = regionGetter(region.first);
-    CHECK(regionObject, ());
-    SaveRegionStreetsKv(region.second, region.first, *regionObject, streamStreetsKv);
+    for (auto const & region : regionsArena.m_regions)
+    {
+      auto const & regionObject = regionGetter(region.first);
+      CHECK(regionObject, ());
+      SaveRegionStreetsKv(region.second, region.first, *regionObject, streamStreetsKv);
+    }
   }
 }
 
@@ -174,17 +182,30 @@ void StreetsBuilder::AddStreetHighway(FeatureBuilder & fb)
   };
   StreetRegionsTracing regionsTracing(fb.GetOuterGeometry(), streetRegionInfoGetter);
 
-  std::lock_guard<std::mutex> lock{m_updateMutex};
-
   auto && pathSegments = regionsTracing.StealPathSegments();
   for (auto & segment : pathSegments)
   {
     auto && region = segment.m_region;
-    auto & street = InsertStreet(region.first, fb.GetName(), fb.GetMultilangName());
-    auto const osmId = pathSegments.size() == 1 ? fb.GetMostGenericOsmId() : NextOsmSurrogateId();
-    street.m_geometry.AddHighwayLine(osmId, std::move(segment.m_path));
 
-    m_streetFeatures2Streets.emplace(fb.GetMostGenericOsmId(), &street);
+    auto const osmId = fb.GetMostGenericOsmId();
+    auto const streetId = pathSegments.size() == 1 ? osmId : NextOsmSurrogateId();
+    Street const * featureStreetPtr = nullptr;
+
+    {
+      auto & regionsArena = GetRegionsArena(region.first);
+      std::lock_guard<std::mutex> lock{regionsArena.m_updateMutex};
+
+      auto & street = regionsArena.InsertStreet(region.first, fb.GetName(), fb.GetMultilangName());
+      street.m_geometry.AddHighwayLine(streetId, std::move(segment.m_path));
+      featureStreetPtr = &street;
+    }
+
+    {
+      auto & featuresArena = GetFeaturesArena(osmId);
+      std::lock_guard<std::mutex> lock{featuresArena.m_updateMutex};
+
+      featuresArena.m_streetFeatures2Streets.emplace(osmId, featureStreetPtr);
+    }
   }
 }
 
@@ -194,13 +215,24 @@ void StreetsBuilder::AddStreetArea(FeatureBuilder & fb)
   if (!region)
     return;
 
-  std::lock_guard<std::mutex> lock{m_updateMutex};
+  auto const osmId = fb.GetMostGenericOsmId();
+  Street const * featureStreetPtr = nullptr;
 
-  auto & street = InsertStreet(region->first, fb.GetName(), fb.GetMultilangName());
-  auto osmId = fb.GetMostGenericOsmId();
-  street.m_geometry.AddHighwayArea(osmId, fb.GetOuterGeometry());
+  {
+    auto & regionsArena = GetRegionsArena(region->first);
+    std::lock_guard<std::mutex> lock{regionsArena.m_updateMutex};
 
-  m_streetFeatures2Streets.emplace(osmId, &street);
+    auto & street = regionsArena.InsertStreet(region->first, fb.GetName(), fb.GetMultilangName());
+    street.m_geometry.AddHighwayArea(osmId, fb.GetOuterGeometry());
+    featureStreetPtr = &street;
+  }
+
+  {
+    auto & featuresArena = GetFeaturesArena(osmId);
+    std::lock_guard<std::mutex> lock{featuresArena.m_updateMutex};
+
+    featuresArena.m_streetFeatures2Streets.emplace(osmId, featureStreetPtr);
+  }
 }
 
 void StreetsBuilder::AddStreetPoint(FeatureBuilder & fb)
@@ -209,13 +241,24 @@ void StreetsBuilder::AddStreetPoint(FeatureBuilder & fb)
   if (!region)
     return;
 
-  std::lock_guard<std::mutex> lock{m_updateMutex};
+  auto const osmId = fb.GetMostGenericOsmId();
+  Street const * featureStreetPtr = nullptr;
 
-  auto osmId = fb.GetMostGenericOsmId();
-  auto & street = InsertStreet(region->first, fb.GetName(), fb.GetMultilangName());
-  street.m_geometry.SetPin({fb.GetKeyPoint(), osmId});
+  {
+    auto & regionsArena = GetRegionsArena(region->first);
+    std::lock_guard<std::mutex> lock{regionsArena.m_updateMutex};
 
-  m_streetFeatures2Streets.emplace(osmId, &street);
+    auto & street = regionsArena.InsertStreet(region->first, fb.GetName(), fb.GetMultilangName());
+    street.m_geometry.SetPin({fb.GetKeyPoint(), osmId});
+    featureStreetPtr = &street;
+  }
+
+  {
+    auto & featuresArena = GetFeaturesArena(osmId);
+    std::lock_guard<std::mutex> lock{featuresArena.m_updateMutex};
+
+    featuresArena.m_streetFeatures2Streets.emplace(osmId, featureStreetPtr);
+  }
 }
 
 void StreetsBuilder::AddStreetBinding(std::string && streetName, FeatureBuilder & fb,
@@ -225,10 +268,36 @@ void StreetsBuilder::AddStreetBinding(std::string && streetName, FeatureBuilder 
   if (!region)
     return;
 
-  std::lock_guard<std::mutex> lock{m_updateMutex};
+  auto const osmId = NextOsmSurrogateId();
 
-  auto & street = InsertStreet(region->first, std::move(streetName), multiLangName);
-  street.m_geometry.AddBinding(NextOsmSurrogateId(), fb.GetKeyPoint());
+  {
+    auto & regionsArena = GetRegionsArena(region->first);
+    std::lock_guard<std::mutex> lock{regionsArena.m_updateMutex};
+
+    auto & street = regionsArena.InsertStreet(region->first, std::move(streetName), multiLangName);
+    street.m_geometry.AddBinding(osmId, fb.GetKeyPoint());
+  }
+}
+
+StreetsBuilder::RegionsArena & StreetsBuilder::GetRegionsArena(uint64_t regionId)
+{
+  return m_regionsArenas[std::hash<uint64_t>{}(regionId) % m_regionsArenas.size()];
+}
+
+StreetsBuilder::RegionsArena const & StreetsBuilder::GetRegionsArena(uint64_t regionId) const
+{
+  return m_regionsArenas[std::hash<uint64_t>{}(regionId) % m_regionsArenas.size()];
+}
+
+StreetsBuilder::FeaturesArena & StreetsBuilder::GetFeaturesArena(base::GeoObjectId const & osmId)
+{
+  return m_featuresArenas[std::hash<base::GeoObjectId>{}(osmId) % m_featuresArenas.size()];
+}
+
+StreetsBuilder::FeaturesArena const & StreetsBuilder::GetFeaturesArena(
+    base::GeoObjectId const & osmId) const
+{
+  return m_featuresArenas[std::hash<base::GeoObjectId>{}(osmId) % m_featuresArenas.size()];
 }
 
 boost::optional<KeyValue> StreetsBuilder::FindStreetRegionOwner(m2::PointD const & point,
@@ -265,8 +334,8 @@ StringUtf8Multilang MergeNames(const StringUtf8Multilang & first,
   return result;
 }
 
-StreetsBuilder::Street & StreetsBuilder::InsertStreet(uint64_t regionId, std::string && streetName,
-                                                      StringUtf8Multilang const & multilangName)
+StreetsBuilder::Street & StreetsBuilder::RegionsArena::InsertStreet(
+    uint64_t regionId, std::string && streetName, StringUtf8Multilang const & multilangName)
 {
   auto & regionStreets = m_regions[regionId];
   StreetsBuilder::Street & street = regionStreets[std::move(streetName)];
@@ -310,7 +379,8 @@ base::JSONPtr StreetsBuilder::MakeStreetValue(uint64_t regionId, JsonValue const
 
 base::GeoObjectId StreetsBuilder::NextOsmSurrogateId()
 {
-  return base::GeoObjectId{base::GeoObjectId::Type::OsmSurrogate, ++m_osmSurrogateCounter};
+  auto id = m_osmSurrogateCounter.fetch_add(1, std::memory_order_relaxed);
+  return base::GeoObjectId{base::GeoObjectId::Type::OsmSurrogate, id};
 }
 
 // static
@@ -343,6 +413,14 @@ bool StreetsBuilder::IsStreet(FeatureBuilder const & fb)
     return true;
 
   return false;
+}
+
+// static
+unsigned int StreetsBuilder::GetArenasCount(unsigned int threadsCount)
+{
+  // N ^ 2 arenas to minimize concurrency of each thread (of N threads)
+  // with any N - 1 other threads.
+  return threadsCount * threadsCount;
 }
 }  // namespace streets
 }  // namespace generator
