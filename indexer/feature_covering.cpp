@@ -125,9 +125,9 @@ void GetIntersection(FeatureType & f, FeatureIntersector<DEPTH_LEVELS> & fIsect)
         f.GetLimitRect(scale).IsValid(), (f.DebugString(scale)));
 }
 
-template <int DEPTH_LEVELS>
-vector<int64_t> CoverIntersection(FeatureIntersector<DEPTH_LEVELS> const & fIsect, int cellDepth,
-                                  uint64_t cellPenaltyArea)
+template <int DEPTH_LEVELS, typename Cover>
+vector<int64_t> CoverIntersection(
+    Cover && cover, FeatureIntersector<DEPTH_LEVELS> const & fIsect, int cellDepth)
 {
   if (fIsect.m_trg.empty() && fIsect.m_polyline.size() == 1)
   {
@@ -138,9 +138,7 @@ vector<int64_t> CoverIntersection(FeatureIntersector<DEPTH_LEVELS> const & fIsec
                .ToInt64(cellDepth));
   }
 
-  vector<m2::CellId<DEPTH_LEVELS>> cells;
-  covering::CoverObject(fIsect, cellPenaltyArea, cells, cellDepth,
-                        m2::CellId<DEPTH_LEVELS>::Root());
+  auto && cells = cover(fIsect, cellDepth);
 
   vector<int64_t> res(cells.size());
   for (size_t i = 0; i < cells.size(); ++i)
@@ -150,12 +148,48 @@ vector<int64_t> CoverIntersection(FeatureIntersector<DEPTH_LEVELS> const & fIsec
 }
 
 template <int DEPTH_LEVELS>
+vector<int64_t> CoverIntersection(
+    FeatureIntersector<DEPTH_LEVELS> const & fIsect, int cellDepth, uint64_t cellPenaltyArea)
+{
+  auto cover = [cellPenaltyArea] (auto const & intersect, int cellDepth) {
+    vector<m2::CellId<DEPTH_LEVELS>> cells;
+    covering::CoverObject(intersect, cellPenaltyArea, cells, cellDepth,
+                          m2::CellId<DEPTH_LEVELS>::Root());
+    return cells;
+  };
+
+  return CoverIntersection(cover, fIsect, cellDepth);
+}
+
+template <int DEPTH_LEVELS>
+vector<int64_t> CoverIntersection(
+    FeatureIntersector<DEPTH_LEVELS> const & fIsect, int cellDepth,
+    base::thread_pool::computational::ThreadPool & threadPool)
+{
+  auto cover = [&] (auto const & intersect, int cellDepth) {
+    return covering::CoverObject<m2::CellId<DEPTH_LEVELS>>(intersect, cellDepth, threadPool);
+  };
+
+  return CoverIntersection(cover, fIsect, cellDepth);
+}
+
+template <int DEPTH_LEVELS>
 vector<int64_t> Cover(indexer::CoveredObject const & o, int cellDepth)
 {
   FeatureIntersector<DEPTH_LEVELS> fIsect;
   o.ForEachPoint(fIsect);
   o.ForEachTriangle(fIsect);
   return CoverIntersection(fIsect, cellDepth, 0 /* cellPenaltyArea */);
+}
+
+template <int DEPTH_LEVELS>
+vector<int64_t> Cover(indexer::CoveredObject const & o, int cellDepth,
+                      base::thread_pool::computational::ThreadPool & threadPool)
+{
+  FeatureIntersector<DEPTH_LEVELS> fIsect;
+  o.ForEachPoint(fIsect);
+  o.ForEachTriangle(fIsect);
+  return CoverIntersection(fIsect, cellDepth, threadPool);
 }
 }  // namespace
 
@@ -173,9 +207,10 @@ vector<int64_t> CoverGeoObject(indexer::CoveredObject const & o, int cellDepth)
   return Cover<kGeoObjectsDepthLevels>(o, cellDepth);
 }
 
-vector<int64_t> CoverRegion(indexer::CoveredObject const & o, int cellDepth)
+vector<int64_t> CoverRegion(indexer::CoveredObject const & o, int cellDepth,
+                            base::thread_pool::computational::ThreadPool & threadPool)
 {
-  return Cover<kRegionsDepthLevels>(o, cellDepth);
+  return Cover<kRegionsDepthLevels>(o, cellDepth, threadPool);
 }
 
 void SortAndMergeIntervals(Intervals v, Intervals & res)

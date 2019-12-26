@@ -107,7 +107,8 @@ public:
   template <typename F, typename... Args>
   void PerformParallelWorks(F && func, size_t workersCountHint)
   {
-    size_t const workersCount = std::min(std::max(size_t{1}, workersCountHint), Size());
+    size_t const workersCount = std::min(std::max(1u, static_cast<unsigned int>(workersCountHint)),
+                                         Size());
 
     std::vector<std::future<void>> workers{};
     workers.reserve(workersCount);
@@ -143,7 +144,7 @@ public:
     m_joiner.Join();
   }
 
-  size_t Size() const noexcept { return m_threads.size(); }
+  unsigned int Size() const noexcept { return static_cast<unsigned int>(m_threads.size()); }
 
 private:
   void Worker()
