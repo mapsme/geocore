@@ -11,6 +11,7 @@
 #include "geometry/rect2d.hpp"
 
 #include "base/logging.hpp"
+#include "base/thread_pool_computational.hpp"
 
 #include <cstdint>
 #include <set>
@@ -32,7 +33,8 @@ typedef std::vector<Interval> Intervals;
 // Cover feature with RectIds and return their integer representations.
 std::vector<int64_t> CoverFeature(FeatureType & feature, int cellDepth, uint64_t cellPenaltyArea);
 
-std::vector<int64_t> CoverRegion(indexer::CoveredObject const & o, int cellDepth);
+std::vector<int64_t> CoverRegion(indexer::CoveredObject const & o, int cellDepth,
+                                 base::thread_pool::computational::ThreadPool & threadPool);
 std::vector<int64_t> CoverGeoObject(indexer::CoveredObject const & o, int cellDepth);
 
 // Given a vector of intervals [a, b), sort them and merge overlapping intervals.

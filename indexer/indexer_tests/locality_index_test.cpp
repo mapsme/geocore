@@ -26,7 +26,8 @@ namespace
 template <class ObjectsVector, class Writer>
 void BuildGeoObjectsIndex(ObjectsVector const & objects, Writer && writer)
 {
-  indexer::GeoObjectsIndexBuilder indexBuilder;
+  base::thread_pool::computational::ThreadPool threadPool{1};
+  indexer::GeoObjectsIndexBuilder indexBuilder{threadPool};
 
   covering::ObjectsCovering objectsCovering;
   for (auto const & object : objects)

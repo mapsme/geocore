@@ -9,6 +9,7 @@
 #include "base/buffer_vector.hpp"
 #include "base/logging.hpp"
 #include "base/math.hpp"
+#include "base/thread_pool_computational.hpp"
 
 #include <cmath>
 #include <cstddef>
@@ -116,4 +117,146 @@ void CoverObject(IntersectF const & intersect, uint64_t cellPenaltyArea, CellIdC
       out.push_back(subdiv[i]);
   }
 }
+
+// ObjectCoverer -----------------------------------------------------------------------------------
+template <typename CellId, typename IntersectionInspector>
+class ObjectCoverer
+{
+public:
+  ObjectCoverer(IntersectionInspector const & intersectionInspector, int cellDepth,
+                base::thread_pool::computational::ThreadPool & threadPool)
+    : m_intersectionInspector{intersectionInspector}
+    , m_cellDepth{cellDepth}
+    , m_threadPool{threadPool}
+  { }
+
+  std::vector<CellId> Cover() const
+  {
+    std::vector<CellId> result;
+
+    auto covering = std::vector<ObjectCovering>{{result, CellId::Root(), {}}};
+    Cover(0, covering);
+
+    return result;
+  }
+
+private:
+  struct ObjectCovering
+  {
+    std::vector<CellId> & m_out;
+    CellId m_cell;
+    std::vector<CellId> m_subCells;
+  };
+
+  void Cover(int level, std::vector<ObjectCovering> & levelCovering) const
+  {
+    auto const uptoLevel = m_cellDepth - 1;
+    if (level < uptoLevel)
+      CoverBySubCells(level, levelCovering);
+
+    ForwardLevelCoveringToOut(level, levelCovering);
+  }
+
+  void ForwardLevelCoveringToOut(int level, std::vector<ObjectCovering> & levelCovering) const
+  {
+    for (auto & cellCovering : levelCovering)
+    {
+      auto & out = cellCovering.m_out;
+
+      auto const & subCells = cellCovering.m_subCells;
+
+      bool allSubcellsAreChildren =
+        std::all_of(subCells.begin(), subCells.end(),
+                    [level](auto const & subCell) { return subCell.Level() + 1 == level; });
+
+      if (subCells.empty())
+        out.push_back(cellCovering.m_cell);
+      else if (allSubcellsAreChildren && subCells.size() == 4)
+        out.push_back(cellCovering.m_cell);
+      else
+        out.insert(out.end(), subCells.begin(), subCells.end());
+    }
+  }
+
+  void CoverBySubCells(int level, std::vector<ObjectCovering> & levelCovering) const
+  {
+    if (level == m_parallelingLevel && levelCovering.size() / m_tasksPerThread > 1)
+      CoverParallelBySubCells(level, levelCovering);
+    else
+      CoverSequencedBySubCells(level, levelCovering.begin(), levelCovering.end());
+  }
+
+  void CoverParallelBySubCells(int level, std::vector<ObjectCovering> & levelCovering) const
+  {
+    std::atomic_size_t unprocessedIndex{0};
+    auto processor = [&]() {
+      while (true)
+      {
+        auto const i = unprocessedIndex++;
+        if (i >= levelCovering.size())
+          return;
+
+        CoverSequencedBySubCells(level, levelCovering.begin() + i, levelCovering.begin() + i + 1);
+      }
+    };
+
+    auto const tasksCount = levelCovering.size() / m_tasksPerThread;
+    m_threadPool.PerformParallelWorks(processor, tasksCount);
+  }
+
+  void CoverSequencedBySubCells(int level, auto levelCoveringBegin, auto levelCoveringEnd) const
+  {
+    auto const childrenLevel = level + 1;
+
+    auto childrenLevelCovering = std::vector<ObjectCovering>{};
+    childrenLevelCovering.reserve(std::distance(levelCoveringBegin, levelCoveringEnd));
+    for (auto cellCovering = levelCoveringBegin; cellCovering != levelCoveringEnd; ++cellCovering)
+    {
+      auto & cell = cellCovering->m_cell;
+      auto & subCells = cellCovering->m_subCells;
+
+      for (uint8_t i = 0; i < 4; ++i)
+      {
+        auto childCell = cell.Child(i);
+
+        CellObjectIntersection const intersection = m_intersectionInspector(childCell);
+
+        if (intersection == CELL_OBJECT_NO_INTERSECTION)
+          continue;
+
+        if (intersection == CELL_INSIDE_OBJECT)
+        {
+          subCells.push_back(childCell);
+          continue;
+        }
+
+        if (childrenLevel == m_cellDepth - 1)
+          subCells.push_back(childCell);
+        else
+          childrenLevelCovering.push_back({subCells, childCell, {}});
+      }
+    }
+
+    if (!childrenLevelCovering.empty())
+      Cover(childrenLevel, childrenLevelCovering);
+  }
+
+  IntersectionInspector const & m_intersectionInspector;
+  int m_cellDepth;
+  base::thread_pool::computational::ThreadPool & m_threadPool;
+  // |m_parallelingLevel| is checking level for parallelization.
+  // This level has 87380 subcells (~100'000) and let this number is task unit complexity.
+  int const m_parallelingLevel{m_cellDepth - std::min(m_cellDepth, 9)};
+  unsigned const m_tasksPerThread = 10;  // ~1'000'000  == 10 * ~100'000 (see |m_parallelingLevel|)
+};
+
+template <class CellId, typename IntersectF>
+std::vector<CellId> CoverObject(
+    IntersectF const & intersect, int cellDepth,
+    base::thread_pool::computational::ThreadPool & threadPool)
+{
+  ObjectCoverer<CellId, IntersectF> coverer{intersect, cellDepth, threadPool};
+  return coverer.Cover();
+}
+
 }  // namespace covering

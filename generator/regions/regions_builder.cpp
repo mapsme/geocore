@@ -174,7 +174,7 @@ std::list<RegionsBuilder::ParentChildPairs> RegionsBuilder::FindParentChildPairs
 {
   constexpr auto nodesCountPerTask = 1000;
   auto const tasksCount = std::min(std::max(size_t{1}, nodes.size() / nodesCountPerTask),
-                                   m_taskProcessingThreadPool.Size());
+                                   size_t{m_taskProcessingThreadPool.Size()});
 
   CHECK(!nodes.empty(), ());
   std::atomic_size_t unprocessedIndex{1};

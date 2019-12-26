@@ -233,9 +233,9 @@ bool GenerateRegionsIndex(std::string const & outPath, std::string const & featu
                           unsigned int threadsCount)
 {
   base::thread_pool::computational::ThreadPool threadPool{threadsCount};
-  auto const featuresFilter = [](FeatureBuilder & fb) { return fb.IsArea(); };
-  indexer::RegionsIndexBuilder indexBuilder;
+  indexer::RegionsIndexBuilder indexBuilder{threadPool};
 
+  auto const featuresFilter = [](FeatureBuilder & fb) { return fb.IsArea(); };
   covering::ObjectsCovering objectsCovering;
   CoverFeatures(featuresFile, featuresFilter, indexBuilder, threadsCount,
                 1 /* chunkFeaturesCount */, threadPool, objectsCovering);
@@ -255,7 +255,7 @@ bool GenerateGeoObjectsIndex(
 {
   base::thread_pool::computational::ThreadPool threadPool{threadsCount};
   covering::ObjectsCovering objectsCovering;
-  indexer::GeoObjectsIndexBuilder indexBuilder;
+  indexer::GeoObjectsIndexBuilder indexBuilder{threadPool};
 
   set<uint64_t> nodeIds;
   if (nodesFile && !ParseNodes(*nodesFile, nodeIds))

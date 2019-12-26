@@ -12,6 +12,7 @@
 #include "base/logging.hpp"
 #include "base/macros.hpp"
 #include "base/scope_guard.hpp"
+#include "base/thread_pool_computational.hpp"
 
 #include "defines.hpp"
 
@@ -34,13 +35,17 @@ template <typename BuilderSpec>
 class CoveringIndexBuilder
 {
 public:
+  CoveringIndexBuilder(base::thread_pool::computational::ThreadPool & threadPool)
+    : m_threadPool{threadPool}
+  { }
+
   void Cover(CoveredObject const & coveredObject, covering::ObjectsCovering & covering) const
   {
     static auto const cellDepth =
         covering::GetCodingDepth<BuilderSpec::kDepthLevels>(scales::GetUpperScale());
 
     auto const id = coveredObject.GetStoredId();
-    auto && cells = m_builderSpec.Cover(coveredObject, cellDepth);
+    auto && cells = m_builderSpec.Cover(coveredObject, cellDepth, m_threadPool);
     for (auto const & cell : cells)
       covering.emplace_back(cell, id);
   }
@@ -83,6 +88,7 @@ public:
 
 private:
   BuilderSpec m_builderSpec;
+  base::thread_pool::computational::ThreadPool & m_threadPool;
 };
 
 struct RegionsIndexBuilderSpec
@@ -90,9 +96,10 @@ struct RegionsIndexBuilderSpec
   static constexpr int kDepthLevels = kRegionsDepthLevels;
   static constexpr auto const & kIndexFileTag = REGIONS_INDEX_FILE_TAG;
 
-  std::vector<int64_t> Cover(indexer::CoveredObject const & o, int cellDepth) const
+  std::vector<int64_t> Cover(indexer::CoveredObject const & o, int cellDepth,
+                             base::thread_pool::computational::ThreadPool & threadPool) const
   {
-    return covering::CoverRegion(o, cellDepth);
+    return covering::CoverRegion(o, cellDepth, threadPool);
   }
 };
 
@@ -101,7 +108,8 @@ struct GeoObjectsIndexBuilderSpec
   static constexpr int kDepthLevels = kGeoObjectsDepthLevels;
   static constexpr auto const & kIndexFileTag = GEO_OBJECTS_INDEX_FILE_TAG;
 
-  std::vector<int64_t> Cover(indexer::CoveredObject const & o, int cellDepth) const
+  std::vector<int64_t> Cover(indexer::CoveredObject const & o, int cellDepth,
+                             base::thread_pool::computational::ThreadPool & /* threadPool */) const
   {
     return covering::CoverGeoObject(o, cellDepth);
   }
