@@ -17,6 +17,7 @@
 #include <thread>
 #include <vector>
 
+#include <boost/filesystem.hpp>
 #include <boost/iostreams/device/mapped_file.hpp>
 
 namespace serial
@@ -352,7 +353,11 @@ private:
 template <class SerializationPolicy = serialization_policy::MinSize, class Handler>
 void ForEachFromDatRawFormat(std::string const & filename, Handler && handler)
 {
+  // It is not possible to map a file of zero size.
+  if (!boost::filesystem::file_size(filename))
+    return;
   auto && featuresMmap = FeaturesFileMmap{filename};
+
   featuresMmap.ForEachTaskChunk<SerializationPolicy>(
       0 /* taskIndex */, 1 /* taskCount*/, 1 /* chunkSize */, std::forward<Handler>(handler));
 }
@@ -367,7 +372,11 @@ void ProcessParallelFromDatRawFormat(unsigned int threadsCount, uint64_t chunkSi
   if (threadsCount == 0 || threadsCount == 1)
     return ForEachFromDatRawFormat<SerializationPolicy>(filename, processorMaker());
 
+  // It is not possible to map a file of zero size.
+  if (!boost::filesystem::file_size(filename))
+    return;
   auto && featuresMmap = FeaturesFileMmap{filename};
+
   auto && threads = std::vector<std::thread>{};
   for (unsigned int i = 0; i < threadsCount; ++i)
   {

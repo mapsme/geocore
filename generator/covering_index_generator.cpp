@@ -154,9 +154,10 @@ private:
 };
 
 template <typename FeatureFilter, typename IndexBuilder>
-bool GenerateCoveringIndex(
-    std::string const & outPath, std::string const & featuresFile, FeatureFilter && featureFilter,
-    IndexBuilder && indexBuilder, unsigned int threadsCount, uint64_t chunkFeaturesCount)
+void CoverFeatures(
+    std::string const & featuresFile, FeatureFilter && featureFilter,
+    IndexBuilder && indexBuilder, unsigned int threadsCount, uint64_t chunkFeaturesCount,
+    covering::ObjectsCovering & objectsCovering)
 {
   std::list<covering::ObjectsCovering> coveringsParts{};
   auto makeProcessor = [&] {
@@ -180,24 +181,16 @@ bool GenerateCoveringIndex(
   LOG(LINFO, ("Geometry cover features..."));
   feature::ProcessParallelFromDatRawFormat(
       threadsCount, chunkFeaturesCount, featuresFile, makeProcessor);
-  LOG(LINFO, ("Finish features geometry covering"));
+  LOG(LINFO, ("Finish features geometry covering from", featuresFile));
 
   LOG(LINFO, ("Merge geometry coverings..."));
-  covering::ObjectsCovering objectsCovering;
   while (!coveringsParts.empty())
   {
     auto const & part = coveringsParts.back();
     objectsCovering.insert(objectsCovering.end(), part.begin(), part.end());
     coveringsParts.pop_back();
   }
-  LOG(LINFO, ("Finish merging of geometry coverings"));
-
-  LOG(LINFO, ("Build locality index..."));
-  if (!indexBuilder.BuildCoveringIndex(std::move(objectsCovering), outPath))
-    return false;
-  LOG(LINFO, ("Finish locality index building ", outPath));
-
-  return true;
+  LOG(LINFO, ("Finish merging of geometry coverings of features from ", featuresFile));
 }
 
 namespace
@@ -238,8 +231,15 @@ bool GenerateRegionsIndex(std::string const & outPath, std::string const & featu
 {
   auto const featuresFilter = [](FeatureBuilder & fb) { return fb.IsArea(); };
   indexer::RegionsIndexBuilder indexBuilder;
-  return GenerateCoveringIndex(outPath, featuresFile, featuresFilter, indexBuilder,
-                               threadsCount, 1 /* chunkFeaturesCount */);
+  covering::ObjectsCovering objectsCovering;
+  CoverFeatures(featuresFile, featuresFilter, indexBuilder, threadsCount,
+                1 /* chunkFeaturesCount */, objectsCovering);
+
+  LOG(LINFO, ("Build locality index..."));
+  if (!indexBuilder.BuildCoveringIndex(std::move(objectsCovering), outPath))
+    return false;
+  LOG(LINFO, ("Finish locality index building", outPath));
+  return true;
 }
 
 bool GenerateGeoObjectsIndex(
@@ -248,46 +248,44 @@ bool GenerateGeoObjectsIndex(
     boost::optional<std::string> const & nodesFile,
     boost::optional<std::string> const & streetsFeaturesFile)
 {
+  covering::ObjectsCovering objectsCovering;
+  indexer::GeoObjectsIndexBuilder indexBuilder;
+
   set<uint64_t> nodeIds;
   if (nodesFile && !ParseNodes(*nodesFile, nodeIds))
     return false;
 
-  bool const allowStreet = bool{streetsFeaturesFile};
-  bool const allowPoi = !nodeIds.empty();
-  auto const featuresFilter = [&nodeIds, allowStreet, allowPoi](FeatureBuilder & fb) {
+  auto const geoObjectsFilter = [&nodeIds](FeatureBuilder & fb) {
     using generator::geo_objects::GeoObjectsFilter;
-    using generator::streets::StreetsFilter;
 
     if (GeoObjectsFilter::IsBuilding(fb) || GeoObjectsFilter::HasHouse(fb))
       return true;
 
-    if (allowStreet && StreetsFilter::IsStreet(fb))
-      return true;
-
-    if (allowPoi && GeoObjectsFilter::IsPoi(fb))
-      return 0 != nodeIds.count(fb.GetMostGenericOsmId().GetEncodedId());
+    if (GeoObjectsFilter::IsPoi(fb))
+      return nodeIds.count(fb.GetMostGenericOsmId().GetEncodedId()) != 0;
 
     return false;
   };
 
-  indexer::GeoObjectsIndexBuilder indexBuilder;
+  CoverFeatures(geoObjectsFeaturesFile, geoObjectsFilter, indexBuilder, threadsCount,
+                10 /* chunkFeaturesCount */, objectsCovering);
 
-  if (!streetsFeaturesFile)
+  if (streetsFeaturesFile)
   {
-    return GenerateCoveringIndex(outPath, geoObjectsFeaturesFile, featuresFilter, indexBuilder,
-                                 threadsCount, 10 /* chunkFeaturesCount */);
+    auto const streetsFilter = [](FeatureBuilder & fb) {
+      using generator::streets::StreetsFilter;
+      return StreetsFilter::IsStreet(fb);
+    };
+
+    CoverFeatures(*streetsFeaturesFile, streetsFilter, indexBuilder, threadsCount,
+                  1 /* chunkFeaturesCount */, objectsCovering);
   }
 
-  auto const featuresDirectory = base::GetDirectory(geoObjectsFeaturesFile);
-  auto const featuresFile = base::JoinPath(
-      featuresDirectory, std::string{"geo_objects_and_streets"} + DATA_FILE_EXTENSION_TMP);
-  SCOPE_GUARD(featuresFileGuard, std::bind(Platform::RemoveFileIfExists, featuresFile));
-
-  base::AppendFileToFile(geoObjectsFeaturesFile, featuresFile);
-  base::AppendFileToFile(*streetsFeaturesFile, featuresFile);
-
-  return GenerateCoveringIndex(outPath, featuresFile, featuresFilter, indexBuilder,
-                               threadsCount, 100 /* chunkFeaturesCount */);
+  LOG(LINFO, ("Build objects index..."));
+  if (!indexBuilder.BuildCoveringIndex(std::move(objectsCovering), outPath))
+    return false;
+  LOG(LINFO, ("Finish objects index building", outPath));
+  return true;
 }
 
 // BordersCollector --------------------------------------------------------------------------------
