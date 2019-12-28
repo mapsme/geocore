@@ -7,12 +7,13 @@
 #include "base/base.hpp"
 #include "base/math.hpp"
 #include "base/stl_helpers.hpp"
+#include "base/thread_pool_computational.hpp"
 
 #include <iterator>
 #include <limits>
 
 template <typename IsVisibleF>
-bool FindSingleStripForIndex(size_t i, size_t n, IsVisibleF isVisible)
+bool FindSingleStripForIndex(size_t i, size_t n, IsVisibleF && isVisible)
 {
   // Searching for a strip only in a single direction, because the opposite direction
   // is traversed from the last vertex of the possible strip.
@@ -35,15 +36,48 @@ bool FindSingleStripForIndex(size_t i, size_t n, IsVisibleF isVisible)
 
 // If polygon with n vertices is a single strip, return the start index of the strip or n otherwise.
 template <typename IsVisibleF>
-size_t FindSingleStrip(size_t n, IsVisibleF isVisible)
+size_t FindSingleStrip(size_t n, IsVisibleF && isVisible)
 {
   for (size_t i = 0; i < n; ++i)
   {
     if (FindSingleStripForIndex(i, n, isVisible))
       return i;
   }
-
   return n;
+}
+
+// If polygon with n vertices is a single strip, return the start index of the strip or n otherwise.
+template <typename IsVisibleF>
+size_t FindSingleStrip(size_t n, IsVisibleF && isVisible,
+                       base::thread_pool::computational::ThreadPool & threadPool)
+{
+  size_t const & tasksCount = n * n * n / 100'000'000;
+  if (tasksCount <= 1)
+    return FindSingleStrip(n, isVisible);
+
+  // Try to find instantly.
+  if (FindSingleStripForIndex(0, n, isVisible))
+    return 0;
+
+  std::atomic_size_t foundIndex{0};
+  std::atomic_size_t unprocessedIndex{1};
+  auto find = [n, &isVisible, &foundIndex, &unprocessedIndex]() {
+    while (foundIndex)
+    {
+      auto const i = unprocessedIndex++;
+      if (i >= n)
+        return;
+
+      if (FindSingleStripForIndex(i, n, isVisible))
+        foundIndex = i;
+    }
+  };
+
+  size_t const tasksPerWorker = 10;
+  size_t const workersCount = std::max(size_t{2}, tasksCount / tasksPerWorker);
+  threadPool.PerformParallelWorks(find, workersCount);
+
+  return foundIndex ? foundIndex.load() : n;
 }
 
 #ifdef DEBUG

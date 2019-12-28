@@ -11,6 +11,8 @@
 
 #include "indexer/data_header.hpp"
 
+#include "base/thread_pool_computational.hpp"
+
 #include <cstdint>
 #include <functional>
 #include <limits>
@@ -80,6 +82,30 @@ public:
 
   bool TryToMakeStrip(Points & points)
   {
+    auto singleStripFinder = [](Points & points) {
+      auto visiblityInspector =
+          IsDiagonalVisibleFunctor<Points::const_iterator>(points.begin(), points.end());
+      return FindSingleStrip(points.size(), visiblityInspector);
+    };
+
+    return TryToMakeSingleStrip(points, singleStripFinder);
+  }
+
+  bool TryToMakeStrip(Points & points,
+                      base::thread_pool::computational::ThreadPool & threadPool)
+  {
+    auto singleStripFinder = [&threadPool](Points & points) {
+      auto visiblityInspector =
+          IsDiagonalVisibleFunctor<Points::const_iterator>(points.begin(), points.end());
+      return FindSingleStrip(points.size(), visiblityInspector, threadPool);
+    };
+
+    return TryToMakeSingleStrip(points, singleStripFinder);
+  }
+
+  template <typename SingleStripFinder>
+  bool TryToMakeSingleStrip(Points & points, SingleStripFinder && singleStripFinder)
+  {
     size_t const count = points.size();
     if (!m_trgInner || (count >= 2 && count - 2 > m_maxNumTriangles))
     {
@@ -109,9 +135,7 @@ public:
         return false;
     }
 
-    size_t const index = FindSingleStrip(
-        count, IsDiagonalVisibleFunctor<Points::const_iterator>(points.begin(), points.end()));
-
+    size_t const index = singleStripFinder(points);
     if (index == count)
     {
       // can't find strip
@@ -124,7 +148,6 @@ public:
     CHECK_EQUAL(count, m_buffer.m_innerTrg.size(), ());
     return true;
   }
-
 
 private:
   class StripEmitter

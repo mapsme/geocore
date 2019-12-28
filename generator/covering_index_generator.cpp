@@ -23,7 +23,7 @@
 #include "base/logging.hpp"
 #include "base/scope_guard.hpp"
 #include "base/string_utils.hpp"
-#include "base/thread_utils.hpp"
+#include "base/thread_pool_computational.hpp"
 #include "base/timer.hpp"
 
 #include "defines.hpp"
@@ -43,7 +43,8 @@ namespace generator
 class CoveredObjectBuilder
 {
 public:
-  CoveredObjectBuilder()
+  CoveredObjectBuilder(base::thread_pool::computational::ThreadPool & threadPool)
+    : m_threadPool(threadPool)
   {
     m_header.SetGeometryCodingParams(serial::GeometryCodingParams());
     m_header.SetScales({scales::GetUpperScale()});
@@ -125,7 +126,7 @@ private:
 
       if (points.size() > 2)
       {
-        if (!holder.TryToMakeStrip(points))
+        if (!holder.TryToMakeStrip(points, m_threadPool))
         {
           m2::ConvexHull hull(points, 1e-16);
           vector<m2::PointD> hullPoints = hull.Points();
@@ -151,12 +152,14 @@ private:
   DataHeader m_header;
   indexer::CoveredObject m_coveredObject;
   buffer_vector<m2::PointD, 32> m_pointsBuffer;
+  base::thread_pool::computational::ThreadPool & m_threadPool;
 };
 
 template <typename FeatureFilter, typename IndexBuilder>
 void CoverFeatures(
     std::string const & featuresFile, FeatureFilter && featureFilter,
     IndexBuilder && indexBuilder, unsigned int threadsCount, uint64_t chunkFeaturesCount,
+    base::thread_pool::computational::ThreadPool & threadPool,
     covering::ObjectsCovering & objectsCovering)
 {
   std::list<covering::ObjectsCovering> coveringsParts{};
@@ -164,7 +167,7 @@ void CoverFeatures(
     coveringsParts.emplace_back();
     auto & covering = coveringsParts.back();
 
-    CoveredObjectBuilder localityObjectBuilder;
+    CoveredObjectBuilder localityObjectBuilder{threadPool};
     auto processor = [featureFilter, &indexBuilder, &covering, localityObjectBuilder]
                      (FeatureBuilder & fb, uint64_t /* currPos */) mutable
     {
@@ -229,11 +232,13 @@ bool ParseNodes(string nodesFile, set<uint64_t> & nodeIds)
 bool GenerateRegionsIndex(std::string const & outPath, std::string const & featuresFile,
                           unsigned int threadsCount)
 {
+  base::thread_pool::computational::ThreadPool threadPool{threadsCount};
   auto const featuresFilter = [](FeatureBuilder & fb) { return fb.IsArea(); };
   indexer::RegionsIndexBuilder indexBuilder;
+
   covering::ObjectsCovering objectsCovering;
   CoverFeatures(featuresFile, featuresFilter, indexBuilder, threadsCount,
-                1 /* chunkFeaturesCount */, objectsCovering);
+                1 /* chunkFeaturesCount */, threadPool, objectsCovering);
 
   LOG(LINFO, ("Build locality index..."));
   if (!indexBuilder.BuildCoveringIndex(std::move(objectsCovering), outPath))
@@ -248,6 +253,7 @@ bool GenerateGeoObjectsIndex(
     boost::optional<std::string> const & nodesFile,
     boost::optional<std::string> const & streetsFeaturesFile)
 {
+  base::thread_pool::computational::ThreadPool threadPool{threadsCount};
   covering::ObjectsCovering objectsCovering;
   indexer::GeoObjectsIndexBuilder indexBuilder;
 
@@ -268,7 +274,7 @@ bool GenerateGeoObjectsIndex(
   };
 
   CoverFeatures(geoObjectsFeaturesFile, geoObjectsFilter, indexBuilder, threadsCount,
-                10 /* chunkFeaturesCount */, objectsCovering);
+                10 /* chunkFeaturesCount */, threadPool, objectsCovering);
 
   if (streetsFeaturesFile)
   {
@@ -278,7 +284,7 @@ bool GenerateGeoObjectsIndex(
     };
 
     CoverFeatures(*streetsFeaturesFile, streetsFilter, indexBuilder, threadsCount,
-                  1 /* chunkFeaturesCount */, objectsCovering);
+                  1 /* chunkFeaturesCount */, threadPool, objectsCovering);
   }
 
   LOG(LINFO, ("Build objects index..."));
