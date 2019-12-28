@@ -9,6 +9,7 @@
 #include <memory>
 #include <queue>
 #include <thread>
+#include <vector>
 
 namespace base
 {
@@ -98,6 +99,23 @@ public:
       m_queue.emplace(std::move(f));
     }
     m_condition.notify_one();
+  }
+
+  // Submit min(|workersCountHint|, Size()) tasks and wait completions.
+  // func - task to be performed.
+  // Warning: If the thread pool is stopped then the call will be ignored.
+  template <typename F, typename... Args>
+  void PerformParallelWorks(F && func, size_t workersCountHint)
+  {
+    size_t const workersCount = std::min(std::max(size_t{1}, workersCountHint), Size());
+
+    std::vector<std::future<void>> workers{};
+    workers.reserve(workersCount);
+    for (size_t i = 0; i < workersCount; ++i)
+      workers.push_back(Submit(func));
+
+    for (auto & worker : workers)
+      worker.wait();
   }
 
   // Stop a ThreadPool.
