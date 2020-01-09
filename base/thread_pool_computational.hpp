@@ -125,6 +125,8 @@ public:
     m_joiner.Join();
   }
 
+  size_t Size() const noexcept { return m_threads.size(); }
+
 private:
   void Worker()
   {

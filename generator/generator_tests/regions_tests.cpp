@@ -123,7 +123,8 @@ std::vector<std::string> GenerateTestRegions(std::vector<OsmElementData> const &
   RegionInfo collector(filename);
   BuildTestData(testData, regions, placePointsMap, collector);
 
-  RegionsBuilder builder(std::move(regions), std::move(placePointsMap));
+  base::thread_pool::computational::ThreadPool threadsPool{1};
+  RegionsBuilder builder(std::move(regions), std::move(placePointsMap), threadsPool);
   std::vector<std::string> kvRegions;
   builder.ForEachCountry([&](std::string const & /*name*/, Node::PtrList const & outers) {
     for (auto const & tree : outers)
@@ -292,7 +293,8 @@ UNIT_TEST(RegionsBuilderTest_GetCountryNames)
   auto const filename = MakeCollectorData();
   SCOPE_GUARD(removeCollectorFile, std::bind(Platform::RemoveFileIfExists, std::cref(filename)));
   RegionInfo collector(filename);
-  RegionsBuilder builder(MakeTestDataSet1(collector), {} /* placePointsMap */);
+  base::thread_pool::computational::ThreadPool threadsPool{1};
+  RegionsBuilder builder(MakeTestDataSet1(collector), {} /* placePointsMap */, threadsPool);
   auto const & countryNames = builder.GetCountryInternationalNames();
   TEST_EQUAL(countryNames.size(), 2, ());
   TEST(std::count(std::begin(countryNames), std::end(countryNames), "Country_1"), ());
@@ -304,7 +306,8 @@ UNIT_TEST(RegionsBuilderTest_GetCountries)
   auto const filename = MakeCollectorData();
   SCOPE_GUARD(removeCollectorFile, std::bind(Platform::RemoveFileIfExists, std::cref(filename)));
   RegionInfo collector(filename);
-  RegionsBuilder builder(MakeTestDataSet1(collector), {} /* placePointsMap */);
+  base::thread_pool::computational::ThreadPool threadsPool{1};
+  RegionsBuilder builder(MakeTestDataSet1(collector), {} /* placePointsMap */, threadsPool);
   auto const & countries = builder.GetCountriesOuters();
   TEST_EQUAL(countries.size(), 3, ());
   size_t countries1 = std::count_if(std::begin(countries), std::end(countries),
@@ -322,7 +325,8 @@ UNIT_TEST(RegionsBuilderTest_GetCountryTrees)
   SCOPE_GUARD(removeCollectorFile, std::bind(Platform::RemoveFileIfExists, std::cref(filename)));
   RegionInfo collector(filename);
   std::vector<std::string> bankOfNames;
-  RegionsBuilder builder(MakeTestDataSet1(collector), {} /* placePointsMap */);
+  base::thread_pool::computational::ThreadPool threadsPool{1};
+  RegionsBuilder builder(MakeTestDataSet1(collector), {} /* placePointsMap */, threadsPool);
   builder.ForEachCountry([&](std::string const & /*name*/, Node::PtrList const & outers) {
     for (auto const & tree : outers)
     {

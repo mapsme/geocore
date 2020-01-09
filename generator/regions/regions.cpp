@@ -43,6 +43,8 @@ public:
                    bool verbose, unsigned int threadsCount)
     : m_pathRegionsTmpMwm{pathRegionsTmpMwm}
     , m_pathOutRegionsKv{pathOutRegionsKv}
+    , m_threadsCount{threadsCount}
+    , m_taskProcessingThreadPool{threadsCount}
     , m_verbose{verbose}
     , m_regionsInfoCollector{pathInRegionsCollector}
     , m_regionsKv{pathOutRegionsKv, std::ofstream::out}
@@ -54,7 +56,8 @@ public:
     PlacePointsMap placePointsMap;
     std::tie(regions, placePointsMap) =
         ReadDatasetFromTmpMwm(m_pathRegionsTmpMwm, m_regionsInfoCollector);
-    RegionsBuilder builder{std::move(regions), std::move(placePointsMap), threadsCount};
+    RegionsBuilder builder{
+        std::move(regions), std::move(placePointsMap), m_taskProcessingThreadPool};
 
     GenerateRegions(builder);
     LOG(LINFO, ("Finish generating regions.", timer.ElapsedSeconds(), "seconds."));
@@ -338,6 +341,9 @@ private:
 
   std::string m_pathRegionsTmpMwm;
   std::string m_pathOutRegionsKv;
+
+  unsigned int m_threadsCount{1};
+  base::thread_pool::computational::ThreadPool mutable m_taskProcessingThreadPool;
 
   bool m_verbose{false};
 

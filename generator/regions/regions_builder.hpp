@@ -5,7 +5,10 @@
 #include "generator/regions/node.hpp"
 #include "generator/regions/region.hpp"
 
+#include "base/thread_pool_computational.hpp"
+
 #include <functional>
+#include <list>
 #include <map>
 #include <memory>
 #include <string>
@@ -26,8 +29,9 @@ public:
   using StringsList = std::vector<std::string>;
   using CountryFn = std::function<void(std::string const &, Node::PtrList const &)>;
 
-  explicit RegionsBuilder(Regions && regions, PlacePointsMap && placePointsMap,
-                          unsigned int threadsCount = 1);
+  explicit RegionsBuilder(
+      Regions && regions, PlacePointsMap && placePointsMap,
+      base::thread_pool::computational::ThreadPool & taskProcessingThreadPool);
 
   Regions const & GetCountriesOuters() const;
   StringsList GetCountryInternationalNames() const;
@@ -42,6 +46,8 @@ public:
 
 private:
   static constexpr double kAreaRelativeErrorPercent = 0.1;
+
+  using ParentChildPairs = std::vector<std::pair<Node::Ptr, Node::Ptr>>;
 
   void MoveLabelPlacePoints(PlacePointsMap & placePointsMap, Regions & regions);
   Regions FormRegionsInAreaOrder(Regions && regions);
@@ -59,12 +65,14 @@ private:
       Region const & countryOuter, Regions const & regionsInAreaOrder,
       boost::optional<std::string> const & countryCode,
       CountrySpecifier const & countrySpecifier) const;
-  Node::Ptr ChooseParent(std::vector<Node::Ptr> const & nodesInAreaOrder,
-                         std::vector<Node::Ptr>::const_reverse_iterator forItem,
-                         CountrySpecifier const & countrySpecifier) const;
-  std::vector<Node::Ptr>::const_reverse_iterator FindAreaLowerBoundRely(
+  std::list<ParentChildPairs> FindParentChildPairs(
+      std::vector<Node::Ptr> const & nodes, CountrySpecifier const & countrySpecifier) const;
+  static Node::Ptr ChooseParent(std::vector<Node::Ptr> const & nodesInAreaOrder,
+                                std::vector<Node::Ptr>::const_reverse_iterator forItem,
+                                CountrySpecifier const & countrySpecifier);
+  static std::vector<Node::Ptr>::const_reverse_iterator FindAreaLowerBoundRely(
       std::vector<Node::Ptr> const & nodesInAreaOrder,
-      std::vector<Node::Ptr>::const_reverse_iterator forItem) const;
+      std::vector<Node::Ptr>::const_reverse_iterator forItem);
   static void InsertIntoSubtree(Node::Ptr & subtree, Node::Ptr && newNode,
                                 CountrySpecifier const & countrySpecifier);
 
@@ -72,6 +80,7 @@ private:
   Regions m_regionsInAreaOrder;
   PlacePointsMap m_placePointsMap;
   unsigned int m_threadsCount;
+  base::thread_pool::computational::ThreadPool & m_taskProcessingThreadPool;
 };
 }  // namespace regions
 }  // namespace generator
