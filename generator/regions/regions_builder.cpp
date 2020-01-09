@@ -10,6 +10,7 @@
 #include "base/thread_pool_computational.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <functional>
 #include <numeric>
@@ -21,12 +22,12 @@ namespace generator
 {
 namespace regions
 {
-RegionsBuilder::RegionsBuilder(Regions && regions, PlacePointsMap && placePointsMap,
-                               unsigned int threadsCount)
-  : m_threadsCount(threadsCount)
+RegionsBuilder::RegionsBuilder(
+    Regions && regions, PlacePointsMap && placePointsMap,
+    base::thread_pool::computational::ThreadPool & taskProcessingThreadPool)
+  : m_threadsCount{static_cast<unsigned int>(taskProcessingThreadPool.Size())}
+  , m_taskProcessingThreadPool{taskProcessingThreadPool}
 {
-  ASSERT(m_threadsCount != 0, ());
-
   std::erase_if(placePointsMap, [](auto const & item) {
     return strings::IsASCIINumeric(item.second.GetName());
   });
@@ -119,14 +120,26 @@ Node::Ptr RegionsBuilder::BuildCountryRegionTree(
   auto nodes = MakeCountryNodesInAreaOrder(outer, m_regionsInAreaOrder, countryCode,
                                            countrySpecifier);
 
-  for (auto i = std::crbegin(nodes), end = std::crend(nodes); i != end; ++i)
-  {
-    if (auto parent = ChooseParent(nodes, i, countrySpecifier))
+  auto && parentChildPairs = FindParentChildPairs(nodes, countrySpecifier);
+
+  auto bindingTask = m_taskProcessingThreadPool.Submit([&] {
+    for (auto const & partion : parentChildPairs)
     {
-      (*i)->SetParent(parent);
-      parent->AddChild(*i);
+      for (auto const & parentChildPair : partion)
+      {
+        auto & parent = parentChildPair.first;
+        auto & child = parentChildPair.second;
+        child->SetParent(parent);
+        parent->AddChild(child);
+
+        auto & children = parent->GetChildren();
+        std::sort(children.begin(), children.end(), [](auto && a, auto && b) {
+          return a->GetData().GetArea() > b->GetData().GetArea();
+        });
+      }
     }
-  }
+  });
+  bindingTask.wait();
 
   return nodes.front();
 }
@@ -156,9 +169,50 @@ std::vector<Node::Ptr> RegionsBuilder::MakeCountryNodesInAreaOrder(
   return nodes;
 }
 
+std::list<RegionsBuilder::ParentChildPairs> RegionsBuilder::FindParentChildPairs(
+    std::vector<Node::Ptr> const & nodes, CountrySpecifier const & countrySpecifier) const
+{
+  constexpr auto nodesCountPerTask = 1000;
+  auto const tasksCount = std::min(std::max(size_t{1}, nodes.size() / nodesCountPerTask),
+                                   m_taskProcessingThreadPool.Size());
+
+  CHECK(!nodes.empty(), ());
+  std::atomic_size_t unprocessedIndex{1};
+  auto task = [&] {
+    ParentChildPairs parentChildPairs;
+    parentChildPairs.reserve(nodes.size() / tasksCount);
+
+    while (true)
+    {
+      auto const i = unprocessedIndex++;
+      if (i >= nodes.size())
+        break;
+
+      auto itemIterator = nodes.begin() + i;
+      auto itemReverseIterator = std::make_reverse_iterator(std::next(itemIterator));
+      if (auto && parent = ChooseParent(nodes, itemReverseIterator, countrySpecifier))
+        parentChildPairs.emplace_back(parent, *itemIterator);
+    }
+
+    return parentChildPairs;
+  };
+
+  auto buildingTasks = std::vector<std::future<ParentChildPairs>>{};
+  buildingTasks.reserve(tasksCount);
+  for (auto i = 0u; i < tasksCount; ++i)
+    buildingTasks.push_back(m_taskProcessingThreadPool.Submit(task));
+
+  auto parentChildPairs = std::list<ParentChildPairs>{};
+  for (auto & task : buildingTasks)
+    parentChildPairs.emplace_back(std::move(task.get()));
+
+  return parentChildPairs;
+}
+
+// static
 Node::Ptr RegionsBuilder::ChooseParent(std::vector<Node::Ptr> const & nodesInAreaOrder,
                                        std::vector<Node::Ptr>::const_reverse_iterator forItem,
-                                       CountrySpecifier const & countrySpecifier) const
+                                       CountrySpecifier const & countrySpecifier)
 {
   auto const & node = *forItem;
   auto const & region = node->GetData();
@@ -200,9 +254,10 @@ Node::Ptr RegionsBuilder::ChooseParent(std::vector<Node::Ptr> const & nodesInAre
   return parent;
 }
 
+// static
 std::vector<Node::Ptr>::const_reverse_iterator RegionsBuilder::FindAreaLowerBoundRely(
     std::vector<Node::Ptr> const & nodesInAreaOrder,
-    std::vector<Node::Ptr>::const_reverse_iterator forItem) const
+    std::vector<Node::Ptr>::const_reverse_iterator forItem)
 {
   auto const & region = (*forItem)->GetData();
 
